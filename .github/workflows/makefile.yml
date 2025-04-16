@@ -1,0 +1,39 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install NASM and GCC cross-compiler for i686
+      run: |
+        sudo apt update
+        sudo apt install -y nasm gcc make
+        sudo apt install -y gcc-multilib # for 32-bit support
+
+    - name: Build using Makefile
+      run: make
+
+    - name: Run distcheck (optional)
+      run: make distcheck
+
+    - name: Upload built binary
+      if: success()
+      run: |
+        mkdir -p bin
+        cp os.bin bin/os.bin
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: os-bin
+        path: bin/os.bin
