@@ -1,0 +1,25 @@
+on:
+  push:
+    paths:
+    - 'Makefile'
+    - 'build.sh'
+    - 'src/**'
+  pull_request:
+    paths:
+    - 'Makefile'
+    - 'build.sh'
+    - 'src/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4.2.2
+    - name: Run Build
+      run: |
+        ./build.sh
+    - name: Upload Build
+      with:
+        name: bin
+        path: bin/*.bin
