@@ -14,25 +14,35 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install NASM and GCC cross-compiler for i686
+    - name: Install dependencies (nasm, make, curl)
       run: |
         sudo apt update
-        sudo apt install -y nasm gcc make
-        sudo apt install -y gcc-multilib # for 32-bit support
+        sudo apt install -y nasm make curl xz-utils
 
-    - name: Build using Makefile
+    - name: Download and extract i686-elf GCC toolchain
+      run: |
+        mkdir -p $HOME/opt
+        curl -L https://github.com/xpack-dev-tools/i686-elf-gcc-xpack/releases/download/v12.2.0-2/xpack-i686-elf-gcc-12.2.0-2-linux-x64.tar.gz \
+          | tar -xz -C $HOME/opt
+        echo "$HOME/opt/xpack-i686-elf-gcc-*/bin" >> $GITHUB_PATH
+
+    - name: Verify toolchain installed
+      run: |
+        i686-elf-gcc --version
+        i686-elf-as --version
+
+    - name: Build project
       run: make
 
-    - name: Run distcheck (optional)
+    - name: Run distcheck (if available)
       run: make distcheck
 
-    - name: Upload built binary
-      if: success()
+    - name: Prepare output for upload
       run: |
         mkdir -p bin
         cp os.bin bin/os.bin
 
-    - name: Upload artifact
+    - name: Upload OS binary
       uses: actions/upload-artifact@v4
       with:
         name: os-bin
