@@ -1,0 +1,49 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install required tools
+      run: |
+        sudo apt update
+        sudo apt install -y nasm make curl
+
+    - name: Download and install i686-elf toolchain
+      run: |
+        curl -L https://github.com/mitchellh/gcc-i686-elf/releases/download/v1.0.0/i686-elf-ubuntu.tar.gz -o toolchain.tar.gz
+        mkdir -p $HOME/toolchain
+        tar -xzf toolchain.tar.gz -C $HOME/toolchain
+        echo "$HOME/toolchain/i686-elf/bin" >> $GITHUB_PATH
+
+    - name: Verify toolchain
+      run: |
+        i686-elf-gcc --version
+        i686-elf-as --version
+
+    - name: Build project
+      run: make
+
+    - name: Run distcheck
+      run: make distcheck
+
+    - name: Prepare output
+      run: |
+        mkdir -p bin
+        cp os.bin bin/os.bin
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: os-bin
+        path: bin/os.bin
