@@ -21,9 +21,9 @@ jobs:
 
     - name: Download and install i686-elf toolchain
       run: |
-        curl -L https://raw.githubusercontent.com/lordmilko/i686-elf-tools/refs/heads/master/i686-elf-tools.sh -o i686-elf-tools.sh
-        chmod +x i686-elf-tools.sh
-        ./i686-elf-tools.sh
+        curl -L https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip -o i686-elf-tools-linux.zip
+        mkdir $HOME/i686-elf-tools && unzip i686-elf-tools-linux.zip -d $HOME/i686-elf-tools
+        echo "$HOME/i686-elf-tools/bin" >> $GITHUB_PATH
 
     - name: Verify toolchain
       run: |
