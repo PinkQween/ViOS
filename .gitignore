@@ -1,5 +1,4 @@
 .qodo
 .DS_Store
 bin/*.bin
-build/*.o
-build/**/.o
+build/**/*.o
