@@ -6,11 +6,13 @@ on:
     - 'Makefile'
     - 'build.sh'
     - 'src/**'
+    - '.github/workflows/makefile.yml'
   pull_request:
     paths:
     - 'Makefile'
     - 'build.sh'
     - 'src/**'
+    - '.github/workflows/makefile.yml'
 
 jobs:
   build:
