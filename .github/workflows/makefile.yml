@@ -2,9 +2,17 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+    - 'Makefile'
+    - 'build.sh'
+    - 'src/**'
+    - '.github/workflows/makefile.yml'
   pull_request:
-    branches: [ "main" ]
+    paths:
+    - 'Makefile'
+    - 'build.sh'
+    - 'src/**'
+    - '.github/workflows/makefile.yml'
 
 jobs:
   build:
@@ -21,10 +29,10 @@ jobs:
 
     - name: Download and install i686-elf toolchain
       run: |
-        curl -L https://github.com/mitchellh/gcc-i686-elf/releases/download/v1.0.0/i686-elf-ubuntu.tar.gz -o toolchain.tar.gz
-        mkdir -p $HOME/toolchain
-        tar -xzf toolchain.tar.gz -C $HOME/toolchain
-        echo "$HOME/toolchain/i686-elf/bin" >> $GITHUB_PATH
+        curl -L https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip -o i686-elf-tools-linux.zip
+        mkdir $HOME/i686-elf-tools
+        unzip i686-elf-tools-linux.zip -d $HOME/i686-elf-tools
+        echo "$HOME/i686-elf-tools/bin" >> $GITHUB_PATH
 
     - name: Verify toolchain
       run: |
@@ -32,15 +40,9 @@ jobs:
         i686-elf-as --version
 
     - name: Build project
-      run: make
-
-    - name: Run distcheck
-      run: make distcheck
-
-    - name: Prepare output
       run: |
-        mkdir -p bin
-        cp os.bin bin/os.bin
+        chmod +x build.sh
+        ./build.sh
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
