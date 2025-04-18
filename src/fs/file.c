@@ -2,16 +2,15 @@
 #include "config.h"
 #include "memory/memory.h"
 #include "memory/heap/kheap.h"
+#include "fat/fat16.h"
 #include "status.h"
 #include "kernel.h"
+struct filesystem *filesystems[VIOS_MAX_FILESYSTEMS];
+struct file_descriptor *file_descriptors[VIOS_MAX_FILE_DESCRIPTORS];
 
-struct filesystem* filesystems[VIOS_MAX_FILESYSTEMS];
-struct file_descriptor* file_descriptors[VIOS_MAX_FILE_DESCRIPTORS];
-
-static struct filesystem** fs_get_free_filesystem()
+static struct filesystem **fs_get_free_filesystem()
 {
     int i = 0;
-
     for (i = 0; i < VIOS_MAX_FILESYSTEMS; i++)
     {
         if (filesystems[i] == 0)
@@ -23,13 +22,16 @@ static struct filesystem** fs_get_free_filesystem()
     return 0;
 }
 
-void fs_insert_filesystem(struct filesystem* filesystem)
+void fs_insert_filesystem(struct filesystem *filesystem)
 {
-    struct filesystem** fs;
+    struct filesystem **fs;
     fs = fs_get_free_filesystem();
-
-    if (!fs) {
-        print("Problem inserting filesystem"); while (1) {}
+    if (!fs)
+    {
+        print("Problem inserting filesystem");
+        while (1)
+        {
+        }
     }
 
     *fs = filesystem;
@@ -37,7 +39,7 @@ void fs_insert_filesystem(struct filesystem* filesystem)
 
 static void fs_static_load()
 {
-    // fs_insert_filesystem(fat16_init())
+    fs_insert_filesystem(fat16_init());
 }
 
 void fs_load()
@@ -52,15 +54,14 @@ void fs_init()
     fs_load();
 }
 
-static int file_new_descriptor(struct file_descriptor** desc_out)
+static int file_new_descriptor(struct file_descriptor **desc_out)
 {
     int res = -ENOMEM;
-
     for (int i = 0; i < VIOS_MAX_FILE_DESCRIPTORS; i++)
     {
         if (file_descriptors[i] == 0)
         {
-            struct file_descriptor* desc = kzalloc(sizeof(struct file_descriptor));
+            struct file_descriptor *desc = kzalloc(sizeof(struct file_descriptor));
             // Descriptors start at 1
             desc->index = i + 1;
             file_descriptors[i] = desc;
@@ -73,7 +74,7 @@ static int file_new_descriptor(struct file_descriptor** desc_out)
     return res;
 }
 
-static struct file_descriptor* file_get_descriptor(int fd)
+static struct file_descriptor *file_get_descriptor(int fd)
 {
     if (fd <= 0 || fd >= VIOS_MAX_FILE_DESCRIPTORS)
     {
@@ -85,10 +86,9 @@ static struct file_descriptor* file_get_descriptor(int fd)
     return file_descriptors[index];
 }
 
-struct filesystem* fs_resolve(struct disk* disk)
+struct filesystem *fs_resolve(struct disk *disk)
 {
-    struct filesystem* fs = 0;
-    
+    struct filesystem *fs = 0;
     for (int i = 0; i < VIOS_MAX_FILESYSTEMS; i++)
     {
         if (filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)

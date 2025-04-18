@@ -2,13 +2,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "idt/idt.h"
-#include "io/io.h"
 #include "memory/heap/kheap.h"
 #include "memory/paging/paging.h"
-#include "disk/streamer.h"
+#include "string/string.h"
+#include "fs/file.h"
 #include "disk/disk.h"
 #include "fs/pparser.h"
-#include "string/string.h"
+#include "disk/streamer.h"
 
 uint16_t *video_mem = 0;
 uint16_t terminal_row = 0;
@@ -64,8 +64,7 @@ void print(const char *str)
     }
 }
 
-static struct paging_4gb_chunk* kernel_chunk = 0;
-
+static struct paging_4gb_chunk *kernel_chunk = 0;
 void kernel_main()
 {
     terminal_initialize();
@@ -74,7 +73,10 @@ void kernel_main()
     // Initialize the heap
     kheap_init();
 
-    // Search and initialize disks
+    // Initialize filesystems
+    fs_init();
+
+    // Search and initialize the disks
     disk_search_and_init();
 
     // Initialize the interrupt descriptor table
@@ -89,16 +91,8 @@ void kernel_main()
     // Enable paging
     enable_paging();
 
-    // Enable system interrupts
+    // Enable the system interrupts
     enable_interrupts();
-
-    struct disk_stream* stream = diskstreamer_new(0);
-
-    diskstreamer_seek(stream, 0x201);
-
-    unsigned char c = 0;
-
-    diskstreamer_read(stream, &c, 1);
 
     while (1) {}
 }
