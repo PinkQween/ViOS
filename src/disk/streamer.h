@@ -6,7 +6,7 @@
 struct disk_stream
 {
     int pos;
-    struct disk* disk;
+    struct disk *disk;
 };
 
 struct disk_stream *diskstreamer_new(int disk_id);

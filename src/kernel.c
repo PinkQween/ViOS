@@ -65,34 +65,58 @@ void print(const char *str)
 }
 
 static struct paging_4gb_chunk *kernel_chunk = 0;
+
 void kernel_main()
 {
     terminal_initialize();
-    print("Hello world!\nHi Vio!");
+    print("Welcome to ViOS Kernel!\n\n");
 
-    // Initialize the heap
+    // Initialize heap
     kheap_init();
+    print("[OK] Heap initialized\n");
 
     // Initialize filesystems
     fs_init();
+    print("[OK] Filesystem initialized\n");
 
-    // Search and initialize the disks
+    // Initialize disks
     disk_search_and_init();
+    print("[OK] Disks initialized\n");
 
-    // Initialize the interrupt descriptor table
+    // Initialize interrupts
     idt_init();
+    print("[OK] Interrupt descriptor table initialized\n");
 
     // Setup paging
-    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
-
-    // Switch to kernel paging chunk
+    kernel_chunk = paging_new_4gb(
+        PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
-
-    // Enable paging
     enable_paging();
+    print("[OK] Paging enabled\n");
 
-    // Enable the system interrupts
+    // Enable system interrupts
     enable_interrupts();
+    print("[OK] Interrupts enabled\n");
 
-    while (1) {}
+    // Try opening a file
+    int fd = fopen("0:/file.txt", "r");
+    if (fd)
+    {
+        print("[OK] Opened file: 0:/file.txt\n");
+        char buf[14];
+        fread(buf, 13, 1, fd);
+        buf[13] = 0x00;
+        print("Contents: ");
+        print(buf);
+        print("\n");
+    }
+    else
+    {
+        print("[WARN] Could not open 0:/file.txt\n");
+    }
+
+    // Kernel idle loop
+    while (1)
+    {
+    }
 }
