@@ -189,26 +189,108 @@ ViOS is not just a clone of the course—it’s an extension. It keeps the struc
 
 ___________
 
-🪪 License
-----------
+🤝 Contributing
+---------------
 
-MIT License – use it, fork it, build from it. Just don’t forget where you came from.
+Contributions are **highly encouraged and deeply appreciated**. ViOS is more than an OS—it's a learning tool and a tribute to hacker culture. Whether you're fixing a bug, improving documentation, or building a whole new feature, your work helps keep the spirit of Vio and low-level computing alive.
 
+### 🧭 How to Contribute
+
+Want to get started? Here’s how:
+
+1.  **Fork the Repo**  
+    Click the **Fork** button on [GitHub](https://github.com/PinkQween/ViOS) to create your own copy of the project.
+    
+2.  **Clone Your Fork**
+    
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/ViOS.git
+    cd ViOS
+    ```
+    
+3.  **Create a New Branch**
+    
+    ```bash
+    git checkout -b your-feature-name
+    ```
+    
+4.  **Make Your Changes**  
+    Add your code, fix bugs, write docs, or improve the build system. Keep commits focused.
+    
+5.  **Test Your Changes**  
+    Run `./build.sh` and test the OS in QEMU:
+    
+    ```bash
+    qemu-system-i386 -kernel bin/os.bin
+    ```
+    
+6.  **Commit & Push**
+    
+    ```bash
+    git add .
+    git commit -m "Add: [short description of your change]"
+    git push origin your-feature-name
+    ```
+    
+7.  **Open a Pull Request**  
+    Go to your fork on GitHub and click **New pull request**.
+    
 ___________
 
-✍️ Author
-----------
+### 🧼 Contribution Guidelines
+    
+*   Keep commits clean and descriptive.
+    
+*   If you’re adding new files, place them in a logical subdirectory.
+    
+*   Contributions can include:
+    
+    *   🔧 Bug fixes
+        
+    *   📄 Documentation
+        
+    *   ⚙️ Drivers or kernel features
+        
+    *   💬 Shell improvements
+        
+    *   📦 File system or memory improvements
+ 
+    *   And More!
 
-This project is licensed under the **MIT License**. Use it, break it, share it.  
-Just keep the spirit alive.
+--- 
 
-Built and customized by Hanna Skairipa
-🔗 GitHub – PinkQween/ViOS
+## 🧪 Ideas to Get Involved
 
-> _"Not all hackers wear masks. Some wear purpose."_  
-> — Vio (SiegedSec)
-
+- 🌐 Implement networking functionality (e.g. TCP/IP stack or USB Ethernet)
+- 📦 Add support for system updates or patching mechanism
+- 🧠 Add new syscalls or user-mode execution support
+- 🛠️ Expand the shell with built-in commands (like `ls`, `cat`, `cd`)
+- 🧳 Build a lightweight `init` system or process manager
+- 🧾 Add support for EXT4 or exFAT filesystems
+- 🎮 Build demo applications or a TUI-based game on top of ViOS
 
 ---
 
-Let me know if you'd like a version with additional markdown badges (build status, license, etc.) or CI integration (like GitHub Actions for build testing).
+## 🧵 Just Starting?
+
+No worries! Open an issue with a question, start a discussion, or contribute to the documentation to get your feet wet. Everyone starts somewhere—and every little bit helps.
+
+> _"The OS belongs to everyone who dares to open the binary."_  
+> – You, after your first PR
+
+---
+
+## 🪪 License
+
+MIT License — use it, fork it, build on it.  
+Just don’t forget where you came from.
+
+---
+
+## ✍️ Author
+
+Built and maintained by **Hanna Skairipa**  
+🔗 [PinkQween on GitHub](https://github.com/PinkQween)
+
+> _"Not all hackers wear masks. Some wear purpose."_  
+> — **Vio** (SiegedSec)
