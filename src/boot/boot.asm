@@ -30,7 +30,6 @@ VolumeID                dd 0xD105
 VolumeIDString          db 'VIOS BOOT  '
 SystemIDString          db 'FAT16   '
 
-
 start:
     jmp 0:step2
 

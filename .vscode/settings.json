@@ -10,7 +10,13 @@
         "stdint.h": "c",
         "kheap.h": "c",
         "string.h": "c",
-        "paging.h": "c"
+        "paging.h": "c",
+        "stddef.h": "c",
+        "gdt.h": "c",
+        "task.h": "c",
+        "variant": "c",
+        "memory.h": "c",
+        "status.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
