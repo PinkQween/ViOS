@@ -11,7 +11,11 @@
 #include "io/io.h"
 #include "gdt/gdt.h"
 #include "task/tss.h"
+#include "isr80h/isr80h.h"
 #include "config.h"
+#include "status.h"
+#include "task/task.h"
+#include "task/process.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -79,6 +83,16 @@ void print(const char *str)
     }
 }
 
+void print_colored(const char *str, char fg, char bg)
+{
+    char colour = (bg << 4) | (fg & 0x0F);
+    size_t len = strlen(str);
+    for (size_t i = 0; i < len; i++)
+    {
+        terminal_writechar(str[i], colour);
+    }
+}
+
 // Converts integer to ASCII string
 void int_to_ascii(int num, char *str)
 {
@@ -137,14 +151,62 @@ void print_stat(struct file_stat *stat)
     print("\n");
 }
 
+void print_status(const char *message, const char *status)
+{
+    char fg = VGA_COLOR_WHITE;
+    char bg = VGA_COLOR_BLACK;
+
+    // Apply standard colors based on status string
+    if (strcmp(status, "OK") == 0)
+    {
+        bg = VGA_COLOR_GREEN;
+    }
+    else if (strcmp(status, "WARN") == 0)
+    {
+        bg = VGA_COLOR_YELLOW;
+        fg = VGA_COLOR_BLACK;
+    }
+    else if (strcmp(status, "ERR") == 0 || strcmp(status, "FAIL") == 0)
+    {
+        bg = VGA_COLOR_RED;
+    }
+    else if (strcmp(status, "PANIC") == 0)
+    {
+        bg = VGA_COLOR_RED;
+        fg = VGA_COLOR_BLACK;
+    }
+    else
+    {
+        bg = VGA_COLOR_CYAN; // fallback for unknown statuses
+    }
+
+    print(message);
+
+    int pad = VGA_WIDTH - terminal_col - strlen(status) - 3;
+    for (int i = 0; i < pad; i++)
+    {
+        terminal_writechar('.', VGA_COLOR_DARK_GREY);
+    }
+
+    print(" [");
+    print_colored(status, fg, bg);
+    print("]\n");
+}
+
 // Kernel panic handler
 void panic(const char *msg)
 {
-    print("[ERR] KERNEL PANIC: ");
+    print_status("SYSTEM PANIC", "PANIC");
     print(msg);
     while (1)
     {
     }
+}
+
+void kernel_page()
+{
+    kernel_registers();
+    paging_switch(kernel_chunk);
 }
 
 // TSS and GDT setup
@@ -163,71 +225,59 @@ struct gdt_structured gdt_structured[VIOS_TOTAL_GDT_SEGMENTS] = {
 void kernel_main()
 {
     terminal_initialize();
-    print("Welcome to ViOS Kernel!\n\n");
+    print("Welcome to ViOS Kernel!\n\n\n\n");
 
     // Load GDT
     memset(gdt_real, 0, sizeof(gdt_real));
     gdt_structured_to_gdt(gdt_real, gdt_structured, VIOS_TOTAL_GDT_SEGMENTS);
     gdt_load(gdt_real, sizeof(gdt_real));
-    print("[OK] GDT loaded\n");
+    print_status("GDT loaded", "OK");
 
     // Heap
     kheap_init();
-    print("[OK] Heap initialized\n");
+    print_status("Heap initialized", "OK");
 
     // Filesystem
     fs_init();
-    print("[OK] Filesystem initialized\n");
+    print_status("Filesystem initialized", "OK");
 
     // Disks
     disk_search_and_init();
-    print("[OK] Disks initialized\n");
+    print_status("Disks initialized", "OK");
 
     // IDT
     idt_init();
-    print("[OK] Interrupt Descriptor Table initialized\n");
+    print_status("Interrupt Descriptor Table initialized", "OK");
 
     // Setup TSS
     memset(&tss, 0, sizeof(tss));
     tss.esp0 = 0x600000;
     tss.ss0 = KERNEL_DATA_SELECTOR;
     tss_load(0x28);
-    print("[OK] TSS loaded\n");
+    print_status("TSS loaded", "OK");
 
     // Paging
     kernel_chunk = paging_new_4gb(
         PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
-    paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
+    paging_switch(kernel_chunk);
     enable_paging();
-    print("[OK] Paging enabled\n");
+    print_status("Paging enabled", "OK");
 
-    // Enable interrupts
-    enable_interrupts();
-    print("[OK] Interrupts enabled\n");
+    isr80h_register_commands();
+    print_status("Registered kernel commands", "OK");
 
-    // Try opening file
-    int fd = fopen("0:/logo.bin", "r");
-    if (fd)
+    // // Enable interrupts
+    // enable_interrupts();
+    // print_status("Interrupts enabled", "OK");
+
+    struct process *process = 0;
+    int res = process_load("0:/blank.bin", &process);
+    if (res != VIOS_ALL_OK)
     {
-        print("[OK] Opened file: 0:/logo.bin\n");
-
-        struct file_stat stat;
-        if (fstat(fd, &stat) == 0)
-        {
-            print_stat(&stat);
-        }
-        else
-        {
-            print("[WARN] Could not stat file\n");
-        }
-
-        fclose(fd);
-        print("[OK] Closed file: 0:/logo.bin\n");
+        panic("Failed to load blank.bin");
     }
-    else
-    {
-        print("[WARN] Could not open file: 0:/logo.bin\n");
-    }
+
+    task_run_first_ever_task();
 
     // Idle loop
     while (1)

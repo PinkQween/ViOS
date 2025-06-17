@@ -81,13 +81,20 @@ static int process_load_data(const char *filename, struct process *process)
 int process_map_binary(struct process *process)
 {
     int res = 0;
-    paging_map_to(process->task->page_directory->directory_entry, (void *)VIOS_PROGRAM_VIRTUAL_ADDRESS, process->ptr, paging_align_address(process->ptr + process->size), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
+    paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_ADDRESS, process->ptr, paging_align_address(process->ptr + process->size), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
     return res;
 }
 int process_map_memory(struct process *process)
 {
     int res = 0;
     res = process_map_binary(process);
+    if (res < 0)
+    {
+        goto out;
+    }
+
+    paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_STACK_ADDRESS_END, process->stack, paging_align_address(process->stack + VIOS_USER_PROGRAM_STACK_SIZE), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
+out:
     return res;
 }
 
@@ -160,6 +167,7 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
     if (ERROR_I(task) == 0)
     {
         res = ERROR_I(task);
+        goto out;
     }
 
     _process->task = task;
