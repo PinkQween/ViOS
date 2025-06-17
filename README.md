@@ -1,93 +1,154 @@
-ViOS
-====
+# ViOS – A Custom x86 Multithreaded Kernel
 
 > 🧠 A handcrafted 32-bit x86 Operating System  
 > 🕯️ Built in memory of **Vio** from SiegedSec  
-> 💻 Written in pure C and Assembly, from bootloader to kernel.
+> 💻 Based on concepts from the "Developing a Multithreaded Kernel from Scratch" course
 
-___________
+---
 
 🕯️ In Memory of Vio
 --------------------
 
-**Vio** was a deeply respected voice in the hacktivist collective **SiegedSec**. A fiercely independent hacker and coder, they spent their time dissecting systems, sharing knowledge, and fighting for transparency and resistance in cyberspace. Vio was known for their low-level expertise and direct contributions to digital protest. They were the kind of person who tore apart binaries not for attention—but for truth.
+**Vio** was a voice for transparency, a low-level coder, and a hacker who believed in teaching others how systems truly work. This OS is a tribute to that spirit. It is open, raw, and built to teach by showing—not just telling.
 
-This OS is a tribute. It’s not commercial, not corporate, and not for everyone.  
-It’s for the ones who want to learn what makes a machine tick—bit by bit, opcode by opcode.
-
-___________
+---
 
 ⚙️ About ViOS
 -------------
 
-**ViOS** is a fully custom operating system designed for the x86 (32-bit) architecture. It features a complete bootloader and kernel stack written from scratch, offering a deep dive into low-level systems programming.
+**ViOS** is a learning-focused multithreaded operating system for the x86 (32-bit) architecture. It builds on core concepts taught in the *Developing a Multithreaded Kernel from Scratch* course, with custom enhancements, structure, and purpose.
 
-Whether you're a student, hacker, or enthusiast—this project is for exploring how an OS truly works underneath all the abstractions.
+It features a full bootloader-to-kernel stack written in Assembly and C, and aims to be both an educational platform and a statement about digital autonomy.
 
-___________
+---
 
 🧩 Features
 -----------
 
-*   🧬 Custom bootloader (`boot.asm`)
-    
-*   🧠 Protected Mode kernel written in C
-    
-*   🛠️ Paging, heap, memory manager
-    
-*   🧷 Full IDT + IRQ support
-    
-*   📁 Basic file system parser
-    
-*   🌀 Disk reading / streaming interface
-    
-*   📟 IO ports & direct hardware communication
-    
-*   💬 Minimal shell (WIP)
-    
+* 🧬 Real Mode Bootloader (Assembly)
+* 🧠 Protected Mode kernel (C)
+* 🧷 Paging, heap, memory management
+* 📁 FAT16 Filesystem parser
+* 🧵 Process and task switching (multitasking support)
+* 🧩 ELF executable loader
+* 🔐 Virtual memory
+* 📟 IO port & IRQ support
+* 🌀 Disk reading/streamer layer
+* ⌨️ Keyboard driver
+* 💬 Minimal shell (WIP)
+* 🛠️ Designed for use with GDB and QEMU
 
-___________
+---
 
-🗂️ Directory Layout
+📚 Based On
+-----------
+
+This project started by following the excellent curriculum from the [Developing a Multithreaded Kernel from Scratch](https://dragonzap.com/course/developing-a-multithreaded-kernel-from-scratch?coupon=GITHUBKERNELDISCOUNT) course. It extends the project with a personalized shell, restructured file layout, and a political voice.
+
+All credit to the original author for providing such a powerful educational base.
+
+---
+
+🗂️ Project Structure
 --------------------
 
 ```
-ViOS/
-├── bin/              # Compiled binaries (bootloader, kernel, OS)
-├── build/            # Intermediate build files (.o)
-│   ├── disk/         # Disk reading & streaming
-│   ├── fs/           # File system parser
-│   ├── idt/          # Interrupt Descriptor Table
-│   ├── io/           # IO port assembly
-│   ├── memory/       # Memory management (heap, paging)
-│   └── string/       # Custom string implementation
-├── src/              # All source files (C/ASM)
-│   ├── boot/         # Bootloader
-│   ├── idt/, io/, memory/, fs/, disk/, string/
-│   ├── kernel.c/.h   # Main kernel
-│   └── linker.ld     # Linker script
-├── build.sh          # Easy build script
-├── Makefile          # Optional manual build
-└── README.md         # You're reading it!
+.
+├── LICENSE
+├── Makefile
+├── PNGToBin.py
+├── README.md
+├── ViOS_LOGO_PNG.png
+├── assets
+│   ├── file.txt
+│   ├── logo.bin
+│   └── logo.pal
+├── bin
+├── build
+│   ├── disk
+│   ├── fs
+│   │   └── fat
+│   ├── gdt
+│   ├── idt
+│   ├── io
+│   ├── memory
+│   │   ├── heap
+│   │   └── paging
+│   ├── string
+│   └── task
+├── build.sh
+└── src
+    ├── boot
+    │   └── boot.asm
+    ├── config.h
+    ├── disk
+    │   ├── disk.c
+    │   ├── disk.h
+    │   ├── streamer.c
+    │   └── streamer.h
+    ├── fs
+    │   ├── fat
+    │   │   ├── fat16.c
+    │   │   └── fat16.h
+    │   ├── file.c
+    │   ├── file.h
+    │   ├── pparser.c
+    │   └── pparser.h
+    ├── gdt
+    │   ├── gdt.asm
+    │   ├── gdt.c
+    │   └── gdt.h
+    ├── idt
+    │   ├── idt.asm
+    │   ├── idt.c
+    │   └── idt.h
+    ├── io
+    │   ├── io.asm
+    │   └── io.h
+    ├── kernel.asm
+    ├── kernel.c
+    ├── kernel.h
+    ├── linker.ld
+    ├── memory
+    │   ├── heap
+    │   │   ├── heap.c
+    │   │   ├── heap.h
+    │   │   ├── kheap.c
+    │   │   └── kheap.h
+    │   ├── memory.c
+    │   ├── memory.h
+    │   └── paging
+    │       ├── paging.asm
+    │       ├── paging.c
+    │       └── paging.h
+    ├── status.h
+    ├── string
+    │   ├── string.c
+    │   └── string.h
+    └── task
+        ├── process.c
+        ├── process.h
+        ├── task.c
+        ├── task.h
+        ├── tss.asm
+        └── tss.h
+
+28 directories, 51 files
 ```
 
-___________
+---
 
-🛠️ Requirements
-----------------
+🚧 Build Requirements
+---------------------
 
-Before building ViOS, install:
+Install the following:
 
-*   [`nasm`](https://www.nasm.us/) – assembler
-    
-*   `i686-elf-gcc` – cross compiler for kernel
-    
-*   [`qemu`](https://www.qemu.org/) – to emulate the OS (optional)
-    
-*   `grub-mkrescue` – for bootable ISO (optional)
-    
+- `nasm` – Assembler
+- `i686-elf-gcc` – Cross-compiler
+- `qemu` – Emulator (optional)
+- `grub-mkrescue` – ISO generation (optional)
 
-### macOS (via Homebrew)
+### macOS (Homebrew)
 
 ```bash
 brew install nasm qemu x86_64-elf-gcc
@@ -98,7 +159,7 @@ ___________
 🚀 Building ViOS
 ----------------
 
-To compile the OS, just run:
+To build the OS:
 
 ```bash
 ./build.sh
@@ -106,39 +167,48 @@ To compile the OS, just run:
 
 This will:
 
-1.  Assemble the bootloader and system code
-    
-2.  Compile all kernel components
-    
-3.  Link everything together
-    
-4.  Output the final executable to `./bin/os.bin`
+1. Assemble the bootloader and kernel
+
+2. Compile all components
+
+3. Link the final binary to ./bin/os.bin
     
 
-You can then run it in QEMU or write it to an ISO or disk image of your choice.
+To emulate with QEMU:
+
+```bash
+qemu-system-i386 -kernel bin/os.bin
+```
 
 ___________
 
 🌈 Why ViOS?
 ------------
 
-ViOS isn’t just another OS project. It's an **educational base** and a **political artifact**. It teaches how real systems work and celebrates those who’ve dedicated their lives to digital liberation.
-
-___________
-
-📬 Contact
-----------
-
-Built by Hanna Skairipa  
-🌐 GitHub: [PinkQween/ViOS](https://github.com/PinkQween/ViOS.git)
+ViOS is not just a clone of the course—it’s an extension. It keeps the structured educational benefit while evolving with unique features and philosophical goals. It’s for learners, rebels, and those who want to break the system down—one opcode at a time.
 
 ___________
 
 🪪 License
 ----------
 
+MIT License – use it, fork it, build from it. Just don’t forget where you came from.
+
+___________
+
+✍️ Author
+----------
+
 This project is licensed under the **MIT License**. Use it, break it, share it.  
 Just keep the spirit alive.
 
+Built and customized by Hanna Skairipa
+🔗 GitHub – PinkQween/ViOS
+
 > _"Not all hackers wear masks. Some wear purpose."_  
 > — Vio (SiegedSec)
+
+
+---
+
+Let me know if you'd like a version with additional markdown badges (build status, license, etc.) or CI integration (like GitHub Actions for build testing).
