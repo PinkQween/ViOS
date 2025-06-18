@@ -18,7 +18,12 @@
         "memory.h": "c",
         "status.h": "c",
         "config.h": "c",
-        "misc.h": "c"
+        "misc.h": "c",
+        "process.h": "c",
+        "io.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c",
+        "vios.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

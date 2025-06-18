@@ -1,8 +1,6 @@
 #ifndef GDT_H
 #define GDT_H
-
 #include <stdint.h>
-
 struct gdt
 {
     uint16_t segment;
@@ -21,6 +19,5 @@ struct gdt_structured
 };
 
 void gdt_load(struct gdt *gdt, int size);
-void gdt_structured_to_gdt(struct gdt *gdt, struct gdt_structured *structured_gdt, int total_entries);
-
+void gdt_structured_to_gdt(struct gdt *gdt, struct gdt_structured *structured_gdt, int total_entires);
 #endif

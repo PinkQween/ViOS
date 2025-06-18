@@ -9,7 +9,8 @@ gdt_load:
     lgdt [gdt_descriptor]
     ret
 
+
 section .data
 gdt_descriptor:
-    dw 0x00 ; size
-    dd 0x00 ; GDT start address
+    dw 0x00 ; Size
+    dd 0x00 ; GDT Start Address

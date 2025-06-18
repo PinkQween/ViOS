@@ -1,24 +1,23 @@
 #include "kernel.h"
-#include "memory/memory.h"
-#include "memory/heap/kheap.h"
-#include "memory/paging/paging.h"
-#include "string/string.h"
-#include "fs/file.h"
-#include "fs/pparser.h"
-#include "disk/disk.h"
-#include "disk/streamer.h"
-#include "idt/idt.h"
-#include "io/io.h"
-#include "gdt/gdt.h"
-#include "task/tss.h"
-#include "isr80h/isr80h.h"
-#include "config.h"
-#include "status.h"
-#include "task/task.h"
-#include "task/process.h"
-
 #include <stddef.h>
 #include <stdint.h>
+#include "idt/idt.h"
+#include "memory/heap/kheap.h"
+#include "memory/paging/paging.h"
+#include "memory/memory.h"
+#include "keyboard/keyboard.h"
+#include "string/string.h"
+#include "isr80h/isr80h.h"
+#include "task/task.h"
+#include "task/process.h"
+#include "fs/file.h"
+#include "disk/disk.h"
+#include "fs/pparser.h"
+#include "disk/streamer.h"
+#include "task/tss.h"
+#include "gdt/gdt.h"
+#include "config.h"
+#include "status.h"
 
 // VGA text buffer
 static uint16_t *video_mem = (uint16_t *)0xB8000;
@@ -39,6 +38,24 @@ void terminal_putchar(int x, int y, char c, char colour)
     video_mem[(y * VGA_WIDTH) + x] = terminal_make_char(c, colour);
 }
 
+void terminal_backspace()
+{
+    if (terminal_row == 0 && terminal_col == 0)
+    {
+        return;
+    }
+
+    if (terminal_col == 0)
+    {
+        terminal_row -= 2;
+        terminal_col = VGA_WIDTH;
+    }
+
+    terminal_col -= 1;
+    terminal_writechar(' ', 15);
+    terminal_col -= 1;
+}
+
 // Writes character at current terminal position
 void terminal_writechar(char c, char colour)
 {
@@ -46,6 +63,12 @@ void terminal_writechar(char c, char colour)
     {
         terminal_row++;
         terminal_col = 0;
+        return;
+    }
+
+    if (c == 0x08)
+    {
+        terminal_backspace();
         return;
     }
 
@@ -213,12 +236,12 @@ void kernel_page()
 struct tss tss;
 struct gdt gdt_real[VIOS_TOTAL_GDT_SEGMENTS];
 struct gdt_structured gdt_structured[VIOS_TOTAL_GDT_SEGMENTS] = {
-    {.base = 0x00, .limit = 0x00, .type = 0x00},                 // NULL
-    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},           // Kernel Code
-    {.base = 0x00, .limit = 0xffffffff, .type = 0x92},           // Kernel Data
-    {.base = 0x00, .limit = 0xffffffff, .type = 0xf8},           // User Code
-    {.base = 0x00, .limit = 0xffffffff, .type = 0xf2},           // User Data
-    {.base = (uint32_t)&tss, .limit = sizeof(tss), .type = 0xE9} // TSS
+    {.base = 0x00, .limit = 0x00, .type = 0x00},                 // NULL Segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},           // Kernel code segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x92},           // Kernel data segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xf8},           // User code segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xf2},           // User data segment
+    {.base = (uint32_t)&tss, .limit = sizeof(tss), .type = 0xE9} // TSS Segment
 };
 
 // Entry point of the kernel
@@ -227,61 +250,64 @@ void kernel_main()
     terminal_initialize();
     print("Welcome to ViOS Kernel!\n\n\n\n");
 
-    // Load GDT
-    memset(gdt_real, 0, sizeof(gdt_real));
     gdt_structured_to_gdt(gdt_real, gdt_structured, VIOS_TOTAL_GDT_SEGMENTS);
+
+    // Load the gdt
     gdt_load(gdt_real, sizeof(gdt_real));
     print_status("GDT loaded", "OK");
 
-    // Heap
+    // Initialize the heap
     kheap_init();
     print_status("Heap initialized", "OK");
 
-    // Filesystem
+    // Initialize filesystems
     fs_init();
     print_status("Filesystem initialized", "OK");
 
-    // Disks
+    // Search and initialize the disks
     disk_search_and_init();
     print_status("Disks initialized", "OK");
 
-    // IDT
+    // Initialize the interrupt descriptor table
     idt_init();
     print_status("Interrupt Descriptor Table initialized", "OK");
 
-    // Setup TSS
-    memset(&tss, 0, sizeof(tss));
+    // Setup the TSS
+    memset(&tss, 0x00, sizeof(tss));
     tss.esp0 = 0x600000;
     tss.ss0 = KERNEL_DATA_SELECTOR;
+
+    // Load the TSS
     tss_load(0x28);
     print_status("TSS loaded", "OK");
 
-    // Paging
-    kernel_chunk = paging_new_4gb(
-        PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+    // Setup paging
+    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+
+    // Switch to kernel paging chunk
     paging_switch(kernel_chunk);
+
+    // Enable paging
     enable_paging();
     print_status("Paging enabled", "OK");
 
+    // Initialize all the system keyboards
+    keyboard_init();
+    print_status("Initialized all system keyboards", "OK");
+    
+    // Register the kernel commands
     isr80h_register_commands();
     print_status("Registered kernel commands", "OK");
 
-    // // Enable interrupts
-    // enable_interrupts();
-    // print_status("Interrupts enabled", "OK");
-
-    // terminal_initialize();
-
     struct process *process = 0;
-    int res = process_load("0:/blank.bin", &process);
+    int res = process_load_switch("0:/shell.elf", &process);
     if (res != VIOS_ALL_OK)
     {
-        panic("Failed to load blank.bin");
+        panic("Failed to load blank.elf");
     }
 
     task_run_first_ever_task();
 
-    // Idle loop
     while (1)
     {
     }
