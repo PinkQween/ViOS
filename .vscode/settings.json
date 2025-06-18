@@ -17,7 +17,8 @@
         "variant": "c",
         "memory.h": "c",
         "status.h": "c",
-        "config.h": "c"
+        "config.h": "c",
+        "misc.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

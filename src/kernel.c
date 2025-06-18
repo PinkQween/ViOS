@@ -270,6 +270,8 @@ void kernel_main()
     // enable_interrupts();
     // print_status("Interrupts enabled", "OK");
 
+    // terminal_initialize();
+
     struct process *process = 0;
     int res = process_load("0:/blank.bin", &process);
     if (res != VIOS_ALL_OK)
