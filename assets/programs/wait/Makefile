@@ -15,5 +15,5 @@ all: prepare_dirs ${FILES}
 	i686-elf-gcc ${INCLUDES} ${FLAGS} -std=gnu99 -c ./wait.c -o ./build/wait.o
 
 clean:
-	rm -rf ${FILES}
+	rm -rf ${FILES} ./build
 	rm ./wait.elf

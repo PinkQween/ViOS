@@ -34,4 +34,4 @@ all: prepare_dirs ${FILES}
 	i686-elf-gcc ${INCLUDES} $(FLAGS) -std=gnu99 -c ./src/memory.c -o ./build/memory.o
 
 clean:
-	rm -rf ${FILES}
+	rm -rf ${FILES} ./build

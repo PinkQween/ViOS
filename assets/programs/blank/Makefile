@@ -24,4 +24,4 @@ all: prepare_dirs ${FILES} ${MALICIOUS_FILES} ${SIMPLE_FILES}
 	i686-elf-gcc ${INCLUDES} ${FLAGS} -std=gnu99 -c ./simpletest.c -o ./build/simpletest.o
 
 clean:
-	rm -f ${FILES} ${MALICIOUS_FILES} ${SIMPLE_FILES} ./blank.elf ./malicioustest.elf ./simpletest.elf
+	rm -f ${FILES} ${MALICIOUS_FILES} ${SIMPLE_FILES} ./blank.elf ./malicioustest.elf ./simpletest.elf ./build

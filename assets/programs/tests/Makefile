@@ -14,5 +14,5 @@ all: prepare_dirs ${FILES}
 	i686-elf-gcc ${INCLUDES}  -I./$(FLAGS) -std=gnu99 -c ./tests.c -o ./build/tests.o
 
 clean:
-	rm -rf ${FILES}
+	rm -rf ${FILES} ./build
 	rm ./tests.elf

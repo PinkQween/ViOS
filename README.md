@@ -85,8 +85,6 @@ ___________
 │       ├── blank
 │       │   ├── blank.c
 │       │   ├── build
-│       │   │   ├── malicious_test.o
-│       │   │   └── simple_test.o
 │       │   ├── linker.ld
 │       │   ├── Makefile
 │       │   ├── malicioustest.c
@@ -98,14 +96,12 @@ ___________
 │       │   └── mal.c
 │       ├── shell
 │       │   ├── blank.elf
-│       │   ├── build
 │       │   ├── linker.ld
 │       │   ├── Makefile
 │       │   └── src
 │       │       ├── shell.c
 │       │       └── shell.h
 │       ├── stdlib
-│       │   ├── build
 │       │   ├── linker.ld
 │       │   ├── Makefile
 │       │   ├── src
@@ -123,31 +119,14 @@ ___________
 │       │   │   ├── vios.c
 │       │   │   └── vios.h
 │       │   └── stdlib.elf
-│       └── tests
-│           ├── build
+│       ├── tests
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   └── tests.c
+│       └── wait
 │           ├── linker.ld
 │           ├── Makefile
-│           └── tests.c
-├── bin
-│   ├── disk.img
-│   ├── os_disk.img
-│   └── test.test
-├── build
-│   ├── disk
-│   ├── fs
-│   │   └── fat
-│   ├── gdt
-│   ├── idt
-│   ├── io
-│   ├── isr80h
-│   ├── keyboard
-│   ├── loader
-│   │   └── formats
-│   ├── memory
-│   │   ├── heap
-│   │   └── paging
-│   ├── string
-│   └── task
+│           └── wait.c
 ├── build.sh
 ├── LICENSE
 ├── Makefile
@@ -216,21 +195,33 @@ ___________
 │   │       ├── paging.asm
 │   │       ├── paging.c
 │   │       └── paging.h
+│   ├── panic
+│   │   ├── panic.c
+│   │   └── panic.h
+│   ├── rtc
+│   │   ├── rtc.c
+│   │   └── rtc.h
 │   ├── status.h
 │   ├── string
 │   │   ├── string.c
 │   │   └── string.h
-│   └── task
-│       ├── process.c
-│       ├── process.h
-│       ├── task.asm
-│       ├── task.c
-│       ├── task.h
-│       ├── tss.asm
-│       └── tss.h
+│   ├── task
+│   │   ├── process.c
+│   │   ├── process.h
+│   │   ├── task.asm
+│   │   ├── task.c
+│   │   ├── task.h
+│   │   ├── tss.asm
+│   │   └── tss.h
+│   ├── terminal
+│   │   ├── terminal.c
+│   │   └── terminal.h
+│   └── utils
+│       ├── utils.c
+│       └── utils.h
 └── ViOS_LOGO_PNG.png
 
-49 directories, 104 files
+34 directories, 110 files
 ```
 
 ___________
