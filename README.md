@@ -1,69 +1,137 @@
-# ViOS – A Custom x86 Multithreaded Kernel
+ViOS – A Custom x86 Multithreaded Kernel
+========================================
+
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
+![Platform](https://img.shields.io/badge/Platform-x86_32-blue)
+
+![logo](/ViOS_LOGO_PNG.png)
 
 > 🧠 A handcrafted 32-bit x86 Operating System  
-> 🕯️ Built in memory of **Vio** from SiegedSec  
-> 💻 Based on concepts from the "Developing a Multithreaded Kernel from Scratch" course
+> 🕯️ Built in memory of **Vio** from SiegedSec
 
----
+## 📚 Table of Contents
+
+- [In Memory of Vio](#in-memory-of-vio)
+- [About ViOS](#about-vios)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Build Requirements](#build-requirements)
+- [Building ViOS](#building-vios)
+- [Why ViOS?](#why-vios)
+- [Contributing](#contributing)
+- [Contribution Guidelines](#contribution-guidelines)
+- [Ideas to Get Involved](#ideas-to-get-involved)
+- [Just Starting?](#just-starting)
+- [License](#license)
+- [Author](#author)
+
+___________
 
 🕯️ In Memory of Vio
 --------------------
 
 **Vio** was a voice for transparency, a low-level coder, and a hacker who believed in teaching others how systems truly work. This OS is a tribute to that spirit. It is open, raw, and built to teach by showing—not just telling.
 
----
+___________
 
 ⚙️ About ViOS
 -------------
 
-**ViOS** is a learning-focused multithreaded operating system for the x86 (32-bit) architecture. It builds on core concepts taught in the *Developing a Multithreaded Kernel from Scratch* course, with custom enhancements, structure, and purpose.
+**ViOS** is a learning-focused multithreaded operating system for the x86 (32-bit) architecture. It features a full bootloader-to-kernel stack written in Assembly and C, and aims to be both an educational platform and a statement about digital autonomy.
 
-It features a full bootloader-to-kernel stack written in Assembly and C, and aims to be both an educational platform and a statement about digital autonomy.
-
----
+___________
 
 🧩 Features
 -----------
 
-* 🧬 Real Mode Bootloader (Assembly)
-* 🧠 Protected Mode kernel (C)
-* 🧷 Paging, heap, memory management
-* 📁 FAT16 Filesystem parser
-* 🧵 Process and task switching (multitasking support)
-* 🧩 ELF executable loader
-* 🔐 Virtual memory
-* 📟 IO port & IRQ support
-* 🌀 Disk reading/streamer layer
-* ⌨️ Keyboard driver
-* 💬 Minimal shell (WIP)
-* 🛠️ Designed for use with GDB and QEMU
+*   🧬 Real Mode Bootloader (Assembly)
+    
+*   🧠 Protected Mode kernel (C)
+    
+*   🧷 Paging, heap, memory management
+    
+*   📁 FAT16 Filesystem parser
+    
+*   🧵 Process and task switching (multitasking support)
+    
+*   🧩 ELF executable loader
+    
+*   🔐 Virtual memory
+    
+*   📟 IO port & IRQ support
+    
+*   🌀 Disk reading/streamer layer
+    
+*   ⌨️ Keyboard driver
+    
+*   💬 Minimal shell (WIP)
+    
+*   🛠️ Designed for use with GDB and QEMU
+    
 
----
-
-📚 Based On
------------
-
-This project started by following the excellent curriculum from the [Developing a Multithreaded Kernel from Scratch](https://dragonzap.com/course/developing-a-multithreaded-kernel-from-scratch?coupon=GITHUBKERNELDISCOUNT) course. It extends the project with a personalized shell, restructured file layout, and a political voice.
-
-All credit to the original author for providing such a powerful educational base.
-
----
+___________
 
 🗂️ Project Structure
---------------------
+---------------------
 
 ```
 .
-├── LICENSE
-├── Makefile
-├── PNGToBin.py
-├── README.md
-├── ViOS_LOGO_PNG.png
 ├── assets
 │   ├── file.txt
 │   ├── logo.bin
-│   └── logo.pal
+│   ├── logo.pal
+│   └── programs
+│       ├── blank
+│       │   ├── blank.c
+│       │   ├── build
+│       │   │   ├── malicious_test.o
+│       │   │   └── simple_test.o
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   ├── malicioustest.c
+│       │   └── simpletest.c
+│       ├── mal
+│       │   ├── build
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   └── mal.c
+│       ├── shell
+│       │   ├── blank.elf
+│       │   ├── build
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   └── src
+│       │       ├── shell.c
+│       │       └── shell.h
+│       ├── stdlib
+│       │   ├── build
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   ├── src
+│       │   │   ├── memory.c
+│       │   │   ├── memory.h
+│       │   │   ├── start.asm
+│       │   │   ├── start.c
+│       │   │   ├── stdio.c
+│       │   │   ├── stdio.h
+│       │   │   ├── stdlib.c
+│       │   │   ├── stdlib.h
+│       │   │   ├── string.c
+│       │   │   ├── string.h
+│       │   │   ├── vios.asm
+│       │   │   ├── vios.c
+│       │   │   └── vios.h
+│       │   └── stdlib.elf
+│       └── tests
+│           ├── build
+│           ├── linker.ld
+│           ├── Makefile
+│           └── tests.c
 ├── bin
+│   ├── disk.img
+│   ├── os_disk.img
+│   └── test.test
 ├── build
 │   ├── disk
 │   ├── fs
@@ -71,87 +139,126 @@ All credit to the original author for providing such a powerful educational base
 │   ├── gdt
 │   ├── idt
 │   ├── io
+│   ├── isr80h
+│   ├── keyboard
+│   ├── loader
+│   │   └── formats
 │   ├── memory
 │   │   ├── heap
 │   │   └── paging
 │   ├── string
 │   └── task
 ├── build.sh
-└── src
-    ├── boot
-    │   └── boot.asm
-    ├── config.h
-    ├── disk
-    │   ├── disk.c
-    │   ├── disk.h
-    │   ├── streamer.c
-    │   └── streamer.h
-    ├── fs
-    │   ├── fat
-    │   │   ├── fat16.c
-    │   │   └── fat16.h
-    │   ├── file.c
-    │   ├── file.h
-    │   ├── pparser.c
-    │   └── pparser.h
-    ├── gdt
-    │   ├── gdt.asm
-    │   ├── gdt.c
-    │   └── gdt.h
-    ├── idt
-    │   ├── idt.asm
-    │   ├── idt.c
-    │   └── idt.h
-    ├── io
-    │   ├── io.asm
-    │   └── io.h
-    ├── kernel.asm
-    ├── kernel.c
-    ├── kernel.h
-    ├── linker.ld
-    ├── memory
-    │   ├── heap
-    │   │   ├── heap.c
-    │   │   ├── heap.h
-    │   │   ├── kheap.c
-    │   │   └── kheap.h
-    │   ├── memory.c
-    │   ├── memory.h
-    │   └── paging
-    │       ├── paging.asm
-    │       ├── paging.c
-    │       └── paging.h
-    ├── status.h
-    ├── string
-    │   ├── string.c
-    │   └── string.h
-    └── task
-        ├── process.c
-        ├── process.h
-        ├── task.c
-        ├── task.h
-        ├── tss.asm
-        └── tss.h
+├── LICENSE
+├── Makefile
+├── README.md
+├── src
+│   ├── boot
+│   │   └── boot.asm
+│   ├── config.h
+│   ├── disk
+│   │   ├── disk.c
+│   │   ├── disk.h
+│   │   ├── streamer.c
+│   │   └── streamer.h
+│   ├── fs
+│   │   ├── fat
+│   │   │   ├── fat16.c
+│   │   │   └── fat16.h
+│   │   ├── file.c
+│   │   ├── file.h
+│   │   ├── pparser.c
+│   │   └── pparser.h
+│   ├── gdt
+│   │   ├── gdt.asm
+│   │   ├── gdt.c
+│   │   └── gdt.h
+│   ├── idt
+│   │   ├── idt.asm
+│   │   ├── idt.c
+│   │   └── idt.h
+│   ├── io
+│   │   ├── io.asm
+│   │   └── io.h
+│   ├── isr80h
+│   │   ├── heap.c
+│   │   ├── heap.h
+│   │   ├── io.c
+│   │   ├── io.h
+│   │   ├── isr80h.c
+│   │   ├── isr80h.h
+│   │   ├── process.c
+│   │   └── process.h
+│   ├── kernel.asm
+│   ├── kernel.c
+│   ├── kernel.h
+│   ├── keyboard
+│   │   ├── classic.c
+│   │   ├── classic.h
+│   │   ├── keyboard.c
+│   │   └── keyboard.h
+│   ├── linker.ld
+│   ├── loader
+│   │   └── formats
+│   │       ├── elf.c
+│   │       ├── elf.h
+│   │       ├── elfloader.c
+│   │       └── elfloader.h
+│   ├── memory
+│   │   ├── heap
+│   │   │   ├── heap.c
+│   │   │   ├── heap.h
+│   │   │   ├── kheap.c
+│   │   │   └── kheap.h
+│   │   ├── memory.c
+│   │   ├── memory.h
+│   │   └── paging
+│   │       ├── paging.asm
+│   │       ├── paging.c
+│   │       └── paging.h
+│   ├── status.h
+│   ├── string
+│   │   ├── string.c
+│   │   └── string.h
+│   └── task
+│       ├── process.c
+│       ├── process.h
+│       ├── task.asm
+│       ├── task.c
+│       ├── task.h
+│       ├── tss.asm
+│       └── tss.h
+└── ViOS_LOGO_PNG.png
 
-28 directories, 51 files
+49 directories, 104 files
 ```
 
----
+___________
 
 🚧 Build Requirements
 ---------------------
 
 Install the following:
 
-- `nasm` – Assembler
-- `i686-elf-gcc` – Cross-compiler
-- `qemu` – Emulator (optional)
-- `grub-mkrescue` – ISO generation (optional)
+*   `nasm` – Assembler
+    
+*   `i686-elf-gcc` – Cross-compiler
+    
+*   `qemu` – Emulator (optional)
+    
+*   `grub-mkrescue` – ISO generation (optional)
+    
 
 ### macOS (Homebrew)
 
 ```bash
 brew install nasm qemu x86_64-elf-gcc
+```
+
+### Ubuntu/Debian
+
+```bash
+sudo apt install build-essential nasm qemu gcc-multilib grub-pc-bin xorriso
 ```
 
 ___________
@@ -167,11 +274,10 @@ To build the OS:
 
 This will:
 
-1. Assemble the bootloader and kernel
-
-2. Compile all components
-
-3. Link the final binary to ./bin/os.bin
+1. Assemble the bootloader and kernel  
+2. Compile all components  
+3. Link the final kernel binary to `./bin/os.bin`  
+4. (If `grub-mkrescue` is installed) Generate a bootable ISO image as `./bin/os_disk.img`
     
 
 To emulate with QEMU:
@@ -185,7 +291,7 @@ ___________
 🌈 Why ViOS?
 ------------
 
-ViOS is not just a clone of the course—it’s an extension. It keeps the structured educational benefit while evolving with unique features and philosophical goals. It’s for learners, rebels, and those who want to break the system down—one opcode at a time.
+ViOS is a platform for those who want to go deep into systems programming. It’s handcrafted, educational, and designed to be extended. Whether you’re learning how memory works or building custom features, ViOS is for you.
 
 ___________
 
@@ -195,8 +301,6 @@ ___________
 Contributions are **highly encouraged and deeply appreciated**. ViOS is more than an OS—it's a learning tool and a tribute to hacker culture. Whether you're fixing a bug, improving documentation, or building a whole new feature, your work helps keep the spirit of Vio and low-level computing alive.
 
 ### 🧭 How to Contribute
-
-Want to get started? Here’s how:
 
 1.  **Fork the Repo**  
     Click the **Fork** button on [GitHub](https://github.com/PinkQween/ViOS) to create your own copy of the project.
@@ -215,7 +319,7 @@ Want to get started? Here’s how:
     ```
     
 4.  **Make Your Changes**  
-    Add your code, fix bugs, write docs, or improve the build system. Keep commits focused.
+    Add your code, fix bugs, write docs, or improve the build system.
     
 5.  **Test Your Changes**  
     Run `./build.sh` and test the OS in QEMU:
@@ -235,10 +339,11 @@ Want to get started? Here’s how:
 7.  **Open a Pull Request**  
     Go to your fork on GitHub and click **New pull request**.
     
+
 ___________
 
 ### 🧼 Contribution Guidelines
-    
+
 *   Keep commits clean and descriptive.
     
 *   If you’re adding new files, place them in a logical subdirectory.
@@ -254,40 +359,56 @@ ___________
     *   💬 Shell improvements
         
     *   📦 File system or memory improvements
- 
-    *   And More!
+        
 
---- 
+___________
 
-## 🧪 Ideas to Get Involved
+🧪 Ideas to Get Involved
+------------------------
 
-- 🌐 Implement networking functionality (e.g. TCP/IP stack or USB Ethernet)
-- 📦 Add support for system updates or patching mechanism
-- 🧠 Add new syscalls or user-mode execution support
-- 🛠️ Expand the shell with built-in commands (like `ls`, `cat`, `cd`)
-- 🧳 Build a lightweight `init` system or process manager
-- 🧾 Add support for EXT4 or exFAT filesystems
-- 🎮 Build demo applications or a TUI-based game on top of ViOS
+*   🌐 Implement networking functionality (e.g. TCP/IP stack or USB Ethernet)
 
----
+*   🌐 Implement networking functionality (e.g. TCP/IP stack or USB Ethernet)
+    
+*   📦 Add support for system updates or patching mechanism
+    
+*   🧠 Add new syscalls or user-mode execution support
+    
+*   🛠️ Expand the shell with built-in commands (like `ls`, `cat`, `cd`)
+    
+*   🧳 Build a lightweight `init` system or process manager
+    
+*   🧾 Add support for EXT4 or exFAT filesystems
+    
+*   🎮 Build demo applications or a TUI-based game on top of ViOS
 
-## 🧵 Just Starting?
+*   🧬 Add long mode (x86_64) support
+
+*   🧱 Add support for other architectures
+    
+
+___________
+
+🧵 Just Starting?
+-----------------
 
 No worries! Open an issue with a question, start a discussion, or contribute to the documentation to get your feet wet. Everyone starts somewhere—and every little bit helps.
 
 > _"The OS belongs to everyone who dares to open the binary."_  
 > – You, after your first PR
 
----
+___________
 
-## 🪪 License
+🪪 License
+----------
 
 MIT License — use it, fork it, build on it.  
 Just don’t forget where you came from.
 
----
+___________
 
-## ✍️ Author
+✍️ Author
+---------
 
 Built and maintained by **Hanna Skairipa**  
 🔗 [PinkQween on GitHub](https://github.com/PinkQween)

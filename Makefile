@@ -62,4 +62,4 @@ user_programs_clean:
 	done
 
 clean: user_programs_clean
-	rm -rf ./bin/boot.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o $(FILES)
+	rm -rf ./bin/boot.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o ./build/kernelfull-elf.o $(FILES)

@@ -11,7 +11,7 @@ struct tss
     uint32_t ss1;
     uint32_t esp2;
     uint32_t ss2;
-    uint32_t sr3;
+    uint32_t cr3;
     uint32_t eip;
     uint32_t eflags;
     uint32_t eax;

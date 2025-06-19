@@ -1,0 +1,32 @@
+name: Build OS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install cross-compiler and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-multilib
+
+          # Add other toolchain installs or build from source if needed
+          # For example, install i686-elf-gcc if you use it
+
+      - name: Build OS
+        run: |
+          ./build.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: os-build
+          path: bin/os.bin
