@@ -25,7 +25,7 @@ FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign
 # Create bin and build directories first
 .PHONY: prepare_dirs
 prepare_dirs:
-	mkdir -p ./bin ./build
+	mkdir -p ./bin ./build /mnt/d
 
 all: prepare_dirs ./bin/boot.bin ./bin/kernel.bin user_programs
 	rm -rf ./bin/os.bin
