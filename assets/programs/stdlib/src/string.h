@@ -2,6 +2,7 @@
 #define VIOS_STRING_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 char tolower(char s1);
 int strlen(const char *ptr);
@@ -14,5 +15,6 @@ char *strncpy(char *dest, const char *src, int count);
 bool isdigit(char c);
 int tonumericdigit(char c);
 char *strtok(char *str, const char *delimiters);
+char *strchr(const char *str, int search_str);
 
 #endif

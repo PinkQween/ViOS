@@ -29,20 +29,6 @@ static bool elf_valid_encoding(struct elf_header *header)
 
 static bool elf_is_executable(struct elf_header *header)
 {
-    // Security check: ensure the entry point is within valid program space
-    if (header->e_entry < VIOS_PROGRAM_VIRTUAL_ADDRESS)
-    {
-        // Suspicious: entry point is too low - could be trying to jump into kernel space
-        return false;
-    }
-
-    // Security check: ensure the entry point is not unreasonably high
-    if (header->e_entry > 0x80000000)
-    {
-        // Suspicious: entry point is too high
-        return false;
-    }
-
     return header->e_type == ET_EXEC && header->e_entry >= VIOS_PROGRAM_VIRTUAL_ADDRESS;
 }
 
@@ -118,7 +104,7 @@ void *elf_phys_end(struct elf_file *file)
 
 int elf_validate_loaded(struct elf_header *header)
 {
-    return (elf_valid_signature(header) && elf_valid_class(header) && elf_valid_encoding(header) && elf_has_program_header(header) && elf_is_executable(header)) ? VIOS_ALL_OK : -EINFORMAT;
+    return (elf_valid_signature(header) && elf_valid_class(header) && elf_valid_encoding(header) && elf_has_program_header(header)) ? VIOS_ALL_OK : -EINFORMAT;
 }
 
 int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf32_phdr *phdr)
@@ -188,7 +174,7 @@ int elf_load(const char *filename, struct elf_file **file_out)
     struct elf_file *elf_file = kzalloc(sizeof(struct elf_file));
     int fd = 0;
     int res = fopen(filename, "r");
-    if (res == 0)
+    if (res <= 0)
     {
         res = -EIO;
         goto out;
@@ -203,9 +189,9 @@ int elf_load(const char *filename, struct elf_file **file_out)
     }
 
     elf_file->elf_memory = kzalloc(stat.filesize);
-    if (fread(elf_file->elf_memory, stat.filesize, 1, fd) != 1)
+    res = fread(elf_file->elf_memory, stat.filesize, 1, fd);
+    if (res < 0)
     {
-        res = -EIO;
         goto out;
     }
 
@@ -218,10 +204,6 @@ int elf_load(const char *filename, struct elf_file **file_out)
     *file_out = elf_file;
 out:
     fclose(fd);
-    if (res < 0 && elf_file)
-    {
-        elf_close(elf_file); // free elf_memory and elf_file
-    }
     return res;
 }
 

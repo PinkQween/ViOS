@@ -62,3 +62,6 @@ void diskstreamer_close(struct disk_stream *stream)
 {
     kfree(stream);
 }
+
+
+

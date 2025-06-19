@@ -14,3 +14,6 @@ section .data
 gdt_descriptor:
     dw 0x00 ; Size
     dd 0x00 ; GDT Start Address
+
+
+    

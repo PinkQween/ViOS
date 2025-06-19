@@ -143,9 +143,5 @@ int main(int argc, char **argv)
     print("=== All tests completed successfully! ===\n");
     print("Security measures are working correctly.\n");
     print("The system is protected against malicious attacks.\n");
-
-    while (1)
-    {
-    }
     return 0;
 }

@@ -61,3 +61,6 @@ int disk_read_block(struct disk *idisk, unsigned int lba, int total, void *buf)
 
     return disk_read_sector(lba, total, buf);
 }
+
+
+

@@ -734,3 +734,5 @@ int fat16_seek(void *private, uint32_t offset, FILE_SEEK_MODE seek_mode)
 out:
     return res;
 }
+
+

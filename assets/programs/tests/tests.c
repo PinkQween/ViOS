@@ -5,13 +5,9 @@
 
 int main(int argc, char **argv)
 {
-    struct process_arguments arguments;
-    vios_process_get_arguments(&arguments);
-
-    printf("%i %s\n", arguments.argc, arguments.argv[0]);
-
     while (1)
     {
+        print(argv[1]);
     }
     return 0;
 }

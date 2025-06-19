@@ -1,5 +1,5 @@
 #include "stdlib.h"
-#include "VIOS.h"
+#include "vios.h"
 
 char *itoa(int i)
 {

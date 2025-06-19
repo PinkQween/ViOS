@@ -1,4 +1,5 @@
 .qodo
 .DS_Store
-bin/*.bin
-build/**/*.o
+*.bin
+*.o
+*.elf

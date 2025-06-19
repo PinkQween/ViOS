@@ -48,8 +48,11 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 	nasm -f elf -g $< -o $@
 
 user_programs:
+	@$(MAKE) -C ./assets/programs/stdlib || exit 1
 	@for dir in ./assets/programs/*/ ; do \
-		$(MAKE) -C $$dir || exit 1; \
+		if [ "$$dir" != "./assets/programs/stdlib/" ]; then \
+			$(MAKE) -C $$dir || exit 1; \
+		fi \
 	done
 
 user_programs_clean:

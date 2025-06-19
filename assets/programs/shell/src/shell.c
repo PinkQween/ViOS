@@ -11,7 +11,8 @@ int main(int argc, char **argv)
         char buf[1024];
         vios_terminal_readline(buf, sizeof(buf), true);
         print("\n");
-        vios_process_load_start(buf);
+        vios_system_run(buf);
+        print("\n");
     }
     return 0;
 }

@@ -26,6 +26,11 @@ static uint16_t terminal_col = 0;
 
 static struct paging_4gb_chunk *kernel_chunk = 0;
 
+uint8_t convert_color(int fg, int bg)
+{
+    return (bg << 4) | (fg);
+}
+
 // Constructs a character with color for VGA buffer
 uint16_t terminal_make_char(char c, char colour)
 {
@@ -52,7 +57,7 @@ void terminal_backspace()
     }
 
     terminal_col -= 1;
-    terminal_writechar(' ', 15);
+    terminal_writechar(' ', convert_color(VGA_COLOR_BLACK, VGA_COLOR_BLACK));
     terminal_col -= 1;
 }
 
@@ -117,7 +122,7 @@ void terminal_initialize()
     {
         for (int x = 0; x < VGA_WIDTH; x++)
         {
-            terminal_putchar(x, y, ' ', 0);
+            terminal_putchar(x, y, ' ', convert_color(VGA_COLOR_BLACK, VGA_COLOR_BLACK));
         }
     }
 }
@@ -128,7 +133,7 @@ void print(const char *str)
     size_t len = strlen(str);
     for (size_t i = 0; i < len; i++)
     {
-        terminal_writechar(str[i], 15); // White text
+        terminal_writechar(str[i], convert_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK)); // White text
     }
 }
 
@@ -226,7 +231,7 @@ void print_status(const char *message, const char *status)
     }
     else
     {
-        bg = VGA_COLOR_CYAN; // fallback for unknown statuses
+        bg = VGA_COLOR_BLACK; // fallback for unknown statuses
     }
 
     print(message);
@@ -234,7 +239,7 @@ void print_status(const char *message, const char *status)
     int pad = VGA_WIDTH - terminal_col - strlen(status) - 3;
     for (int i = 0; i < pad; i++)
     {
-        terminal_writechar('.', VGA_COLOR_DARK_GREY);
+        terminal_writechar('.', convert_color(VGA_COLOR_DARK_GREY, VGA_COLOR_BLACK));
     }
 
     print(" [");
@@ -279,7 +284,7 @@ void kernel_main()
     gdt_structured_to_gdt(gdt_real, gdt_structured, VIOS_TOTAL_GDT_SEGMENTS);
 
     // Load the gdt
-    gdt_load(gdt_real, sizeof(gdt_real)-1);
+    gdt_load(gdt_real, sizeof(gdt_real) - 1);
     print_status("GDT loaded", "OK");
 
     // Initialize the heap
@@ -331,24 +336,15 @@ void kernel_main()
     int res = process_load_switch("0:/shell.elf", &process);
     if (res != VIOS_ALL_OK)
     {
-        panic("Failed to load shell.elf");
+        panic("Failed to load shell.elf\n");
     }
-
-    task_run_first_ever_task();
-
-    // struct process *process = 0;
-    // int res = process_load_switch("0:/tests.elf", &process);
-    // if (res != VIOS_ALL_OK)
-    // {
-    //     panic("Failed to load tests.elf\n");
-    // }
 
     // struct command_argument argument;
     // strcpy(argument.argument, "Testing!");
     // argument.next = 0x00;
 
     // process_inject_arguments(process, &argument);
-    // task_run_first_ever_task();
+    task_run_first_ever_task();
 
     while (1)
     {

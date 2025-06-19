@@ -70,3 +70,6 @@ user_registers:
     mov fs, ax
     mov gs, ax
     ret
+
+
+    

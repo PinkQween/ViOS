@@ -1,4 +1,37 @@
 #include "string.h"
+#include <stdarg.h> 
+
+static int int_to_str(int value, char* buffer, int bufsize) {
+    int pos = 0;
+    bool negative = false;
+
+    if (value < 0) {
+        negative = true;
+        value = -value;
+    }
+
+    // Write digits in reverse order
+    char temp[20];
+    int i = 0;
+    do {
+        temp[i++] = (value % 10) + '0';
+        value /= 10;
+    } while (value > 0);
+
+    if (negative) {
+        temp[i++] = '-';
+    }
+
+    // Reverse into output buffer
+    int len = i;
+    if (bufsize > 0) {
+        for (int j = 0; j < i && pos < bufsize; j++) {
+            buffer[pos++] = temp[i - j - 1];
+        }
+    }
+
+    return len; // length of string written (or would be)
+}
 
 char tolower(char s1)
 {
@@ -125,4 +158,81 @@ int strcmp(const char *s1, const char *s2)
         s2++;
     }
     return *(unsigned char *)s1 - *(unsigned char *)s2;
+}
+
+int snprintf(char *str, size_t size, const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    size_t pos = 0;  // position in output buffer
+    int total_len = 0;  // total length that would have been written
+
+    for (const char *p = format; *p != '\0'; p++) {
+        if (*p != '%') {
+            // Regular char
+            if (pos + 1 < size) {
+                str[pos] = *p;
+            }
+            pos++;
+            total_len++;
+        } else {
+            p++;  // move past '%'
+
+            if (*p == 's') {
+                const char *s = va_arg(args, const char*);
+                if (!s) s = "(null)";
+                while (*s) {
+                    if (pos + 1 < size) {
+                        str[pos] = *s;
+                    }
+                    pos++;
+                    total_len++;
+                    s++;
+                }
+            } else if (*p == 'd') {
+                int val = va_arg(args, int);
+                char numbuf[32];
+                int len = int_to_str(val, numbuf, sizeof(numbuf));
+                for (int i = 0; i < len; i++) {
+                    if (pos + 1 < size) {
+                        str[pos] = numbuf[i];
+                    }
+                    pos++;
+                    total_len++;
+                }
+            } else if (*p == '%') {
+                if (pos + 1 < size) {
+                    str[pos] = '%';
+                }
+                pos++;
+                total_len++;
+            } else {
+                // Unsupported format, just print as-is
+                if (pos + 1 < size) {
+                    str[pos] = '%';
+                }
+                pos++;
+                total_len++;
+                if (*p != '\0') {
+                    if (pos + 1 < size) {
+                        str[pos] = *p;
+                    }
+                    pos++;
+                    total_len++;
+                }
+            }
+        }
+    }
+
+    if (size > 0) {
+        if (pos < size) {
+            str[pos] = '\0';
+        } else {
+            str[size - 1] = '\0';
+        }
+    }
+
+    va_end(args);
+    return total_len;
 }

@@ -1,4 +1,4 @@
-FILES=./build/start.asm.o ./build/vios.asm.o ./build/vios.o ./build/stdlib.o ./build/stdio.o ./build/string.o ./build/memory.o
+FILES=./build/start.asm.o ./build/vios.asm.o ./build/vios.o ./build/stdlib.o ./build/stdio.o ./build/string.o ./build/memory.o ./build/start.o
 INCLUDES=-I./src
 FLAGS= -g -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -7,6 +7,9 @@ all: ${FILES}
 
 ./build/start.asm.o: ./src/start.asm
 	nasm -f elf ./src/start.asm -o ./build/start.asm.o
+
+./build/start.o: ./src/start.c
+	i686-elf-gcc ${INCLUDES} $(FLAGS) -std=gnu99 -c ./src/start.c -o ./build/start.o
 
 ./build/vios.asm.o: ./src/vios.asm
 	nasm -f elf ./src/vios.asm -o ./build/vios.asm.o

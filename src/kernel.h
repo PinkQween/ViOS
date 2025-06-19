@@ -1,6 +1,8 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
+#include <stdint.h>
+
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 #define VIOS_MAX_PATH 108
@@ -12,6 +14,7 @@ void kernel_page();
 void kernel_registers();
 void int_to_ascii(int num, char *str);
 void terminal_writechar(char c, char colour);
+uint8_t convert_color(int fg, int bg);
 
 #define ERROR(value) (void *)(value)
 #define ERROR_I(value) (int)(value)
@@ -29,7 +32,7 @@ void terminal_writechar(char c, char colour);
 #define VGA_COLOR_DARK_GREY 0x8
 #define VGA_COLOR_LIGHT_BLUE 0x9
 #define VGA_COLOR_LIGHT_GREEN 0xA
-#define VGA_COLOR_LIGHT_CYAN 0xB
+#define VGA_COLOR_LIGHT_BLACK 0xB
 #define VGA_COLOR_LIGHT_RED 0xC
 #define VGA_COLOR_PINK 0xD
 #define VGA_COLOR_YELLOW 0xE

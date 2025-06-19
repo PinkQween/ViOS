@@ -1,4 +1,37 @@
 #include "string.h"
+#include <stddef.h>
+
+static int int_to_str(int value, char* buffer, int bufsize) {
+    int pos = 0;
+    bool negative = false;
+
+    if (value < 0) {
+        negative = true;
+        value = -value;
+    }
+
+    // Write digits in reverse order
+    char temp[20];
+    int i = 0;
+    do {
+        temp[i++] = (value % 10) + '0';
+        value /= 10;
+    } while (value > 0);
+
+    if (negative) {
+        temp[i++] = '-';
+    }
+
+    // Reverse into output buffer
+    int len = i;
+    if (bufsize > 0) {
+        for (int j = 0; j < i && pos < bufsize; j++) {
+            buffer[pos++] = temp[i - j - 1];
+        }
+    }
+
+    return len; // length of string written (or would be)
+}
 
 char tolower(char s1)
 {
@@ -173,4 +206,23 @@ char *strtok(char *str, const char *delimiters)
     }
 
     return p_start;
+}
+
+char *strchr(const char *str, int ch) {
+    while (*str != '\0')
+    {
+        if (*str == (char)ch)
+        {
+            return (char *)str; // Cast to non-const because return type is non-const
+        }
+        str++;
+    }
+
+    // Check if ch is '\0' to match behavior of standard strchr
+    if (ch == '\0')
+    {
+        return (char *)str;
+    }
+
+    return 0x00;
 }

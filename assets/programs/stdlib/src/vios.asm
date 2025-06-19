@@ -2,13 +2,24 @@
 
 section .asm
 
+global vios_exit:function
 global print:function
 global vios_getkey:function
 global vios_malloc:function
 global vios_free:function
 global vios_putchar:function
 global vios_process_load_start:function
+global vios_system:function
 global vios_process_get_arguments:function
+
+; void vios_exit()
+vios_exit:
+    push ebp
+    mov ebp, esp
+    mov eax, 0 ; Command 0 process exit
+    int 0x80
+    pop ebp
+    ret
 
 ; void print(const char* filename)
 print:
@@ -73,6 +84,18 @@ vios_process_load_start:
     add esp, 4
     pop ebp
     ret
+
+; int vios_system(struct command_argument* arguments)
+vios_system:
+    push ebp
+    mov ebp, esp
+    mov eax, 7 ; Command 7 process_system ( runs a system command based on the arguments)
+    push dword[ebp+8] ; Variable "arguments"
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
 
 ; void vios_process_get_arguments(struct process_arguments* arguments)
 vios_process_get_arguments:
