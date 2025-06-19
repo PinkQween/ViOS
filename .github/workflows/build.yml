@@ -21,7 +21,7 @@ jobs:
           sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
 
           # Download prebuilt i686-elf toolchain (lordmilko)
-          wget https://objects.githubusercontent.com/github-production-release-asset-2e65be/47872348/5150ce61-c0f7-4d03-9486-ff437f7ce9dd?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20250619%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250619T230249Z&X-Amz-Expires=300&X-Amz-Signature=b171317629f5116b99ca5a0cacc1da0cf9a8c53d58df4c9d06ee2943f47e62e5&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3Di686-elf-tools-linux.zip&response-content-type=application%2Foctet-stream
+          wget https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
           sudo tar -xf i686-elf-tools-x86_64-linux.tar.gz -C /usr/local
           sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
 
