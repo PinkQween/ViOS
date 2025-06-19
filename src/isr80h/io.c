@@ -2,6 +2,7 @@
 #include "task/task.h"
 #include "kernel.h"
 #include "keyboard/keyboard.h"
+#include "rtc/rtc.h"
 
 void *isr80h_command1_print(struct interrupt_frame *frame)
 {
@@ -23,5 +24,12 @@ void *isr80h_command3_putchar(struct interrupt_frame *frame)
 {
     char c = (char)(int)task_get_stack_item(task_current(), 0);
     terminal_writechar(c, convert_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+    return 0;
+}
+
+void *isr80h_command9_sleep(struct interrupt_frame *frame)
+{
+    int seconds = (int)task_get_stack_item(task_current(), 0);
+    sleep_seconds(seconds);
     return 0;
 }

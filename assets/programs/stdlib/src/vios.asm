@@ -11,6 +11,7 @@ global vios_putchar:function
 global vios_process_load_start:function
 global vios_system:function
 global vios_process_get_arguments:function
+global vios_sleep:function
 
 ; void vios_exit()
 vios_exit:
@@ -103,6 +104,17 @@ vios_process_get_arguments:
     mov ebp, esp
     mov eax, 8 ; Command 8 Gets the process arguments
     push dword[ebp+8] ; Variable arguments
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+; void sleep(int seconds)
+vios_sleep:
+    push ebp
+    mov ebp, esp
+    mov eax, 9
+    push dword[ebp+8]
     int 0x80
     add esp, 4
     pop ebp
