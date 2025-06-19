@@ -22,12 +22,11 @@ jobs:
           
           # Install i686-elf toolchain (cross-compiler + binutils)
           # This is not available via default apt, so build or download prebuilt:
-          
-          # Download prebuilt i686-elf toolchain from a trusted source (example)
-          wget https://toolchains.bootlin.com/downloads/releases/toolchains/i686-elf/latest-2023.05-1/i686-elf-linux-gnu.tar.xz
+          # Download prebuilt i686-elf toolchain
+          wget https://toolchains.bootlin.com/downloads/releases/toolchains/i686-elf/2023.11-1/i686-elf-linux-gnu.tar.xz
           sudo tar -xf i686-elf-linux-gnu.tar.xz -C /usr/local
           sudo ln -sf /usr/local/i686-elf-linux-gnu/bin/* /usr/local/bin/
-
+    
           # Verify cross-compiler works
           i686-elf-gcc --version
           i686-elf-ld --version
