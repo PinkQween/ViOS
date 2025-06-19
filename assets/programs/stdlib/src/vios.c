@@ -121,11 +121,10 @@ int vios_system_run(const char *command)
     struct command_argument *current = root_command_argument;
     while (current)
     {
-        +struct command_argument *next = current->next;
-        +vios_free(current);
-        +current = next;
-        +
+        struct command_argument *next = current->next;
+        vios_free(current);
+        current = next;
     }
 
-    return result
+    return result;
 }

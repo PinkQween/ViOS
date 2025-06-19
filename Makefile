@@ -34,6 +34,7 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 ./bin/kernel.bin: $(FILES)
 	i686-elf-ld -g -relocatable $(FILES) -o ./build/kernelfull.o
 	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib ./build/kernelfull.o
+	i686-elf-gcc $(FLAGS) -T ./src/linker-elf.ld -o ./build/kernelfull-elf.o -ffreestanding -O0 -nostdlib ./build/kernelfull.o
 
 ./bin/boot.bin: ./src/boot/boot.asm
 	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin
