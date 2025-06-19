@@ -22,7 +22,8 @@ jobs:
 
           # Download prebuilt i686-elf toolchain (lordmilko)
           wget https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
-          sudo tar -xf i686-elf-tools-x86_64-linux.tar.gz -C /usr/local
+          unzip i686-elf-tools-linux.zip -d i686-elf-tools
+          sudo mv i686-elf-tools /usr/local/i686-elf-tools
           sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
 
           # Verify cross-compiler
