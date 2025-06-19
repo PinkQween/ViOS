@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '*'
   pull_request:
 
 jobs:
@@ -36,8 +38,20 @@ jobs:
           make clean
           sudo ./build.sh
 
-      - name: Upload OS build artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: os-build
-          path: ./bin/os.bin
+          tag_name: ${{ env.VERSION }}
+          name: Build OS ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload OS binary to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./bin/os.bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
