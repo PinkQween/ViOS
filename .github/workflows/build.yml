@@ -34,7 +34,7 @@ jobs:
       - name: Build OS
         run: |
           make clean
-          make all
+          sudo ./build.sh
 
       - name: Upload OS build artifact
         uses: actions/upload-artifact@v4
