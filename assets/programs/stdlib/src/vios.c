@@ -108,6 +108,7 @@ int vios_system_run(const char *command)
 {
     char buf[1024];
     strncpy(buf, command, sizeof(buf));
+    buf[sizeof(buf) - 1] = 0;
     struct command_argument *root_command_argument = vios_parse_command(buf, sizeof(buf));
     buf[sizeof(buf) - 1] = 0;
     if (!root_command_argument)
@@ -115,5 +116,16 @@ int vios_system_run(const char *command)
         return -1;
     }
 
-    return vios_system(root_command_argument);
+    int result = vios_system(root_command_argument);
+    // Clean up allocated command arguments
+    struct command_argument *current = root_command_argument;
+    while (current)
+    {
+        +struct command_argument *next = current->next;
+        +vios_free(current);
+        +current = next;
+        +
+    }
+
+    return result
 }

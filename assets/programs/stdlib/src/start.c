@@ -11,6 +11,6 @@ void c_start()
 
     if (res == 0)
     {
-
+        // Handle successful termination
     }
 }
