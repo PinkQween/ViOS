@@ -19,15 +19,13 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
-          
-          # Install i686-elf toolchain (cross-compiler + binutils)
-          # This is not available via default apt, so build or download prebuilt:
-          # Download prebuilt i686-elf toolchain
-          wget https://toolchains.bootlin.com/downloads/releases/toolchains/i686-elf/2023.11-1/i686-elf-linux-gnu.tar.xz
-          sudo tar -xf i686-elf-linux-gnu.tar.xz -C /usr/local
-          sudo ln -sf /usr/local/i686-elf-linux-gnu/bin/* /usr/local/bin/
-    
-          # Verify cross-compiler works
+
+          # Download prebuilt i686-elf toolchain (lordmilko)
+          wget https://github.com/lordmilko/i686-elf-tools/releases/download/v1.0.0/i686-elf-tools-x86_64-linux.tar.gz
+          sudo tar -xf i686-elf-tools-x86_64-linux.tar.gz -C /usr/local
+          sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
+
+          # Verify cross-compiler
           i686-elf-gcc --version
           i686-elf-ld --version
           nasm -v
