@@ -1,9 +1,9 @@
 #include "stdio.h"
+#include "VIOS.h"
 #include "stdlib.h"
-#include "vios.h"
 #include <stdarg.h>
-
-int putchar(int c) {
+int putchar(int c)
+{
     vios_putchar((char)c);
     return 0;
 }
@@ -32,7 +32,7 @@ int printf(const char *fmt, ...)
             break;
 
         case 's':
-            sval = va_arg(ap, char*);
+            sval = va_arg(ap, char *);
             print(sval);
             break;
 

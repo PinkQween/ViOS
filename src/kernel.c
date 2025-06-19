@@ -56,6 +56,22 @@ void terminal_backspace()
     terminal_col -= 1;
 }
 
+void terminal_scroll()
+{
+    for (int y = 1; y < VGA_HEIGHT; y++)
+    {
+        for (int x = 0; x < VGA_WIDTH; x++)
+        {
+            video_mem[(y - 1) * VGA_WIDTH + x] = video_mem[y * VGA_WIDTH + x];
+        }
+    }
+    // Clear the last line
+    for (int x = 0; x < VGA_WIDTH; x++)
+    {
+        terminal_putchar(x, VGA_HEIGHT - 1, ' ', 0);
+    }
+}
+
 // Writes character at current terminal position
 void terminal_writechar(char c, char colour)
 {
@@ -63,6 +79,11 @@ void terminal_writechar(char c, char colour)
     {
         terminal_row++;
         terminal_col = 0;
+        if (terminal_row >= VGA_HEIGHT)
+        {
+            terminal_scroll();
+            terminal_row = VGA_HEIGHT - 1;
+        }
         return;
     }
 
@@ -79,6 +100,11 @@ void terminal_writechar(char c, char colour)
     {
         terminal_col = 0;
         terminal_row++;
+        if (terminal_row >= VGA_HEIGHT)
+        {
+            terminal_scroll();
+            terminal_row = VGA_HEIGHT - 1;
+        }
     }
 }
 
@@ -253,7 +279,7 @@ void kernel_main()
     gdt_structured_to_gdt(gdt_real, gdt_structured, VIOS_TOTAL_GDT_SEGMENTS);
 
     // Load the gdt
-    gdt_load(gdt_real, sizeof(gdt_real));
+    gdt_load(gdt_real, sizeof(gdt_real)-1);
     print_status("GDT loaded", "OK");
 
     // Initialize the heap
@@ -294,19 +320,35 @@ void kernel_main()
     // Initialize all the system keyboards
     keyboard_init();
     print_status("Initialized all system keyboards", "OK");
-    
+
     // Register the kernel commands
     isr80h_register_commands();
     print_status("Registered kernel commands", "OK");
+
+    // terminal_initialize();
 
     struct process *process = 0;
     int res = process_load_switch("0:/shell.elf", &process);
     if (res != VIOS_ALL_OK)
     {
-        panic("Failed to load blank.elf");
+        panic("Failed to load shell.elf");
     }
 
     task_run_first_ever_task();
+
+    // struct process *process = 0;
+    // int res = process_load_switch("0:/tests.elf", &process);
+    // if (res != VIOS_ALL_OK)
+    // {
+    //     panic("Failed to load tests.elf\n");
+    // }
+
+    // struct command_argument argument;
+    // strcpy(argument.argument, "Testing!");
+    // argument.next = 0x00;
+
+    // process_inject_arguments(process, &argument);
+    // task_run_first_ever_task();
 
     while (1)
     {

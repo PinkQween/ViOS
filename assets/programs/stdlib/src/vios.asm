@@ -4,9 +4,11 @@ section .asm
 
 global print:function
 global vios_getkey:function
-global vios_putchar:function
 global vios_malloc:function
 global vios_free:function
+global vios_putchar:function
+global vios_process_load_start:function
+global vios_process_get_arguments:function
 
 ; void print(const char* filename)
 print:
@@ -28,17 +30,18 @@ vios_getkey:
     pop ebp
     ret
 
+; void vios_putchar(char c)
 vios_putchar:
     push ebp
     mov ebp, esp
-    mov eax, 3 ; Command getkey
-    push dword [ebp+8]
+    mov eax, 3 ; Command putchar
+    push dword [ebp+8] ; Variable "c"
     int 0x80
     add esp, 4
     pop ebp
     ret
 
-    ; void* vios_malloc(size_t size)
+; void* vios_malloc(size_t size)
 vios_malloc:
     push ebp
     mov ebp, esp
@@ -55,6 +58,28 @@ vios_free:
     mov ebp, esp
     mov eax, 5 ; Command 5 free (Frees the allocated memory for this process)
     push dword[ebp+8] ; Variable "ptr"
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+; void vios_process_load_start(const char* filename)
+vios_process_load_start:
+    push ebp
+    mov ebp, esp
+    mov eax, 6 ; Command 6 process load start ( stars a process )
+    push dword[ebp+8] ; Variable "filename"
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+; void vios_process_get_arguments(struct process_arguments* arguments)
+vios_process_get_arguments:
+    push ebp
+    mov ebp, esp
+    mov eax, 8 ; Command 8 Gets the process arguments
+    push dword[ebp+8] ; Variable arguments
     int 0x80
     add esp, 4
     pop ebp

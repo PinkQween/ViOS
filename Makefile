@@ -11,6 +11,7 @@ FILES = \
   ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o \
   ./build/task/process.o ./build/task/task.o ./build/task/task.asm.o \
   ./build/isr80h/misc.o ./build/isr80h/isr80h.o ./build/isr80h/io.o ./build/isr80h/heap.o \
+  ./build/isr80h/process.o \
   ./build/keyboard/keyboard.o ./build/keyboard/classic.o \
   ./build/loader/formats/elfloader.o ./build/loader/formats/elf.o
 
