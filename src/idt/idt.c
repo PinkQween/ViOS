@@ -1,6 +1,8 @@
 #include "idt.h"
 #include "config.h"
+#include "panic/panic.h"
 #include "kernel.h"
+#include "terminal/terminal.h"
 #include "memory/memory.h"
 #include "task/task.h"
 #include "task/process.h"

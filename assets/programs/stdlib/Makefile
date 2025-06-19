@@ -2,7 +2,11 @@ FILES=./build/start.asm.o ./build/vios.asm.o ./build/vios.o ./build/stdlib.o ./b
 INCLUDES=-I./src
 FLAGS= -g -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
-all: ${FILES}
+.PHONY: prepare_dirs
+prepare_dirs:
+	mkdir -p ./build
+
+all: prepare_dirs ${FILES}
 	i686-elf-ld -m elf_i386 -relocatable ${FILES} -o ./stdlib.elf
 
 ./build/start.asm.o: ./src/start.asm

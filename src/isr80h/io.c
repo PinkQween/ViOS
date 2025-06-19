@@ -1,6 +1,6 @@
 #include "io.h"
 #include "task/task.h"
-#include "kernel.h"
+#include "terminal/terminal.h"
 #include "keyboard/keyboard.h"
 #include "rtc/rtc.h"
 

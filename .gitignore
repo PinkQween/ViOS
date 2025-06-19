@@ -1,5 +1,17 @@
-.qodo
+# Ignore all .qodo files recursively
+**/*.qodo
+**/*.vscode
+
+# macOS metadata
 .DS_Store
+
+# Compiled binary/object/ELF files
 *.bin
 *.o
 *.elf
+
+# Ignore bin and build folders recursively
+bin/
+build/
+**/bin/
+**/build/

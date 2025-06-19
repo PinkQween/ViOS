@@ -1,5 +1,5 @@
 #include "gdt.h"
-#include "kernel.h"
+#include "panic/panic.h"
 
 void encodeGdtEntry(uint8_t *target, struct gdt_structured source)
 {

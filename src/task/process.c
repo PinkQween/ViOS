@@ -8,6 +8,7 @@
 #include "memory/heap/kheap.h"
 #include "memory/paging/paging.h"
 #include "loader/formats/elfloader.h"
+#include "panic/panic.h"
 #include "kernel.h"
 
 // The current process that is running

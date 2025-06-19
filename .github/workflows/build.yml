@@ -11,22 +11,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install cross-compiler and dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential gcc-multilib
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-          # Add other toolchain installs or build from source if needed
-          # For example, install i686-elf-gcc if you use it
+      - name: Install dependencies and cross-compiler
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
+          
+          # Install i686-elf toolchain (cross-compiler + binutils)
+          # This is not available via default apt, so build or download prebuilt:
+          
+          # Download prebuilt i686-elf toolchain from a trusted source (example)
+          wget https://toolchains.bootlin.com/downloads/releases/toolchains/i686-elf/latest-2023.05-1/i686-elf-linux-gnu.tar.xz
+          sudo tar -xf i686-elf-linux-gnu.tar.xz -C /usr/local
+          sudo ln -sf /usr/local/i686-elf-linux-gnu/bin/* /usr/local/bin/
+
+          # Verify cross-compiler works
+          i686-elf-gcc --version
+          i686-elf-ld --version
+          nasm -v
 
       - name: Build OS
         run: |
-          ./build.sh
+          make clean
+          make all
 
-      - name: Upload artifact
+      - name: Upload OS build artifact
         uses: actions/upload-artifact@v4
         with:
           name: os-build
-          path: bin/os.bin
+          path: ./bin/os.bin
