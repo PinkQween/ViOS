@@ -27,21 +27,21 @@ ViOS – A Custom x86 Multithreaded Kernel
 - [Author](#author)
 
 ___________
-
+<a id="in-memory-of-vio"></a>
 🕯️ In Memory of Vio
 --------------------
 
 **Vio** was a voice for transparency, a low-level coder, and a hacker who believed in teaching others how systems truly work. This OS is a tribute to that spirit. It is open, raw, and built to teach by showing—not just telling.
 
 ___________
-
+<a id="about-vios"></a>
 ⚙️ About ViOS
 -------------
 
 **ViOS** is a learning-focused multithreaded operating system for the x86 (32-bit) architecture. It features a full bootloader-to-kernel stack written in Assembly and C, and aims to be both an educational platform and a statement about digital autonomy.
 
 ___________
-
+<a id="features"></a>
 🧩 Features
 -----------
 
@@ -71,7 +71,7 @@ ___________
     
 
 ___________
-
+<a id="project-structure"></a>
 🗂️ Project Structure
 ---------------------
 
@@ -225,7 +225,7 @@ ___________
 ```
 
 ___________
-
+<a id="build-requirements"></a>
 🚧 Build Requirements
 ---------------------
 
@@ -253,7 +253,7 @@ sudo apt install build-essential nasm qemu gcc-multilib grub-pc-bin xorriso
 ```
 
 ___________
-
+<a id="building-vios"></a>
 🚀 Building ViOS
 ----------------
 
@@ -278,14 +278,14 @@ qemu-system-i386 -kernel bin/os.bin
 ```
 
 ___________
-
+<a id="why-vios"></a>
 🌈 Why ViOS?
 ------------
 
 ViOS is a platform for those who want to go deep into systems programming. It’s handcrafted, educational, and designed to be extended. Whether you’re learning how memory works or building custom features, ViOS is for you.
 
 ___________
-
+<a id="contributing"></a>
 🤝 Contributing
 ---------------
 
@@ -332,7 +332,7 @@ Contributions are **highly encouraged and deeply appreciated**. ViOS is more tha
     
 
 ___________
-
+<a id="contribution-guidelines"></a>
 ### 🧼 Contribution Guidelines
 
 *   Keep commits clean and descriptive.
@@ -353,7 +353,7 @@ ___________
         
 
 ___________
-
+<a id="ideas-to-get-involved"></a>
 🧪 Ideas to Get Involved
 ------------------------
 
@@ -379,7 +379,7 @@ ___________
     
 
 ___________
-
+<a id="just-starting"></a>
 🧵 Just Starting?
 -----------------
 
@@ -389,7 +389,7 @@ No worries! Open an issue with a question, start a discussion, or contribute to 
 > – You, after your first PR
 
 ___________
-
+<a id="license"></a>
 🪪 License
 ----------
 
@@ -397,7 +397,7 @@ MIT License — use it, fork it, build on it.
 Just don’t forget where you came from.
 
 ___________
-
+<a id="author"></a>
 ✍️ Author
 ---------
 
