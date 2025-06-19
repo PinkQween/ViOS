@@ -15,7 +15,7 @@ static uint8_t rtc_read_register(uint8_t reg)
 static int is_update_in_progress()
 {
     outb(CMOS_ADDRESS, 0x0A);
-    return (insb(CMOS_DATA) & 0x80);
+    return (inb(CMOS_DATA) & 0x80);
 }
 
 static uint8_t bcd_to_bin(uint8_t val)
@@ -65,11 +65,25 @@ void rtc_init()
 
 void sleep_seconds(int seconds)
 {
+    if (seconds <= 0)
+        return;
+
     struct rtc_time start, current;
     rtc_read(&start);
-    int target = (start.second + seconds) % 60;
+
+    int total_start_seconds = start.hour * 3600 + start.minute * 60 + start.second;
+    int total_target_seconds = total_start_seconds + seconds;
+
+    int total_current_seconds; // declare outside loop
+
     do
     {
         rtc_read(&current);
-    } while (current.second != target);
+        total_current_seconds = current.hour * 3600 + current.minute * 60 + current.second;
+
+        if (total_current_seconds < total_start_seconds)
+        {
+            total_current_seconds += 24 * 3600;
+        }
+    } while (total_current_seconds < total_target_seconds);
 }

@@ -1,5 +1,5 @@
-#ifndef SRC_IO_RTC_H
-#define SRC_IO_RTC_H
+#ifndef SRC_RTC_H
+#define SRC_RTC_H
 
 #include <stdint.h>
 

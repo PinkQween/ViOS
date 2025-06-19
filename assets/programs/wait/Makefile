@@ -6,7 +6,8 @@ all: ${FILES}
 	i686-elf-gcc -g -T ./linker.ld -o ./wait.elf -ffreestanding -O0 -nostdlib -fpic -g ${FILES} ../stdlib/stdlib.elf
 
 ./build/wait.o: ./wait.c
-	i686-elf-gcc ${INCLUDES}  -I./$(FLAGS) -std=gnu99 -c ./wait.c -o ./build/wait.o
+	mkdir -p ./build
+	i686-elf-gcc ${INCLUDES} ${FLAGS} -std=gnu99 -c ./wait.c -o ./build/wait.o
 
 clean:
 	rm -rf ${FILES}

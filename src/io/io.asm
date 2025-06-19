@@ -4,6 +4,7 @@ global insb
 global insw
 global outb
 global outw
+global inb
 
 insb:
     push ebp
@@ -49,4 +50,8 @@ outw:
     pop ebp
     ret
 
-    
+inb:
+    mov edx, [esp+4]  ; first argument: port number
+    in al, dx         ; read byte from port into al
+    movzx eax, al     ; zero-extend al into eax (optional, but good practice)
+    ret

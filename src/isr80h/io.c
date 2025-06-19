@@ -30,6 +30,10 @@ void *isr80h_command3_putchar(struct interrupt_frame *frame)
 void *isr80h_command9_sleep(struct interrupt_frame *frame)
 {
     int seconds = (int)task_get_stack_item(task_current(), 0);
+    if (seconds < 0)
+    {
+        return (void *)-1; // Return error for negative values
+    }
     sleep_seconds(seconds);
     return 0;
 }
