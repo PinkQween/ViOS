@@ -1,5 +1,5 @@
 #include "stdio.h"
-#include "VIOS.h"
+#include "vios.h"
 #include "stdlib.h"
 #include <stdarg.h>
 int putchar(int c)
