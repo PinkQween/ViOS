@@ -35,6 +35,7 @@ void terminal_scroll(void);
 
 void print(const char *str);
 void print_colored(const char *str, char fg, char bg);
+void print_hex(uint8_t val) ;
 void print_status(const char *message, const char *status);
 
 #endif

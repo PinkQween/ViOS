@@ -14,13 +14,16 @@ FILES = \
   ./build/isr80h/process.o \
   ./build/keyboard/keyboard.o ./build/keyboard/classic.o \
   ./build/loader/formats/elfloader.o ./build/loader/formats/elf.o \
-  ./build/rtc/rtc.o ./build/terminal/terminal.o ./build/panic/panic.o
+  ./build/rtc/rtc.o ./build/terminal/terminal.o ./build/panic/panic.o \
+  ./build/isr80h/file.o ./build/utils/utils.o ./build/keyboard/uart.o
 
 INCLUDES = -I./src
-FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops \
-        -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function \
-        -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter \
-        -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
+CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
+KFLAGS  = -ffreestanding -fno-builtin -nostdlib -nostartfiles -nodefaultlibs
+EXTRAS  = -falign-jumps -falign-functions -falign-labels -falign-loops \
+          -fstrength-reduce -fomit-frame-pointer -finline-functions \
+          -Wno-unused-function -Wno-unused-label -Wno-cpp -Wno-unused-parameter
+FLAGS   = $(CFLAGS) $(KFLAGS) $(EXTRAS) $(INCLUDES)
 
 # Create bin and build directories first
 .PHONY: prepare_dirs
@@ -54,12 +57,13 @@ all: prepare_dirs ./bin/boot.bin ./bin/kernel.bin user_programs
 	nasm -f elf -g $< -o $@
 
 user_programs:
-	@$(MAKE) -C ./assets/programs/stdlib || exit 1
-	@for dir in ./assets/programs/*/ ; do \
-		if [ "$$dir" != "./assets/programs/stdlib/" ]; then \
-			$(MAKE) -C $$dir || exit 1; \
-		fi \
-	done
+	@$(MAKE) -C ./assets/programs/stdlib all
+	@{ \
+		for dir in $(shell find ./assets/programs -mindepth 1 -maxdepth 1 -type d -not -name "stdlib"); do \
+			echo "Building $$dir..."; \
+			$(MAKE) -C $$dir all || exit 1; \
+		done; \
+	}
 
 user_programs_clean:
 	@for dir in ./assets/programs/*/ ; do \

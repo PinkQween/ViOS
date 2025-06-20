@@ -226,3 +226,72 @@ char *strchr(const char *str, int ch) {
 
     return 0x00;
 }
+
+int snprintf(char *buffer, size_t size, const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    size_t i = 0; // buffer index
+    const char *p = format;
+
+    while (*p && i < size - 1)
+    {
+        if (*p == '%')
+        {
+            ++p;
+            if (*p == 's')
+            {
+                const char *str = va_arg(args, const char *);
+                while (*str && i < size - 1)
+                {
+                    buffer[i++] = *str++;
+                }
+            }
+            else if (*p == 'd')
+            {
+                int val = va_arg(args, int);
+                char num[12];
+                int n = 0;
+                if (val < 0)
+                {
+                    if (i < size - 1)
+                        buffer[i++] = '-';
+                    val = -val;
+                }
+                do
+                {
+                    num[n++] = '0' + val % 10;
+                    val /= 10;
+                } while (val > 0 && n < sizeof(num));
+                while (n-- > 0 && i < size - 1)
+                {
+                    buffer[i++] = num[n];
+                }
+            }
+            else if (*p == 'c')
+            {
+                char c = (char)va_arg(args, int);
+                if (i < size - 1)
+                    buffer[i++] = c;
+            }
+            else
+            {
+                // Unsupported, treat as literal
+                if (i < size - 1)
+                    buffer[i++] = '%';
+                if (i < size - 1)
+                    buffer[i++] = *p;
+            }
+        }
+        else
+        {
+            buffer[i++] = *p;
+        }
+        ++p;
+    }
+
+    buffer[i] = '\0';
+    va_end(args);
+    return (int)i;
+}

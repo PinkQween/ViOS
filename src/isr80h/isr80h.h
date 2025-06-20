@@ -5,7 +5,6 @@ struct interrupt_frame;
 
 enum SystemCommands
 {
-    // SYSTEM_COMMAND0_SUM,
     SYSTEM_COMMAND0_EXIT,
     SYSTEM_COMMAND1_PRINT,
     SYSTEM_COMMAND2_GETKEY,
@@ -16,6 +15,7 @@ enum SystemCommands
     SYSTEM_COMMAND7_INVOKE_SYSTEM_COMMAND,
     SYSTEM_COMMAND8_GET_PROGRAM_ARGUMENTS,
     SYSTEM_COMMAND9_SLEEP,
+    SYSTEM_COMMAND10_READ,
 };
 
 void isr80h_register_commands();

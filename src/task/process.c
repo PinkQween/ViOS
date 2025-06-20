@@ -492,23 +492,49 @@ int process_load_switch(const char *filename, struct process **process)
 int process_load_for_slot(const char *filename, struct process **process, int process_slot)
 {
     int res = 0;
-    struct process *_process;
+    struct process *_process = NULL;
+    char try_names[3][VIOS_MAX_PATH];
+    int try_count = 1;
 
-    if (process_get(process_slot) != 0)
+    // Try the user input first
+    strncpy(try_names[0], filename, VIOS_MAX_PATH);
+    try_names[0][VIOS_MAX_PATH - 1] = '\0';
+
+    // Only add .elf and .bin if they fit
+    if (strlen(filename) + 4 < VIOS_MAX_PATH)
     {
-        res = -EISTKN;
-        goto out;
+        snprintf(try_names[1], VIOS_MAX_PATH, "%s.elf", filename);
+        snprintf(try_names[2], VIOS_MAX_PATH, "%s.bin", filename);
+        try_count = 3;
     }
 
-    _process = kzalloc(sizeof(struct process));
-    if (!_process)
+    for (int i = 0; i < try_count; ++i)
     {
-        res = -ENOMEM;
-        goto out;
+        if (process_get(process_slot) != 0)
+        {
+            res = -EISTKN;
+            goto out;
+        }
+
+        _process = kzalloc(sizeof(struct process));
+        if (!_process)
+        {
+            res = -ENOMEM;
+            goto out;
+        }
+
+        process_init(_process);
+        res = process_load_data(try_names[i], _process);
+        if (res >= 0)
+        {
+            // Success!
+            break;
+        }
+        // Free and try next
+        process_free_process(_process);
+        _process = NULL;
     }
 
-    process_init(_process);
-    res = process_load_data(filename, _process);
     if (res < 0)
     {
         goto out;
@@ -521,7 +547,7 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
         goto out;
     }
 
-    strncpy(_process->filename, filename, sizeof(_process->filename));
+    strncpy(_process->filename, (res >= 0) ? try_names[0] : filename, sizeof(_process->filename));
     _process->id = process_slot;
 
     // Create a task
@@ -529,8 +555,6 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
     if (ISERR(_process->task))
     {
         res = ERROR_I(_process->task);
-
-        // Task is NULL due to error code being returned in task_new.
         _process->task = NULL;
         goto out;
     }
@@ -542,8 +566,6 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
     }
 
     *process = _process;
-
-    // Add the process to the array
     processes[process_slot] = _process;
 
 out:
@@ -555,8 +577,6 @@ out:
             _process = NULL;
             *process = NULL;
         }
-
-        // Free the process data
     }
     return res;
 }

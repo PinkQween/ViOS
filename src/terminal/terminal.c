@@ -1,10 +1,25 @@
 #include "terminal.h"
 #include "string/string.h"
+#include "io/io.h"
 #include <stdint.h>
 
 static uint16_t *video_mem = (uint16_t *)0xB8000;
 static uint16_t terminal_row = 0;
 static uint16_t terminal_col = 0;
+
+#define UART_BASE 0x3F8
+
+static inline int uart_transmitter_empty()
+{
+    return (inb(UART_BASE + 5) & 0x20) != 0;
+}
+
+void uart_putc(char c)
+{
+    while (!uart_transmitter_empty())
+        ; // wait until transmitter holding register empty
+    outb(UART_BASE, c);
+}
 
 uint8_t convert_color(int fg, int bg)
 {
@@ -58,6 +73,7 @@ void terminal_scroll()
 
 void terminal_writechar(char c, char colour)
 {
+    // print to VGA text buffer as usual
     if (c == '\n')
     {
         terminal_row++;
@@ -67,16 +83,21 @@ void terminal_writechar(char c, char colour)
             terminal_scroll();
             terminal_row = VGA_HEIGHT - 1;
         }
+        uart_putc('\r'); // carriage return for UART terminals
+        uart_putc('\n'); // newline for UART terminals
         return;
     }
 
     if (c == 0x08)
     {
         terminal_backspace();
+        uart_putc(0x08); // send backspace to UART
         return;
     }
 
     terminal_putchar(terminal_col, terminal_row, c, colour);
+    uart_putc(c); // output char to UART
+
     terminal_col++;
 
     if (terminal_col >= VGA_WIDTH)
@@ -162,4 +183,14 @@ void print_status(const char *message, const char *status)
     print(" [");
     print_colored(status, fg, bg);
     print("]\n");
+}
+
+void print_hex(uint8_t val)
+{
+    const char *hex_chars = "0123456789ABCDEF";
+    char hex[3];
+    hex[0] = hex_chars[(val >> 4) & 0xF];
+    hex[1] = hex_chars[val & 0xF];
+    hex[2] = 0;
+    print(hex);
 }

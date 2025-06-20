@@ -12,6 +12,7 @@ global vios_process_load_start:function
 global vios_system:function
 global vios_process_get_arguments:function
 global vios_sleep:function
+global vios_read:function
 
 ; void vios_exit()
 vios_exit:
@@ -109,11 +110,22 @@ vios_process_get_arguments:
     pop ebp
     ret
 
-; void sleep(int seconds)
+; void vios_sleep(int seconds)
 vios_sleep:
     push ebp
     mov ebp, esp
     mov eax, 9
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+; char* vios_read(const char* filename)
+vios_read:
+    push ebp
+    mov ebp, esp
+    mov eax, 10
     push dword[ebp+8]
     int 0x80
     add esp, 4

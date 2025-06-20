@@ -9,9 +9,11 @@
 *.bin
 *.o
 *.elf
+*.iso
 
 # Ignore bin and build folders recursively
 bin/
 build/
+out/
 **/bin/
 **/build/

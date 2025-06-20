@@ -27,7 +27,7 @@ DriveNumber             db 0x80
 WinNTBit                db 0x00
 Signature               db 0x29
 VolumeID                dd 0xD105
-VolumeIDString          db 'VIOS    BOO'
+VolumeIDString          db 'VIOS BOOT  '
 SystemIDString          db 'FAT16   '
 
 
