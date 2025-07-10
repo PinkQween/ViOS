@@ -28,17 +28,15 @@ FLAGS   = $(CFLAGS) $(KFLAGS) $(EXTRAS) $(INCLUDES)
 # Create bin and build directories first
 .PHONY: prepare_dirs
 prepare_dirs:
-	mkdir -p ./bin ./build /mnt/d
+	mkdir -p ./bin ./build
 
 all: prepare_dirs ./bin/boot.bin ./bin/kernel.bin user_programs
 	rm -rf ./bin/os.bin
 	dd if=./bin/boot.bin of=./bin/os.bin bs=512 conv=notrunc
 	dd if=./bin/kernel.bin >> ./bin/os.bin
 	dd if=/dev/zero bs=1048576 count=16 >> ./bin/os.bin
-	sudo mount -t vfat ./bin/os.bin /mnt/d
-	sudo cp -r ./assets/* /mnt/d
-	find ./assets/programs -name '*.elf' -exec sudo cp {} /mnt/d/ \;
-	sudo umount /mnt/d
+	# Note: Filesystem mounting disabled for macOS compatibility
+	# On macOS, the OS will boot but filesystem features may be limited
 
 ./bin/kernel.bin: prepare_dirs $(FILES)
 	i686-elf-ld -g -relocatable $(FILES) -o ./build/kernelfull.o
