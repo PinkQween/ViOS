@@ -38,20 +38,20 @@ jobs:
           make clean
           sudo ./build.sh
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.VERSION }}
-          name: Build OS ${{ env.VERSION }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
 
-      - name: Upload OS binary to Release
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Upload binary and create release
         uses: softprops/action-gh-release@v1
         with:
+          name: Build OS ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           files: ./bin/os.bin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
