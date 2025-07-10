@@ -9,8 +9,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
-  packages: write
+  contents: write
 
 jobs:
   build:
@@ -26,13 +25,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
 
-          # Download prebuilt i686-elf toolchain (lordmilko)
           wget https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
           unzip i686-elf-tools-linux.zip -d i686-elf-tools
           sudo mv i686-elf-tools /usr/local/i686-elf-tools
           sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
 
-          # Verify cross-compiler
           i686-elf-gcc --version
           i686-elf-ld --version
           nasm -v
@@ -41,6 +38,12 @@ jobs:
         run: |
           make clean
           sudo ./build.sh
+      
+      - name: Upload OS binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: os-bin
+          path: ./bin/os.bin
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
@@ -48,14 +51,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - name: Download OS binary
+        uses: actions/download-artifact@v3
+        with:
+          name: os-bin
 
-      - name: Upload binary and create release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Build OS ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
+          name: Build OS ${{ github.ref_name }}
           files: ./bin/os.bin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
