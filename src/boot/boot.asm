@@ -31,20 +31,45 @@ VolumeIDString          db 'VIOS BOOT  '
 SystemIDString          db 'FAT16   '
 
 
+vbe_error:
+    mov ax, 0xb800
+    mov es, ax
+    xor di, di
+
+    mov si, vbe_error_msg
+
+.print_loop:
+    lodsb
+    cmp al, 0
+    je .done
+    mov ah, 0x07        ; light gray on black
+    mov [es:di], ax
+    add di, 2
+    jmp .print_loop
+
+.done:
+    jmp $
+
+vbe_error_msg db "VBE mode failed", 0
+
 start:
     call clear
 
-    mov ax, 0x4f01 ; querying the VBE
-    mov cx, 0x17E  ; Mode we want
-    mov bx, 0x090 ; Offset for the vbe info structure
+    mov ax, 0x4f01        ; querying the VBE
+    mov cx, 0x17E         ; Mode we want
+    mov bx, 0x090         ; Offset for the vbe info structure
     mov es, bx
     mov di, 0x00
     int 0x10
+    cmp ax, 0x004F        ; Check for VBE success
+    jne vbe_error         ; Handle error if not successful
 
     ; Make the switch to graphics mode
     mov ax, 0x4f02
     mov bx, 0x17E
     int 0x10
+    cmp ax, 0x004F        ; Check for VBE success
+    jne vbe_error         ; Handle error if not successful
 
     ; Clear segment registers
     xor ax, ax

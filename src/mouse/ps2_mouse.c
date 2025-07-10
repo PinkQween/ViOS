@@ -51,6 +51,19 @@ void ps2_mouse_handle_interrupt()
     mouse_y -= dy; // Y is inverted
 
     VBEInfoBlock *vbe = (VBEInfoBlock *)VBEInfoAddress;
+    if (!vbe)
+    {
+        // Fall back to reasonable defaults if VBE info unavailable
+        if (mouse_x < 0)
+            mouse_x = 0;
+        if (mouse_y < 0)
+            mouse_y = 0;
+        if (mouse_x >= 800)
+            mouse_x = 799; // Default resolution
+        if (mouse_y >= 600)
+            mouse_y = 599;
+        return;
+    }
     if (mouse_x < 0)
         mouse_x = 0;
     if (mouse_y < 0)

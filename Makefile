@@ -58,17 +58,12 @@ prepare_dirs:
 	mkdir -p ./bin ./build ./mnt/d
 
 all: prepare_dirs ./bin/boot.bin ./bin/kernel.bin user_programs install
-	rm -rf ./bin/os.bin
-	dd if=./bin/boot.bin of=./bin/os.bin bs=512 conv=notrunc
-	dd if=./bin/kernel.bin >> ./bin/os.bin
-	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
 
-install:
+install: ./bin/os.bin
 ifeq ($(UNAME_S),Linux)
-	sudo mount -t vfat ./bin/os.bin ./mnt/d
-	sudo cp -r ./assets/* ./mnt/d
-	find ./assets/programs -name '*.elf' -exec sudo cp {} ./mnt/d/ \;
-	sudo umount ./mnt/d
+	mformat -i ./bin/os.bin@@1M -F
+    mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
+    find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
 else ifeq ($(UNAME_S),Darwin)
 	@echo "Mounting FAT16 image on macOS..."
 	@hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d || \
@@ -91,6 +86,12 @@ endif
 
 ./bin/boot.bin: prepare_dirs ./src/boot/boot.asm
 	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin
+
+./bin/os.bin: ./bin/boot.bin ./bin/kernel.bin
+	rm -rf ./bin/os.bin
+	dd if=./bin/boot.bin of=./bin/os.bin bs=512 conv=notrunc
+	dd if=./bin/kernel.bin >> ./bin/os.bin
+	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
 
 # Generic C and ASM file rules
 ./build/%.o: ./src/%.c

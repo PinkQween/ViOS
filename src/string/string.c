@@ -41,26 +41,37 @@ void int_to_str(int value, char *buffer)
     buffer[j] = '\0';
 }
 
-char *strcpy(char *dest, const char *src)
+char *strncpy_safe(char *dest, const char *src, size_t dest_size)
 {
+    if (dest_size == 0)
+        return dest;
     char *res = dest;
-    while (*src)
+    size_t i = 0;
+    while (*src && i < dest_size - 1)
     {
         *dest++ = *src++;
+        i++;
     }
     *dest = '\0';
     return res;
 }
 
-void strcat(char *dest, const char *src)
+void strncat_safe(char *dest, const char *src, size_t dest_size)
 {
-    while (*dest)
-        dest++; // move to end
+    size_t dest_len = strnlen(dest, dest_size);
+    if (dest_len >= dest_size - 1)
+        return;
+
+    char *end = dest + dest_len;
+    size_t remaining = dest_size - dest_len - 1;
+
     while (*src)
     {
-        *dest++ = *src++;
+        if (remaining-- == 0)
+            break;
+        *end++ = *src++;
     }
-    *dest = '\0';
+    *end = '\0';
 }
 
 // int int_to_str(int value, char *buffer, int bufsize)
@@ -314,4 +325,13 @@ int snprintf(char *str, size_t size, const char *format, ...)
 
     va_end(args);
     return total_len;
+}
+
+char *strcpy(char *dest, const char *src)
+{
+    char *ret = dest;
+    while ((*dest++ = *src++))
+    {
+    }
+    return ret;
 }

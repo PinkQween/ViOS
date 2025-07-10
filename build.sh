@@ -1,6 +1,9 @@
 #!/bin/bash
 
-set +e
+#!/bin/bash
+
+# Exit on any error, undefined variables, and pipe failures
+set -euo pipefail
 
 # === Config ===
 export PREFIX="$HOME/opt/cross"
@@ -62,8 +65,16 @@ install_gcc() {
     echo "[*] Installing GCC"
     sudo dpkg --add-architecture i386
     sudo apt-get update
-    sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
     # Download prebuilt i686-elf toolchain (lordmilko)
+    echo "[!] WARNING: Downloading prebuilt toolchain. Verify source integrity."
+    echo "[*] Source: https://github.com/lordmilko/i686-elf-tools"
+    read -p "Continue? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborted by user."
+        exit 1
+    fi
+
     wget https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
     unzip i686-elf-tools-linux.zip -d i686-elf-tools
     sudo mv i686-elf-tools /usr/local/i686-elf-tools
@@ -90,6 +101,21 @@ if ! command -v "${TARGET}-gcc" &>/dev/null; then
     install_gcc
 else
     echo "[✓] ${TARGET}-gcc already installed."
+fi
+
+# Check for mformat (mtools)
+if ! command -v mformat &>/dev/null; then
+    echo "[*] mformat (from mtools) is required but not installed. Attempting to install..."
+    if command -v apt &>/dev/null; then
+        sudo apt update && sudo apt install -y mtools
+    elif command -v dnf &>/dev/null; then
+        sudo dnf install -y mtools
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -Sy --noconfirm mtools
+    else
+        echo "[!] Could not detect package manager. Please install mtools manually."
+        exit 1
+    fi
 fi
 
 # === Build Your Kernel ===

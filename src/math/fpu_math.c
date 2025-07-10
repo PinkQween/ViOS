@@ -69,8 +69,8 @@ double fpu_sqrt(double a)
 // For trig functions, the x87 FPU has FSIN, FCOS instructions but
 // they expect the argument in ST(0) in radians.
 
-// NOTE: FSIN and FCOS only work correctly for angles in [-π/4, π/4]
-// Outside this range, they may give incorrect results.
+// NOTE: FSIN and FCOS work for all angles but may lose precision
+// for very large values due to internal range reduction.
 
 // Helper function to reduce angle to [-π/4, π/4] range
 static double reduce_angle(double angle)
@@ -414,9 +414,12 @@ int max(int a, int b)
 
 int abs(int a)
 {
-    if (a < 0) {
+    if (a < 0)
+    {
         return -a;
-    } else {
+    }
+    else
+    {
         return a;
     }
 }

@@ -11,13 +11,9 @@
 
 #define CLASSIC_KEYBOARD_CAPS_LOCK 0x3A
 #define CLASSIC_KEYBOARD_SHIFT_KEYS {0x2A, 0x36}
-#define CLASSIC_KEYBOARD_SHIFT_KEYS_RELEASE_VALUES {0xAA, 0xB6}
 
 static const uint8_t shift_keys[] = CLASSIC_KEYBOARD_SHIFT_KEYS;
 static const size_t shift_keys_count = sizeof(shift_keys) / sizeof(shift_keys[0]);
-
-static const uint8_t release_shift_keys[] = CLASSIC_KEYBOARD_SHIFT_KEYS_RELEASE_VALUES;
-static const size_t release_shift_keys_count = sizeof(release_shift_keys) / sizeof(release_shift_keys[0]);
 
 static bool shift_down = false;
 
@@ -36,27 +32,31 @@ static uint8_t keyboard_scan_set_one[] = {
     '6', '+', '1', '2', '3', '0', '.'};
 
 int classic_keyboard_init();
+uint8_t classic_keyboard_scancode_to_char(uint8_t scancode);
+void classic_keyboard_handle_interrupt();
 
 struct keyboard classic_keyboard = {
     .name = {"Classic"},
     .init = classic_keyboard_init};
 
-void classic_keyboard_handle_interrupt();
-
 void set_keyboard_leds(bool caps, bool num, bool scroll)
 {
     uint8_t led_cmd = 0xED;
     uint8_t led_state = (scroll ? 1 : 0) | (num ? 2 : 0) | (caps ? 4 : 0);
+    int timeout = 1000; // Reasonable timeout value
 
     // Send the command
     outb(0x60, led_cmd);
     // Wait for ACK (0xFA)
-    while (insb(0x60) != 0xFA)
+    while (timeout-- > 0 && insb(0x60) != 0xFA)
         ;
+    if (timeout <= 0)
+        return; // Timeout occurred
 
     // Send LED state
     outb(0x60, led_state);
-    while (insb(0x60) != 0xFA)
+    timeout = 1000;
+    while (timeout-- > 0 && insb(0x60) != 0xFA)
         ;
 }
 
@@ -73,7 +73,6 @@ int classic_keyboard_init()
     mask &= ~(1 << 1); // Clear bit 1 for IRQ 1 (keyboard)
     mask &= ~(1 << 2); // Clear bit 2 for IRQ 2 (cascade to slave PIC)
     outb(0x21, mask);
-
     return 0;
 }
 
@@ -87,7 +86,7 @@ uint8_t classic_keyboard_scancode_to_char(uint8_t scancode)
 
     // Apply lowercase if caps lock is off and shift is not held
     bool caps = keyboard_get_caps_lock(&classic_keyboard) == KEYBOARD_CAPS_LOCK_ON;
-    if ((c >= 'A' && c <= 'Z') && (!caps && !shift_down))
+    if ((c >= 'A' && c <= 'Z') && (caps != shift_down))
     {
         c += 32; // Convert to lowercase
     }
@@ -103,9 +102,10 @@ void classic_keyboard_handle_interrupt()
     if (scancode & CLASSIC_KEYBOARD_KEY_RELEASED)
     {
         scancode &= ~CLASSIC_KEYBOARD_KEY_RELEASED;
-        for (size_t i = 0; i < release_shift_keys_count; ++i)
+        // Check if the released key was a shift key
+        for (size_t i = 0; i < shift_keys_count; ++i)
         {
-            if (release_shift_keys[i] == (scancode | CLASSIC_KEYBOARD_KEY_RELEASED))
+            if (shift_keys[i] == scancode)
             {
                 shift_down = false;
             }

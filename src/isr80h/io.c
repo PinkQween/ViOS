@@ -7,12 +7,12 @@
 void *isr80h_command1_print(struct interrupt_frame *frame)
 {
     void *user_space_msg_buffer = task_get_stack_item(task_current(), 0);
-    int x = (int)(task_current(), 1);
-    int y = (int)(task_current(), 2);
-    int r = (int)(task_current(), 3);
-    int g = (int)(task_current(), 4);
-    int b = (int)(task_current(), 5);
-    int s = (int)(task_current(), 6);
+    int x = (int)task_get_stack_item(task_current(), 1);
+    int y = (int)task_get_stack_item(task_current(), 2);
+    int r = (int)task_get_stack_item(task_current(), 3);
+    int g = (int)task_get_stack_item(task_current(), 4);
+    int b = (int)task_get_stack_item(task_current(), 5);
+    int s = (int)task_get_stack_item(task_current(), 6);
     char buf[1024];
     copy_string_from_task(task_current(), user_space_msg_buffer, buf, sizeof(buf));
 

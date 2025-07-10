@@ -8,15 +8,22 @@ output_dir = 'src/fonts'
 
 os.makedirs(output_dir, exist_ok=True)
 
+if not os.path.exists(font_dir):
+    raise RuntimeError(f"Font directory '{font_dir}' does not exist")
+
 font_files = [f for f in os.listdir(font_dir) if f.lower().endswith(('.ttf', '.otf'))]
 if not font_files:
-    raise RuntimeError("No .ttf or .otf fonts found in", font_dir)
+    raise RuntimeError(f"No .ttf or .otf fonts found in {font_dir}")
 
 for font_filename in font_files:
     font_path = os.path.join(font_dir, font_filename)
     font_name = os.path.splitext(font_filename)[0]
-
-    print(f"Processing {font_filename}...")
+    try:
+        face = freetype.Face(font_path)
+        face.set_pixel_sizes(0, 16)
+    except freetype.FT_Exception as e:
+        print(f"Error loading font {font_filename}: {e}")
+        continue
 
     face = freetype.Face(font_path)
     face.set_pixel_sizes(0, 16)
@@ -104,12 +111,15 @@ for font_filename in font_files:
 
         c.write(f'int get{font_name}Advance(int index) {{\n')
         c.write(f'  if (index < 32 || index >= 127) return 0;\n')
-        c.write(f'  return font_advance[index - 32];\n')
-        c.write('}\n\n')
-
         c.write(f'int get{font_name}Kerning(int left, int right) {{\n')
         for (l, r), v in kerning_pairs.items():
-            c.write(f'  if (left == \'{l}\' && right == \'{r}\') return {v};\n')
+            # Properly escape characters
+            l_escaped = repr(l)[1:-1]  # Remove outer quotes from repr
+            r_escaped = repr(r)[1:-1]
+            c.write(f'  if (left == \'{l_escaped}\' && right == \'{r_escaped}\') return {v};\n')
+        c.write('  return 0;\n')
+        c.write('}\n')
+        c.write(f'  if (left == \'{l}\' && right == \'{r}\') return {v};\n')
         c.write('  return 0;\n')
         c.write('}\n')
 
