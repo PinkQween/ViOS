@@ -2,6 +2,8 @@
 #define IDT_H
 
 #include <stdint.h>
+#include "mouse/mouse.h"       // For mouse_handle_interrupt
+#include "keyboard/keyboard.h" // For keyboard handler
 
 struct interrupt_frame;
 typedef void *(*ISR80H_COMMAND)(struct interrupt_frame *frame);

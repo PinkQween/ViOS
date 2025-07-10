@@ -11,7 +11,6 @@
 #include "panic/panic.h"
 #include "kernel.h"
 
-// The current process that is running
 struct process *current_process = 0;
 
 int process_free_process(struct process *process);
@@ -155,6 +154,7 @@ int process_free_elf_data(struct process *process)
     }
     return 0;
 }
+
 int process_free_program_data(struct process *process)
 {
     int res = 0;
@@ -204,13 +204,12 @@ int process_free_process(struct process *process)
     process_terminate_allocations(process);
     process_free_program_data(process);
 
-    // Free the process stack memory.
     if (process->stack)
     {
         kfree(process->stack);
         process->stack = NULL;
     }
-    // Free the task
+
     if (process->task)
     {
         task_free(process->task);
@@ -224,16 +223,8 @@ int process_free_process(struct process *process)
 
 int process_terminate(struct process *process)
 {
-    // Unlink the process from the process array.
     process_unlink(process);
-
     int res = process_free_process(process);
-    if (res < 0)
-    {
-        goto out;
-    }
-
-out:
     return res;
 }
 
@@ -295,13 +286,12 @@ int process_inject_arguments(struct process *process, struct command_argument *r
 out:
     return res;
 }
+
 void process_free(struct process *process, void *ptr)
 {
-    // Unlink the pages from the process for the given address
     struct process_allocation *allocation = process_get_allocation_by_addr(process, ptr);
     if (!allocation)
     {
-        // Oops its not our pointer.
         return;
     }
 
@@ -311,10 +301,7 @@ void process_free(struct process *process, void *ptr)
         return;
     }
 
-    // Unjoin the allocation
     process_allocation_unjoin(process, ptr);
-
-    // We can now free the memory.
     kfree(ptr);
 }
 
@@ -354,12 +341,9 @@ static int process_load_binary(const char *filename, struct process *process)
     process->size = stat.filesize;
 
 out:
-    if (res < 0)
+    if (res < 0 && program_data_ptr)
     {
-        if (program_data_ptr)
-        {
-            kfree(program_data_ptr);
-        }
+        kfree(program_data_ptr);
     }
     fclose(fd);
     return res;
@@ -367,23 +351,13 @@ out:
 
 static int process_load_elf(const char *filename, struct process *process)
 {
-    int res = 0;
-    struct elf_file *elf_file = 0;
-    res = elf_load(filename, &elf_file);
-    if (ISERR(res))
-    {
-        goto out;
-    }
-
-    process->filetype = PROCESS_FILETYPE_ELF;
-    process->elf_file = elf_file;
-out:
+    int res = elf_load(filename, &process->elf_file);
     return res;
 }
+
 static int process_load_data(const char *filename, struct process *process)
 {
-    int res = 0;
-    res = process_load_elf(filename, process);
+    int res = process_load_elf(filename, process);
     if (res == -EINFORMAT)
     {
         res = process_load_binary(filename, process);
@@ -394,18 +368,16 @@ static int process_load_data(const char *filename, struct process *process)
 
 int process_map_binary(struct process *process)
 {
-    int res = 0;
-    paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_ADDRESS, process->ptr, paging_align_address(process->ptr + process->size), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
-    return res;
+    return paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_ADDRESS, process->ptr, paging_align_address(process->ptr + process->size), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
 }
 
 static int process_map_elf(struct process *process)
 {
     int res = 0;
-
     struct elf_file *elf_file = process->elf_file;
     struct elf_header *header = elf_header(elf_file);
     struct elf32_phdr *phdrs = elf_pheader(header);
+
     for (int i = 0; i < header->e_phnum; i++)
     {
         struct elf32_phdr *phdr = &phdrs[i];
@@ -423,6 +395,7 @@ static int process_map_elf(struct process *process)
     }
     return res;
 }
+
 int process_map_memory(struct process *process)
 {
     int res = 0;
@@ -446,7 +419,6 @@ int process_map_memory(struct process *process)
         goto out;
     }
 
-    // Finally map the stack
     paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_STACK_ADDRESS_END, process->stack, paging_align_address(process->stack + VIOS_USER_PROGRAM_STACK_SIZE), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
 out:
     return res;
@@ -496,11 +468,9 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
     char try_names[3][VIOS_MAX_PATH];
     int try_count = 1;
 
-    // Try the user input first
     strncpy(try_names[0], filename, VIOS_MAX_PATH);
     try_names[0][VIOS_MAX_PATH - 1] = '\0';
 
-    // Only add .elf and .bin if they fit
     if (strlen(filename) + 4 < VIOS_MAX_PATH)
     {
         snprintf(try_names[1], VIOS_MAX_PATH, "%s.elf", filename);
@@ -527,10 +497,9 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
         res = process_load_data(try_names[i], _process);
         if (res >= 0)
         {
-            // Success!
             break;
         }
-        // Free and try next
+
         process_free_process(_process);
         _process = NULL;
     }
@@ -547,10 +516,9 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
         goto out;
     }
 
-    strncpy(_process->filename, (res >= 0) ? try_names[0] : filename, sizeof(_process->filename));
+    strncpy(_process->filename, try_names[0], sizeof(_process->filename));
     _process->id = process_slot;
 
-    // Create a task
     _process->task = task_new(_process);
     if (ISERR(_process->task))
     {

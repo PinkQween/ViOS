@@ -1,4 +1,6 @@
 #include "utils.h"
+#include "graphics/graphics.h"
+#include "fonts/characters_AtariST8x16SystemFont.h"
 
 void int_to_ascii(int num, char *str)
 {
@@ -37,3 +39,45 @@ void int_to_ascii(int num, char *str)
         str[k] = temp;
     }
 }
+
+// void print_status(const char *msg, bool ok)
+// {
+//     VBEInfoBlock *VBE = (VBEInfoBlock *)VBEInfoAddress;
+//     int term_width = VBE->x_resolution;
+//     int x = 0;
+//     extern int cursor_x, cursor_y; // Use terminal's cursor
+//     x = cursor_x;
+
+//     // Print the message
+//     print(msg);
+//     int msg_len = 0;
+//     for (const char *p = msg; *p; ++p)
+//         msg_len++;
+//     int px = x + msg_len * FONT_ATARIST8X16SYSTEMFONT_WIDTH;
+
+//     // Calculate how many dots to fill
+//     int status_width = 7 * FONT_ATARIST8X16SYSTEMFONT_WIDTH; // e.g. " [OK] "
+//     int dots = (term_width - px - status_width) / FONT_ATARIST8X16SYSTEMFONT_WIDTH;
+//     for (int i = 0; i < dots; ++i)
+//     {
+//         terminal_putchar('.');
+//     }
+//     // Print space before status
+//     terminal_putchar(' ');
+//     // Print status box
+//     int status_x = cursor_x;
+//     int status_y = cursor_y;
+//     int color_r = ok ? 0 : 255;
+//     int color_g = ok ? 255 : 0;
+//     int color_b = 0;
+//     // Draw background box
+//     DrawRect(status_x, status_y, 5 * FONT_ATARIST8X16SYSTEMFONT_WIDTH, FONT_ATARIST8X16SYSTEMFONT_HEIGHT, color_r, color_g, color_b);
+//     // Print [OK] or [FAIL] in box
+//     const char *status_str = ok ? "[OK]" : "[FAIL]";
+//     int text_r = 255, text_g = 255, text_b = 255;
+//     DrawString(getAtariST8x16SystemFontCharacter, FONT_ATARIST8X16SYSTEMFONT_WIDTH, FONT_ATARIST8X16SYSTEMFONT_HEIGHT, (char *)status_str, status_x, status_y, text_r, text_g, text_b, 1);
+//     cursor_x += 5 * FONT_ATARIST8X16SYSTEMFONT_WIDTH;
+//     Flush();
+//     // Move to next line
+//     terminal_putchar('\n');
+// }

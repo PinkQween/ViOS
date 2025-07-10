@@ -16,5 +16,6 @@ struct rtc_time
 void rtc_init();
 void sleep_seconds(int seconds);
 void rtc_read(struct rtc_time *time);
+void sleep_ms(int ms);
 
 #endif // SRC_IO_RTC_H

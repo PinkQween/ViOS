@@ -37,5 +37,3 @@ void gdt_structured_to_gdt(struct gdt *gdt, struct gdt_structured *structured_gd
         encodeGdtEntry((uint8_t *)&gdt[i], structured_gdt[i]);
     }
 }
-
-

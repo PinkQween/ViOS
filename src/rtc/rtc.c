@@ -87,3 +87,27 @@ void sleep_seconds(int seconds)
         }
     } while (total_current_seconds < total_target_seconds);
 }
+
+#define PIT_CHANNEL2_DATA 0x42
+#define PIT_COMMAND 0x43
+
+void sleep_ms(int ms)
+{
+    if (ms <= 0)
+        return;
+
+    // Calculate countdown value (approximate)
+    // PIT runs at 1,193,182 Hz, so counts = ms * 1193
+    int count = ms * 1193;
+
+    // Setup PIT channel 2 in mode 0 (one-shot)
+    outb(PIT_COMMAND, 0xB6);
+
+    // Load low byte then high byte
+    outb(PIT_CHANNEL2_DATA, count & 0xFF);
+    outb(PIT_CHANNEL2_DATA, (count >> 8) & 0xFF);
+
+    // Wait until counter reaches zero by polling bit 5 of port 0x61
+    while (inb(0x61) & 0x20)
+        ;
+}

@@ -31,6 +31,25 @@ _start:
     out 0x21, al
     ; End remap of the master PIC
 
+    ; Remap the slave PIC
+    mov al, 00010001b
+    out 0xA0, al ; Tell slave PIC
+
+    mov al, 0x28 ; Interrupt 0x28 is where slave ISR should start
+    out 0xA1, al
+    
+    mov al, 0x02 ; ICW3 - tell slave its cascade identity
+    out 0xA1, al
+
+    mov al, 00000001b
+    out 0xA1, al
+    ; End remap of the slave PIC
+
+    ; Keep all IRQs masked initially (will be enabled selectively)
+    mov al, 0xFF
+    out 0x21, al ; Master PIC
+    out 0xA1, al ; Slave PIC
+
     call kernel_main
 
     jmp $
