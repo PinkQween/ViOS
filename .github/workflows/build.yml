@@ -40,7 +40,7 @@ jobs:
           sudo ./build.sh
       
       - name: Upload OS binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: os-bin
           path: ./bin/os.bin
@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Download OS binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: os-bin
 
