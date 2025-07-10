@@ -26,7 +26,8 @@ fi
 # -no-reboot      : Exit QEMU instead of rebooting
 # -no-shutdown    : Don't shutdown automatically
 # -serial stdio   : Connect serial port to terminal (for debugging)
-# -monitor telnet::45454,server,nowait : Allow monitor access via telnet
+# -hda            : Primary hard disk (OS)
+# -hdb            : Secondary hard disk (filesystem with programs)
 qemu-system-i386 \
     -hda ./bin/os.bin \
     -m 512M \

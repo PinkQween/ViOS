@@ -16,6 +16,7 @@ enum SystemCommands
     SYSTEM_COMMAND8_GET_PROGRAM_ARGUMENTS,
     SYSTEM_COMMAND9_SLEEP,
     SYSTEM_COMMAND10_READ,
+    SYSTEM_COMMAND11_WRITE,
 };
 
 void isr80h_register_commands();

@@ -100,7 +100,7 @@ gdt_descriptor:
 
     ; For the loading...
     mov eax, 1
-    mov ecx, 100
+    mov ecx, 105
     mov edi, 0x0100000
 
 
