@@ -37,6 +37,11 @@ all: prepare_dirs ./bin/boot.bin ./bin/kernel.bin user_programs
 	dd if=/dev/zero bs=1048576 count=16 >> ./bin/os.bin
 	# Note: Filesystem mounting disabled for macOS compatibility
 	# On macOS, the OS will boot but filesystem features may be limited
+	# Mount operations commented out for macOS compatibility:
+	# sudo mount -t vfat ./bin/os.bin /mnt/d
+	# sudo cp -r ./assets/* /mnt/d
+	# find ./assets/programs -name '*.elf' -exec sudo cp {} /mnt/d/ \;
+	# sudo umount /mnt/d
 
 ./bin/kernel.bin: prepare_dirs $(FILES)
 	i686-elf-ld -g -relocatable $(FILES) -o ./build/kernelfull.o
