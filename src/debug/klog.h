@@ -28,7 +28,7 @@ typedef enum {
 #define KLOG_MAX_SUBSYSTEM_LEN 16
 
 // Log buffer configuration
-#define KLOG_BUFFER_SIZE 4096
+#define KLOG_BUFFER_SIZE 256
 #define KLOG_MAX_SUBSYSTEMS 32
 
 // Subsystem filtering
