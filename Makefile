@@ -69,21 +69,23 @@ fonts:
 
 install: ./bin/os.bin
 ifeq ($(UNAME_S),Linux)
-    mformat -i ./bin/os.bin@@1M -F
-    mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
-    find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
-else ifeq ($(UNAME_S),Darwin)
-	@echo "Mounting FAT16 image on macOS..."
-	@hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d || \
-		(echo "Failed to mount. Trying manual attach..."; \
-		hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin; \
-		diskutil list; \
-		echo "Please mount the correct partition manually if needed.")
-	cp -r ./assets/* ./mnt/d || true
-	find ./assets/programs -name '*.elf' -exec cp {} ./mnt/d/ \; || true
-	@hdiutil detach ./mnt/d || true
+	mformat -i ./bin/os.bin@@1M -F
+	mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
+	find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
 else
-	@echo "Skipping install (switch to linux or darwin)"
+	ifeq ($(UNAME_S),Darwin)
+		@echo "Mounting FAT16 image on macOS..."
+		@hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d || \
+			(echo "Failed to mount. Trying manual attach..."; \
+			hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin; \
+			diskutil list; \
+			echo "Please mount the correct partition manually if needed.")
+		cp -r ./assets/* ./mnt/d || true
+		find ./assets/programs -name '*.elf' -exec cp {} ./mnt/d/ \; || true
+		@hdiutil detach ./mnt/d || true
+	else
+		@echo "Skipping install (switch to linux or darwin)"
+	endif
 endif
 
 ./bin/kernel.elf: prepare_dirs $(FILES)
