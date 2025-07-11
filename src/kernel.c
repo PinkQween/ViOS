@@ -23,6 +23,10 @@
 #include "fs/file.h"
 #include "debug/serial.h"
 #include "debug/klog.h"
+#include "audio/sb16.h"
+#include "audio/audio.h"
+#include "io/io.h"
+#include "rtc/rtc.h"
 
 int almost_equal(double a, double b, double epsilon)
 {
@@ -77,6 +81,7 @@ static void kernel_init_devices()
 {
     keyboard_init();
     mouse_init();
+    audio_init();
 
     struct mouse *mouse = ps2_mouse_init();
 
@@ -91,6 +96,23 @@ static void kernel_init_graphics()
     {
         panic("Failed to initialize graphics system");
     }
+}
+
+static void kernel_init_audio()
+{
+    // Initialize our audio layer (SoundBlaster + Virtual Audio)
+    audio_init();
+    
+    // Always try to play beep regardless of detection
+    virtual_audio_control(VIRTUAL_AUDIO_RESET);  // Reset audio system
+    sleep_ms(500);
+    
+    // Play a long beep to test
+    virtual_audio_control(VIRTUAL_AUDIO_BEEP);   // First beep (1000 Hz)
+    sleep_seconds(3);                              // Play for 3 seconds
+    virtual_audio_control(VIRTUAL_AUDIO_STOP);   // Stop the beep
+    sleep_ms(500);
+    virtual_audio_control(VIRTUAL_AUDIO_BEEP); // First beep (1000 Hz)
 }
 
 static void kernel_launch_first_process(const char *path)
@@ -124,6 +146,7 @@ void kernel_main()
     
     KLOG_INFO("KERNEL", "Initializing graphics subsystem");
     kernel_init_graphics();
+    kernel_init_audio();
 
     KLOG_INFO("KERNEL", "Loading first process: %s", "0:/systemd.elf");
     const char *first_program = "0:/systemd.elf";

@@ -25,6 +25,7 @@ FILES = \
   ./build/isr80h/io.o \
   ./build/isr80h/heap.o \
   ./build/isr80h/process.o \
+  ./build/isr80h/audio.o \
   ./build/keyboard/keyboard.o \
   ./build/keyboard/ps2_keyboard.o \
   ./build/loader/formats/elfloader.o \
@@ -43,7 +44,9 @@ FILES = \
   ./build/mouse/ps2_mouse.o \
   ./build/math/fpu_math.o \
   ./build/debug/serial.o \
-  ./build/debug/klog.o
+  ./build/debug/klog.o \
+  ./build/audio/sb16.o \
+  ./build/audio/audio.o
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
