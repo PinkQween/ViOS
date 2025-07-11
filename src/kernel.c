@@ -121,7 +121,7 @@ void kernel_main()
     kernel_init_graphics();
     kernel_init_audio();
 
-    const char *first_program = "0:/cpp_test.elf";
+    const char *first_program = "0:/rust_test.elf";
     kernel_launch_first_process(first_program);
 
     sleep_seconds(3);

@@ -3,6 +3,7 @@
 # Default options
 AUDIO=true
 DEBUG=false
+SERIAL=true
 
 # Parse arguments
 for arg in "$@"; do
@@ -13,6 +14,9 @@ for arg in "$@"; do
         -d|--debug)
             DEBUG=true
             ;;
+        -s|--no-serial)
+            SERIAL=false
+            ;;
         *)
             echo "Unknown option: $arg"
             exit 1
@@ -22,6 +26,11 @@ done
 
 # Base QEMU command
 QEMU_CMD="qemu-system-i386 -m 512M -drive file=bin/os.bin,if=ide,index=0,media=disk,format=raw"
+
+# Serial option
+if [ "$SERIAL" = true ]; then
+    QEMU_CMD="$QEMU_CMD -serial stdio"
+fi
 
 # Audio option
 if [ "$AUDIO" = true ]; then
