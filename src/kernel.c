@@ -21,6 +21,8 @@
 #include "math/fpu_math.h"
 #include "mouse/ps2_mouse.h"
 #include "fs/file.h"
+#include "debug/serial.h"
+#include "debug/klog.h"
 
 int almost_equal(double a, double b, double epsilon)
 {
@@ -103,14 +105,32 @@ static void kernel_launch_first_process(const char *path)
 
 void kernel_main()
 {
+    // Initialize serial debugging
+    serial_init(SERIAL_COM1_BASE, 115200);
+    klog_init(KLOG_INFO, KLOG_DEST_SERIAL);
+    klog_boot("Kernel booting...");
+    
+    KLOG_INFO("KERNEL", "Setting up GDT and TSS");
     kernel_setup_gdt_tss();
+    
+    KLOG_INFO("KERNEL", "Initializing memory subsystem");
     kernel_init_memory();
+    
+    KLOG_INFO("KERNEL", "Initializing devices");
     kernel_init_devices();
+    
+    KLOG_INFO("KERNEL", "Registering system call handlers");
     isr80h_register_commands();
+    
+    KLOG_INFO("KERNEL", "Initializing graphics subsystem");
     kernel_init_graphics();
 
+    KLOG_INFO("KERNEL", "Loading first process: %s", "0:/systemd.elf");
     const char *first_program = "0:/systemd.elf";
     kernel_launch_first_process(first_program);
 
+    KLOG_INFO("KERNEL", "Starting first task");
     task_run_first_ever_task();
+    
+    KLOG_INFO("KERNEL", "Kernel initialization complete");
 }
