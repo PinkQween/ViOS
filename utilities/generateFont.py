@@ -99,7 +99,7 @@ for font_filename in font_files:
             c.write('  },\n')
         c.write('};\n\n')
 
-        c.write(f'static const unsigned char font_advance[] = {{\n')
+        c.write(f'static const unsigned char font_advance[] __attribute__((unused)) = {{\n')
         for _, _, adv, *_ in glyph_data:
             c.write(f'  {adv},\n')
         c.write('};\n\n')
@@ -111,15 +111,14 @@ for font_filename in font_files:
 
         c.write(f'int get{font_name}Advance(int index) {{\n')
         c.write(f'  if (index < 32 || index >= 127) return 0;\n')
+        c.write(f'  return font_advance[index - 32];\n')
+        c.write('}\n\n')
+
         c.write(f'int get{font_name}Kerning(int left, int right) {{\n')
         for (l, r), v in kerning_pairs.items():
-            # Properly escape characters
-            l_escaped = repr(l)[1:-1]  # Remove outer quotes from repr
+            l_escaped = repr(l)[1:-1]
             r_escaped = repr(r)[1:-1]
             c.write(f'  if (left == \'{l_escaped}\' && right == \'{r_escaped}\') return {v};\n')
-        c.write('  return 0;\n')
-        c.write('}\n')
-        c.write(f'  if (left == \'{l}\' && right == \'{r}\') return {v};\n')
         c.write('  return 0;\n')
         c.write('}\n')
 

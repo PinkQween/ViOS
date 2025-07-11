@@ -156,7 +156,7 @@ vios_read:
 vios_audio_push:
     push ebp
     mov ebp, esp
-    mov eax, 12 ; Command 12 audio push
+    mov eax, 12 ; Command 12 audio_push
     push dword[ebp+8] ; Variable "c"
     int 0x80
     add esp, 4
@@ -167,7 +167,7 @@ vios_audio_push:
 vios_audio_pop:
     push ebp
     mov ebp, esp
-    mov eax, 13 ; Command 13 audio pop
+    mov eax, 13 ; Command 13 audio_pop
     int 0x80
     pop ebp
     ret
@@ -176,7 +176,7 @@ vios_audio_pop:
 vios_audio_control:
     push ebp
     mov ebp, esp
-    mov eax, 14 ; Command 14 audio control
+    mov eax, 14 ; Command 14 audio_control
     push dword[ebp+8] ; Variable "command"
     int 0x80
     add esp, 4

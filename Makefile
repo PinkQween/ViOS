@@ -60,11 +60,14 @@ UNAME_S := $(shell uname -s)
 prepare_dirs:
 	mkdir -p ./bin ./build ./mnt/d
 
-all: prepare_dirs ./bin/boot.bin ./bin/kernel.bin user_programs install
+all: prepare_dirs fonts ./bin/boot.bin ./bin/kernel.bin user_programs install
+
+fonts:
+	./utilities/generateFont.py
 
 install: ./bin/os.bin
 ifeq ($(UNAME_S),Linux)
-	mformat -i ./bin/os.bin@@1M -F
+    mformat -i ./bin/os.bin@@1M -F
     mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
     find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
 else ifeq ($(UNAME_S),Darwin)
@@ -120,4 +123,4 @@ user_programs_clean:
 	done
 
 clean: user_programs_clean
-	rm -rf ./bin/boot.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o ./build/kernelfull-elf.o $(FILES) ./bin/ ./build/
+	rm -rf ./bin/boot.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o ./build/kernelfull-elf.o $(FILES) ./bin/ ./build/ ./mnt ./src/fonts
