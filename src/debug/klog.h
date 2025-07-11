@@ -66,6 +66,8 @@ typedef struct {
     bool timestamps_enabled;
 } klog_config_t;
 
+int vsnprintf(char *buf, size_t size, const char *format, va_list args);
+
 // Core logging functions
 void klog_init(klog_level_t min_level, klog_dest_t destinations);
 void klog_shutdown(void);
