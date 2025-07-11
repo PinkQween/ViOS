@@ -11,10 +11,14 @@
 
 // Helper function to use serial debug safely
 static void serial_fatal_log(const char *format, ...) {
+    char buffer[SERIAL_LOG_BUFFER_SIZE];
+
     va_list args;
     va_start(args, format);
-    serial_debug(SERIAL_DEBUG_FATAL, "PANIC", format, args);
+    vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
+
+    serial_debug(SERIAL_DEBUG_FATAL, "PANIC", "%s", buffer);
 }
 
 // Basic legacy panic
