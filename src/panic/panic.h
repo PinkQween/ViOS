@@ -1,6 +1,8 @@
 #ifndef PANIC_H
 #define PANIC_H
 
+#define SERIAL_LOG_BUFFER_SIZE 512
+
 #include <stdint.h>
 
 // Forward declaration - actual definition is in idt.h
