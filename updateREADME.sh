@@ -1,5 +1,7 @@
 #!/bin/bash
 
+make clean
+
 TARGET_DIR="/tmp/ViOS"
 
 rm -rf "$TARGET_DIR"
