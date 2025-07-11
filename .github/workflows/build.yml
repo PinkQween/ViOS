@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
+          sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex mtools
 
           wget https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
           unzip i686-elf-tools-linux.zip -d i686-elf-tools
@@ -37,7 +37,7 @@ jobs:
       - name: Build OS
         run: |
           make clean
-          sudo ./build.sh
+          make all
       
       - name: Upload OS binary
         uses: actions/upload-artifact@v4
