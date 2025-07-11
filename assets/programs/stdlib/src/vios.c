@@ -83,3 +83,13 @@ int vios_system_run(const char *command)
 
     return result;
 }
+
+int vios_write(const char *filename, const void *data, size_t size)
+{
+    int result = 0;
+    
+    // System call 11 is write
+    asm volatile("int $0x80" : "=a"(result) : "a"(11), "b"(filename), "c"(data), "d"(size) : "memory");
+    
+    return result;
+}

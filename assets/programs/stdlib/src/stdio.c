@@ -2,6 +2,13 @@
 #include "vios.h"
 #include "stdlib.h"
 #include <stdarg.h>
+
+void print(const char *str) {
+    while (*str) {
+        vios_putchar(*str++, 0, 0, 0, 0, 0, 1);
+    }
+}
+
 // int putchar(int c)
 // {
 //     vios_putchar((char)c);

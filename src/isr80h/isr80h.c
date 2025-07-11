@@ -19,4 +19,5 @@ void isr80h_register_commands()
     isr80h_register_command(SYSTEM_COMMAND8_GET_PROGRAM_ARGUMENTS, isr80h_command8_get_program_arguments);
     isr80h_register_command(SYSTEM_COMMAND9_SLEEP, isr80h_command9_sleep);
     isr80h_register_command(SYSTEM_COMMAND10_READ, isr80h_command10_read);
+    isr80h_register_command(SYSTEM_COMMAND11_WRITE, isr80h_command11_write);
 }
