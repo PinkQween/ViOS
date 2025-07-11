@@ -103,19 +103,23 @@ else
     echo "[✓] ${TARGET}-gcc already installed."
 fi
 
-# Check for mformat (mtools)
-if ! command -v mformat &>/dev/null; then
-    echo "[*] mformat (from mtools) is required but not installed. Attempting to install..."
-    if command -v apt &>/dev/null; then
-        sudo apt update && sudo apt install -y mtools
-    elif command -v dnf &>/dev/null; then
-        sudo dnf install -y mtools
-    elif command -v pacman &>/dev/null; then
-        sudo pacman -Sy --noconfirm mtools
-    else
-        echo "[!] Could not detect package manager. Please install mtools manually."
-        exit 1
+if [[ "$(uname -s)" == "Linux" ]]; then
+    # Check for mformat (mtools)
+    if ! command -v mformat &>/dev/null; then
+        echo "[*] mformat (from mtools) is required but not installed. Attempting to install..."
+        if command -v apt &>/dev/null; then
+            sudo apt update && sudo apt install -y mtools
+        elif command -v dnf &>/dev/null; then
+            sudo dnf install -y mtools
+        elif command -v pacman &>/dev/null; then
+            sudo pacman -Sy --noconfirm mtools
+        else
+            echo "[!] Could not detect package manager. Please install mtools manually."
+            exit 1
+        fi
     fi
+else
+    echo "[*] Not running on Linux, skipping mtools installation check."
 fi
 
 # === Build Your Kernel ===
