@@ -1,4 +1,5 @@
 #include "sb16.h"
+#include "audio.h"
 #include "memory/memory.h"
 #include "memory/heap/kheap.h"
 #include "io/io.h"
@@ -7,6 +8,9 @@
 #include "math/fpu_math.h"
 #include "rtc/rtc.h"
 #include "idt/idt.h"
+#include "task/process.h"
+#include "task/task.h"
+#include "config.h"
 
 // Global context
 sb16_context_t g_sb16_context;
@@ -43,6 +47,10 @@ static uint8_t *beep_buffer = NULL;
 static uint32_t beep_buffer_size = 0;
 static bool beep_playing = false;
 
+// Forward declarations
+static int sb16_device_init();
+bool sb16_init(void);
+
 // Simple microsecond delay function
 static void sleep_us(int us) {
     // Simple busy wait for microseconds
@@ -76,6 +84,22 @@ static void sb16_interrupt_wrapper(struct interrupt_frame *frame) {
     sb16_interrupt_handler();
 }
 
+// SoundBlaster audio device structure
+static struct audio sb16_audio_device = {
+    .name = {"SoundBlaster16"},
+    .init = sb16_device_init
+};
+
+// Internal initialization function
+static int sb16_device_init() {
+    return sb16_init() ? 0 : -1;
+}
+
+// Public audio interface
+struct audio *sb16_audio_init() {
+    return &sb16_audio_device;
+}
+
 bool sb16_init(void) {
     // Reset the DSP
     if (!sb16_reset())
@@ -96,6 +120,16 @@ bool sb16_init(void) {
 
     // Enable speaker
     sb16_speaker_on();
+
+    // Initialize mixer settings
+    sb16_set_master_volume(200);  // Set high volume
+    sb16_set_pcm_volume(200);     // Set high PCM volume
+    
+    // Initialize context
+    g_sb16_context.master_volume = 200;
+    g_sb16_context.pcm_volume = 200;
+    g_sb16_context.device.sample_rate = SB16_SAMPLE_RATE_22050;
+    g_sb16_context.device.format = SB16_FORMAT_MONO_8;
 
     // Initialize buffers
     for (int i = 0; i < SB16_MAX_BUFFERS; ++i) {
@@ -122,6 +156,50 @@ void sb16_shutdown(void) {
     }
 
     g_sb16_context.device.initialized = false;
+}
+
+void sb16_audio_control(uint8_t command) {
+    switch (command) {
+        case VIRTUAL_AUDIO_VOLUME_UP:
+            sb16_set_master_volume(g_sb16_context.master_volume + 10);
+            break;
+        case VIRTUAL_AUDIO_VOLUME_DOWN:
+            sb16_set_master_volume(g_sb16_context.master_volume - 10);
+            break;
+        case VIRTUAL_AUDIO_MUTE_TOGGLE:
+            // Toggle mute here
+            break;
+        case VIRTUAL_AUDIO_PLAY:
+            // Playback control
+            break;
+        case VIRTUAL_AUDIO_PAUSE:
+            sb16_stop_playback();
+            break;
+        case VIRTUAL_AUDIO_STOP:
+            sb16_stop_playback();
+            break;
+    }
+}
+void sb16_audio_process_buffer(struct process *process) {
+    if (!process || !g_sb16_context.device.initialized) {
+        return;
+    }
+    
+    int head_index = process->audio.head % VIOS_AUDIO_BUFFER_SIZE;
+    int tail_index = process->audio.tail % VIOS_AUDIO_BUFFER_SIZE;
+    
+    // Process audio data in the buffer
+    while (head_index != tail_index) {
+        char c = process->audio.buffer[head_index];
+        if (c != 0) {
+            // Play the audio data
+            sb16_start_playback((uint8_t*)&c, 1, false);
+        }
+        head_index = (head_index + 1) % VIOS_AUDIO_BUFFER_SIZE;
+    }
+    
+    // Update the head position
+    process->audio.head = head_index;
 }
 
 bool sb16_reset(void) {
@@ -200,14 +278,42 @@ void sb16_play_beep(uint32_t frequency) {
     // Stop any existing beep
     sb16_stop_beep();
     
-    // Generate a square wave buffer for the beep
-    beep_buffer_size = SB16_BUFFER_SIZE;
-    beep_buffer = _sb16_generate_square_wave(frequency, SB16_SAMPLE_RATE_22050, beep_buffer_size);
+    // Try direct DSP programming for a simple beep
+    if (!g_sb16_context.device.initialized) {
+        return;
+    }
+    
+    // Enable speaker
+    sb16_speaker_on();
+    
+    // Set high volume
+    sb16_set_master_volume(255);
+    sb16_set_pcm_volume(255);
+    
+    // Generate a simple square wave buffer
+    beep_buffer_size = 8192;  // Larger buffer
+    beep_buffer = _sb16_generate_square_wave(frequency, SB16_SAMPLE_RATE_11025, beep_buffer_size);
     
     if (beep_buffer) {
         beep_playing = true;
-        sb16_start_playback(beep_buffer, beep_buffer_size, true);
+        // Try simpler playback
+        sb16_simple_playback(beep_buffer, beep_buffer_size);
     }
+}
+
+// Simple direct playback without complex DMA
+void sb16_simple_playback(uint8_t *data, uint32_t size) {
+    if (!data || size == 0) return;
+    
+    // Set sample rate using time constant for older SB compatibility
+    uint8_t time_constant = 256 - (1000000 / 22050);
+    sb16_write_dsp(0x40);  // Set time constant
+    sb16_write_dsp(time_constant);
+    
+    // Use direct DAC output mode
+    sb16_write_dsp(0x14);  // 8-bit single-cycle DMA output
+    sb16_write_dsp((size - 1) & 0xFF);        // Low byte of length
+    sb16_write_dsp(((size - 1) >> 8) & 0xFF); // High byte of length
 }
 
 void sb16_stop_beep(void) {
@@ -324,29 +430,31 @@ void _sb16_setup_dma(uint8_t *buffer, uint32_t size, bool is_16bit) {
     uint8_t channel = is_16bit ? SB16_DMA_CHANNEL_16 : SB16_DMA_CHANNEL_8;
     uint32_t physical_addr = (uint32_t)buffer;
     
-    // Mask the DMA channel
-    outb(DMA_MASK_REG, 0x04 | channel);
-    
-    // Clear the flip-flop
-    outb(DMA_CLEAR_FF, 0x00);
-    
-    // Set mode - auto-init mode, increment, read, channel
-    // Mode: 01 (auto-init) + 10 (increment) + 01 (read) + 00 (verify disable) = 0x58
-    outb(DMA_MODE_REG, 0x58 | channel);
-    
-    // Set address
-    outb(DMA_ADDR_1, physical_addr & 0xFF);
-    outb(DMA_ADDR_1, (physical_addr >> 8) & 0xFF);
-    
-    // Set count
-    outb(DMA_COUNT_1, (size - 1) & 0xFF);
-    outb(DMA_COUNT_1, ((size - 1) >> 8) & 0xFF);
-    
-    // Set page
-    outb(DMA_PAGE_1, (physical_addr >> 16) & 0xFF);
-    
-    // Unmask the DMA channel
-    outb(DMA_MASK_REG, channel);
+    // For channel 1 (8-bit SoundBlaster)
+    if (channel == 1) {
+        // Mask the DMA channel
+        outb(DMA_MASK_REG, 0x04 | channel);
+        
+        // Clear the flip-flop
+        outb(DMA_CLEAR_FF, 0x00);
+        
+        // Set mode - single mode, increment, read, channel 1
+        outb(DMA_MODE_REG, 0x48 | channel); // 0x49 for channel 1
+        
+        // Set address (channel 1 uses ports 0x02/0x03)
+        outb(DMA_ADDR_1, physical_addr & 0xFF);
+        outb(DMA_ADDR_1, (physical_addr >> 8) & 0xFF);
+        
+        // Set count
+        outb(DMA_COUNT_1, (size - 1) & 0xFF);
+        outb(DMA_COUNT_1, ((size - 1) >> 8) & 0xFF);
+        
+        // Set page (channel 1 uses page register 0x83)
+        outb(DMA_PAGE_1, (physical_addr >> 16) & 0xFF);
+        
+        // Unmask the DMA channel
+        outb(DMA_MASK_REG, channel);
+    }
 }
 
 uint8_t* _sb16_generate_square_wave(uint32_t frequency, uint32_t sample_rate, uint32_t duration_samples) {

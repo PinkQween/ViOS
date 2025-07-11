@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "audio.h"
 
 // Sound Blaster 16 I/O Port Addresses
 #define SB16_BASE_PORT          0x220
@@ -89,9 +90,8 @@ typedef struct {
     uint8_t mic_volume;
 } sb16_context_t;
 
-// Function prototypes
-bool sb16_init(void);
-void sb16_shutdown(void);
+// Audio interface
+struct audio *sb16_audio_init();
 bool sb16_reset(void);
 bool sb16_detect(void);
 uint16_t sb16_get_version(void);
@@ -125,6 +125,11 @@ void sb16_set_mic_volume(uint8_t volume);
 void sb16_generate_tone(uint32_t frequency, uint32_t duration_ms);
 void sb16_play_beep(uint32_t frequency);
 void sb16_stop_beep(void);
+void sb16_simple_playback(uint8_t *data, uint32_t size);
+
+// Audio layer integration
+void sb16_audio_control(uint8_t command);
+void sb16_audio_process_buffer(struct process *process);
 
 // Interrupt handling
 void sb16_interrupt_handler(void);
