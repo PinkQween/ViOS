@@ -32,7 +32,14 @@ install_deps() {
         git \
         gawk \
         xz-utils \
-        nasm
+        nasm \
+        python3 \
+        python3-pip \
+        python3-dev \
+        libfreetype6-dev
+
+    # Install Python FreeType bindings for Python3
+    pip3 install --user freetype-py
 }
 
 # === Download + Build Binutils ===
@@ -83,7 +90,7 @@ install_gcc() {
 
 # Check if necessary tools are available
 missing_tools=()
-for tool in nasm make gcc g++ bison flex makeinfo; do
+for tool in nasm make gcc g++ bison flex makeinfo python3 python3-pip; do
     if ! command -v "$tool" &>/dev/null; then
         missing_tools+=("$tool")
     fi
