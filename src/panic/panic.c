@@ -1,6 +1,7 @@
 
 #include "panic.h"
 #include "debug/serial.h"
+#include "debug/klog.h"
 #include "rtc/rtc.h"
 #include "graphics/graphics.h"
 #include "memory/memory.h"
