@@ -55,9 +55,21 @@ vbe_error_msg db "VBE mode failed", 0
 start:
     call clear
 
-    ; Set VGA text mode 3 (80x25 color text mode)
-    mov ax, 0x03
+    mov ax, 0x4f01        ; querying the VBE
+    mov cx, 0x17E         ; Mode we want
+    mov bx, 0x090         ; Offset for the vbe info structure
+    mov es, bx
+    mov di, 0x00
     int 0x10
+    cmp ax, 0x004F        ; Check for VBE success
+    jne vbe_error         ; Handle error if not successful
+
+    ; Make the switch to graphics mode
+    mov ax, 0x4f02
+    mov bx, 0x17E
+    int 0x10
+    cmp ax, 0x004F        ; Check for VBE success
+    jne vbe_error         ; Handle error if not successful
 
     ; Clear segment registers
     xor ax, ax
