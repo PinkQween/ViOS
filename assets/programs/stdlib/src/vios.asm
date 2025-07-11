@@ -13,6 +13,9 @@ global vios_system:function
 global vios_process_get_arguments:function
 global vios_sleep:function
 global vios_read:function
+global vios_audio_push:function
+global vios_audio_pop:function
+global vios_audio_control:function
 
 ; void vios_exit()
 vios_exit:
@@ -144,6 +147,37 @@ vios_read:
     mov ebp, esp
     mov eax, 10
     push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+; void vios_audio_push(char c)
+vios_audio_push:
+    push ebp
+    mov ebp, esp
+    mov eax, 12 ; Command 12 audio push
+    push dword[ebp+8] ; Variable "c"
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+; char vios_audio_pop()
+vios_audio_pop:
+    push ebp
+    mov ebp, esp
+    mov eax, 13 ; Command 13 audio pop
+    int 0x80
+    pop ebp
+    ret
+
+; void vios_audio_control(int command)
+vios_audio_control:
+    push ebp
+    mov ebp, esp
+    mov eax, 14 ; Command 14 audio control
+    push dword[ebp+8] ; Variable "command"
     int 0x80
     add esp, 4
     pop ebp

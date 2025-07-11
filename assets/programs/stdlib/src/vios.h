@@ -32,5 +32,8 @@ int vios_system_run(const char *command);
 void vios_sleep(int seconds);
 char *vios_read(const char *filename);
 int vios_write(const char *filename, const void *data, size_t size);
+void vios_audio_push(char c);
+char vios_audio_pop();
+void vios_audio_control(int command);
 
 #endif
