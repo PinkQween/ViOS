@@ -102,17 +102,6 @@ static void kernel_init_audio()
 {
     // Initialize our audio layer (SoundBlaster + Virtual Audio)
     audio_init();
-    
-    // Always try to play beep regardless of detection
-    virtual_audio_control(VIRTUAL_AUDIO_RESET);  // Reset audio system
-    sleep_ms(500);
-    
-    // Play a long beep to test
-    virtual_audio_control(VIRTUAL_AUDIO_BEEP);   // First beep (1000 Hz)
-    sleep_seconds(3);                              // Play for 3 seconds
-    virtual_audio_control(VIRTUAL_AUDIO_STOP);   // Stop the beep
-    sleep_ms(500);
-    virtual_audio_control(VIRTUAL_AUDIO_BEEP); // First beep (1000 Hz)
 }
 
 static void kernel_launch_first_process(const char *path)
@@ -152,8 +141,12 @@ void kernel_main()
     const char *first_program = "0:/systemd.elf";
     kernel_launch_first_process(first_program);
 
-    KLOG_INFO("KERNEL", "Starting first task");
     task_run_first_ever_task();
+  
+  
+    sleep_seconds(3);
+
+    virtual_audio_control(VIRTUAL_AUDIO_BEEP);
     
     KLOG_INFO("KERNEL", "Kernel initialization complete");
 }

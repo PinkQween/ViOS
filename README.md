@@ -77,151 +77,166 @@ ___________
 
 ```
 .
-├── assets
-│   ├── file.txt
-│   ├── logo.bin
-│   ├── logo.pal
-│   └── programs
-│       ├── blank
-│       │   ├── blank.c
-│       │   ├── build
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   ├── malicioustest.c
-│       │   └── simpletest.c
-│       ├── mal
-│       │   ├── build
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   └── mal.c
-│       ├── shell
-│       │   ├── blank.elf
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   └── src
-│       │       ├── shell.c
-│       │       └── shell.h
-│       ├── stdlib
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   ├── src
-│       │   │   ├── memory.c
-│       │   │   ├── memory.h
-│       │   │   ├── start.asm
-│       │   │   ├── start.c
-│       │   │   ├── stdio.c
-│       │   │   ├── stdio.h
-│       │   │   ├── stdlib.c
-│       │   │   ├── stdlib.h
-│       │   │   ├── string.c
-│       │   │   ├── string.h
-│       │   │   ├── vios.asm
-│       │   │   ├── vios.c
-│       │   │   └── vios.h
-│       │   └── stdlib.elf
-│       ├── tests
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   └── tests.c
-│       └── wait
-│           ├── linker.ld
-│           ├── Makefile
-│           └── wait.c
-├── build.sh
+├── .env
+├── .github
+│   └── workflows
+│       └── build.yml
+├── .gitignore
 ├── LICENSE
 ├── Makefile
 ├── README.md
+├── ViOS_LOGO_PNG.png
+├── assets
+│   └── programs
+│       ├── shell
+│       │   ├── Makefile
+│       │   ├── linker.ld
+│       │   └── src
+│       │       ├── shell.c
+│       │       └── shell.h
+│       └── stdlib
+│           ├── Makefile
+│           ├── linker.ld
+│           └── src
+│               ├── audio.h
+│               ├── memory.c
+│               ├── memory.h
+│               ├── start.asm
+│               ├── start.c
+│               ├── stdio.c
+│               ├── stdio.h
+│               ├── stdlib.c
+│               ├── stdlib.h
+│               ├── string.c
+│               ├── string.h
+│               ├── vios.asm
+│               ├── vios.c
+│               └── vios.h
+├── build.sh
+├── buildExternal.sh
+├── run.sh
 ├── src
-│   ├── boot
-│   │   └── boot.asm
-│   ├── config.h
-│   ├── disk
-│   │   ├── disk.c
-│   │   ├── disk.h
-│   │   ├── streamer.c
-│   │   └── streamer.h
-│   ├── fs
-│   │   ├── fat
-│   │   │   ├── fat16.c
-│   │   │   └── fat16.h
-│   │   ├── file.c
-│   │   ├── file.h
-│   │   ├── pparser.c
-│   │   └── pparser.h
-│   ├── gdt
-│   │   ├── gdt.asm
-│   │   ├── gdt.c
-│   │   └── gdt.h
-│   ├── idt
-│   │   ├── idt.asm
-│   │   ├── idt.c
-│   │   └── idt.h
-│   ├── io
-│   │   ├── io.asm
-│   │   └── io.h
-│   ├── isr80h
-│   │   ├── heap.c
-│   │   ├── heap.h
-│   │   ├── io.c
-│   │   ├── io.h
-│   │   ├── isr80h.c
-│   │   ├── isr80h.h
-│   │   ├── process.c
-│   │   └── process.h
-│   ├── kernel.asm
-│   ├── kernel.c
-│   ├── kernel.h
-│   ├── keyboard
-│   │   ├── classic.c
-│   │   ├── classic.h
-│   │   ├── keyboard.c
-│   │   └── keyboard.h
-│   ├── linker.ld
-│   ├── loader
-│   │   └── formats
-│   │       ├── elf.c
-│   │       ├── elf.h
-│   │       ├── elfloader.c
-│   │       └── elfloader.h
-│   ├── memory
-│   │   ├── heap
-│   │   │   ├── heap.c
-│   │   │   ├── heap.h
-│   │   │   ├── kheap.c
-│   │   │   └── kheap.h
-│   │   ├── memory.c
-│   │   ├── memory.h
-│   │   └── paging
-│   │       ├── paging.asm
-│   │       ├── paging.c
-│   │       └── paging.h
-│   ├── panic
-│   │   ├── panic.c
-│   │   └── panic.h
-│   ├── rtc
-│   │   ├── rtc.c
-│   │   └── rtc.h
-│   ├── status.h
-│   ├── string
-│   │   ├── string.c
-│   │   └── string.h
-│   ├── task
-│   │   ├── process.c
-│   │   ├── process.h
-│   │   ├── task.asm
-│   │   ├── task.c
-│   │   ├── task.h
-│   │   ├── tss.asm
-│   │   └── tss.h
-│   ├── terminal
-│   │   ├── terminal.c
-│   │   └── terminal.h
-│   └── utils
-│       ├── utils.c
-│       └── utils.h
-└── ViOS_LOGO_PNG.png
+│   ├── audio
+│   │   ├── audio.c
+│   │   ├── audio.h
+│   │   ├── sb16.c
+│   │   └── sb16.h
+│   ├── boot
+│   │   └── boot.asm
+│   ├── config.h
+│   ├── disk
+│   │   ├── disk.c
+│   │   ├── disk.h
+│   │   ├── streamer.c
+│   │   └── streamer.h
+│   ├── fs
+│   │   ├── fat
+│   │   │   ├── fat16.c
+│   │   │   └── fat16.h
+│   │   ├── file.c
+│   │   ├── file.h
+│   │   ├── pparser.c
+│   │   └── pparser.h
+│   ├── gdt
+│   │   ├── gdt.asm
+│   │   ├── gdt.c
+│   │   └── gdt.h
+│   ├── graphics
+│   │   ├── drawing_loop.h
+│   │   ├── graphics.c
+│   │   ├── graphics.h
+│   │   ├── graphics_server.c
+│   │   └── graphics_server.h
+│   ├── idt
+│   │   ├── idt.asm
+│   │   ├── idt.c
+│   │   └── idt.h
+│   ├── init
+│   │   ├── init.c
+│   │   └── init.h
+│   ├── io
+│   │   ├── io.asm
+│   │   └── io.h
+│   ├── isr80h
+│   │   ├── audio.c
+│   │   ├── audio.h
+│   │   ├── file.c
+│   │   ├── file.h
+│   │   ├── heap.c
+│   │   ├── heap.h
+│   │   ├── io.c
+│   │   ├── io.h
+│   │   ├── isr80h.c
+│   │   ├── isr80h.h
+│   │   ├── process.c
+│   │   └── process.h
+│   ├── kernel.asm
+│   ├── kernel.c
+│   ├── kernel.h
+│   ├── keyboard
+│   │   ├── keyboard.c
+│   │   ├── keyboard.h
+│   │   ├── ps2_keyboard.c
+│   │   └── ps2_keyboard.h
+│   ├── linker.ld
+│   ├── loader
+│   │   └── formats
+│   │       ├── elf.c
+│   │       ├── elf.h
+│   │       ├── elfloader.c
+│   │       └── elfloader.h
+│   ├── math
+│   │   ├── fpu_math.c
+│   │   └── fpu_math.h
+│   ├── memory
+│   │   ├── heap
+│   │   │   ├── heap.c
+│   │   │   ├── heap.h
+│   │   │   ├── kheap.c
+│   │   │   └── kheap.h
+│   │   ├── memory.c
+│   │   ├── memory.h
+│   │   └── paging
+│   │       ├── paging.asm
+│   │       ├── paging.c
+│   │       └── paging.h
+│   ├── mouse
+│   │   ├── mouse.c
+│   │   ├── mouse.h
+│   │   ├── ps2_mouse.c
+│   │   └── ps2_mouse.h
+│   ├── panic
+│   │   ├── panic.c
+│   │   └── panic.h
+│   ├── rtc
+│   │   ├── rtc.c
+│   │   └── rtc.h
+│   ├── status.h
+│   ├── string
+│   │   ├── string.c
+│   │   └── string.h
+│   ├── task
+│   │   ├── process.c
+│   │   ├── process.h
+│   │   ├── task.asm
+│   │   ├── task.c
+│   │   ├── task.h
+│   │   ├── tss.asm
+│   │   └── tss.h
+│   └── utils
+│       ├── utils.c
+│       └── utils.h
+├── updateREADME.sh
+└── utilities
+    ├── fonts
+    │   ├── Arial.ttf
+    │   ├── AtariST8x16SystemFont.ttf
+    │   ├── Brightly.otf
+    │   ├── Cheri.ttf
+    │   └── RobotoThin.ttf
+    └── generateFont.py
 
-34 directories, 110 files
+36 directories, 124 files
 ```
 
 ___________

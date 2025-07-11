@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex mtools
+          sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
 
           wget https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
           unzip i686-elf-tools-linux.zip -d i686-elf-tools
@@ -37,33 +37,17 @@ jobs:
       - name: Build OS
         run: |
           make clean
-          make all
-      
-      - name: Upload OS binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: os-bin
-          path: ./bin/os.bin
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download OS binary
-        uses: actions/download-artifact@v4
-        with:
-          name: os-bin
-          path: ./bin
+          sudo ./build.sh
 
       - name: Rename OS binary to include tag
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           mv ./bin/os.bin ./bin/os-${GITHUB_REF_NAME}.bin
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}

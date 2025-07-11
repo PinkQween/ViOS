@@ -16,5 +16,6 @@
 bin/
 build/
 out/
+mnt/
 **/bin/
 **/build/

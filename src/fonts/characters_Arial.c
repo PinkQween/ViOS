@@ -1808,7 +1808,7 @@ static const unsigned int font_bitmap[95][FONT_ARIAL_HEIGHT] = {
   },
 };
 
-static const unsigned char font_advance[] = {
+static const unsigned char font_advance[] __attribute__((unused)) = {
   4,
   5,
   6,
