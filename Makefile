@@ -43,10 +43,12 @@ FILES = \
   ./build/mouse/mouse.o \
   ./build/mouse/ps2_mouse.o \
   ./build/math/fpu_math.o \
+  ./build/audio/sb16.o \
+  ./build/audio/audio.o \
   ./build/debug/serial.o \
   ./build/debug/klog.o \
-  ./build/audio/sb16.o \
-  ./build/audio/audio.o
+  
+  
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
