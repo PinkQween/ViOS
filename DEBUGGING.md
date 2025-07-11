@@ -2,7 +2,7 @@
 
 This document describes the comprehensive debugging system implemented for ViOS, providing external logging capabilities for QEMU-based development.
 
-## 🎯 Overview
+## Overview
 
 The debugging system provides three main components:
 1. **Serial Port Logging** - External output via COM1/COM2 
@@ -23,7 +23,7 @@ src/panic/
 └── panic.c       # Panic implementation with debug support
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### QEMU Testing
 
@@ -161,7 +161,7 @@ typedef enum {
 } klog_dest_t;
 ```
 
-## 🏗️ Integration
+## Integration
 
 ### Kernel Initialization
 
@@ -178,18 +178,7 @@ void kernel_main() {
 }
 ```
 
-### Makefile Integration
-
-The build system includes the debug modules:
-
-```makefile
-FILES = \
-  # ... other files ...
-  ./build/debug/serial.o \
-  ./build/debug/klog.o
-```
-
-## 📈 Example Output
+## Example Output
 
 ```
 === ViOS Serial Debug Log ===
@@ -205,7 +194,7 @@ Serial port initialized: COM1 at 115200 baud
 [12:34:57] [INFO ] [KERNEL] Kernel initialization complete
 ```
 
-## 🐛 Debugging Tips
+## Debugging Tips
 
 ### Common Issues
 
@@ -226,41 +215,7 @@ Serial port initialized: COM1 at 115200 baud
 - Use conditional logging for high-frequency events
 - Consider log level filtering for production builds
 
-## 🔍 Advanced Features
-
-### Conditional Logging
-
-```c
-#ifdef DEBUG
-    KLOG_TRACE_IF(condition, "MEMORY", "Debug trace");
-    KLOG_DEBUG_IF(verbose, "DISK", "Verbose debug");
-#endif
-```
-
-### Function Tracing
-
-```c
-void my_function() {
-    KLOG_FUNC_ENTRY("SUBSYSTEM");
-    
-    // Function implementation
-    
-    KLOG_FUNC_EXIT_VAL("SUBSYSTEM", return_value);
-}
-```
-
-### Memory Analysis
-
-```c
-// Hex dump with context
-klog_hex_dump(KLOG_DEBUG, "NETWORK", packet_buffer, packet_size, 0x1000);
-
-// Register dumps on crash
-panic_with_frame("Division by zero", current_frame);
-```
-
-## 🧪 Testing
-
+## Testing
 The system has been tested with:
 
 - ✅ QEMU i386 emulation
@@ -271,21 +226,9 @@ The system has been tested with:
 - ✅ Panic conditions
 - ✅ Assert macros
 
-## 📚 Related Files
+## Related Files
 
 - `src/kernel.c` - Main kernel with debug initialization
 - `src/panic/` - Enhanced panic system
 - `Makefile` - Build system integration
 - `src/idt/idt.h` - Interrupt frame definitions
-
-## 🎯 Future Enhancements
-
-- [ ] Graphics output destination
-- [ ] Network logging support
-- [ ] Log file rotation
-- [ ] Performance profiling integration
-- [ ] Remote debugging protocol
-
----
-
-*This debugging system provides professional-grade logging and debugging capabilities for ViOS development in QEMU environments.*
