@@ -46,9 +46,7 @@ FILES = \
   ./build/audio/sb16.o \
   ./build/audio/audio.o \
   ./build/debug/serial.o \
-  ./build/debug/klog.o \
-  
-  
+  ./build/debug/klog.o
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
