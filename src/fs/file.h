@@ -31,6 +31,7 @@ typedef unsigned int FILE_STAT_FLAGS;
 struct disk;
 typedef void *(*FS_OPEN_FUNCTION)(struct disk *disk, struct path_part *path, FILE_MODE mode);
 typedef int (*FS_READ_FUNCTION)(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, char *out);
+typedef int (*FS_WRITE_FUNCTION)(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, void *ptr);
 typedef int (*FS_RESOLVE_FUNCTION)(struct disk *disk);
 
 typedef int (*FS_CLOSE_FUNCTION)(void *private);
@@ -51,6 +52,7 @@ struct filesystem
     FS_RESOLVE_FUNCTION resolve;
     FS_OPEN_FUNCTION open;
     FS_READ_FUNCTION read;
+    FS_WRITE_FUNCTION write;
     FS_SEEK_FUNCTION seek;
     FS_STAT_FUNCTION stat;
     FS_CLOSE_FUNCTION close;
@@ -74,6 +76,7 @@ void fs_init();
 int fopen(const char *filename, const char *mode_str);
 int fseek(int fd, int offset, FILE_SEEK_MODE whence);
 int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd);
+int fwrite(void *ptr, uint32_t size, uint32_t nmemb, int fd);
 int fstat(int fd, struct file_stat *stat);
 int fclose(int fd);
 

@@ -25,5 +25,6 @@ struct disk
 void disk_search_and_init();
 struct disk *disk_get(int index);
 int disk_read_block(struct disk *idisk, unsigned int lba, int total, void *buf);
+int disk_write_block(struct disk *idisk, unsigned int lba, int total, void *buf);
 
 #endif

@@ -31,5 +31,6 @@ int vios_system(struct command_argument *arguments);
 int vios_system_run(const char *command);
 void vios_sleep(int seconds);
 char *vios_read(const char *filename);
+int vios_write(const char *filename, const void *data, size_t size);
 
 #endif
