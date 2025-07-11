@@ -403,7 +403,6 @@ ___________
 
 Built and maintained by **Hanna Skairipa**  
 🔗 [PinkQween on GitHub](https://github.com/PinkQween)
-This fork is Mauntained by **Bradley Wu**
 
 > _"Not all hackers wear masks. Some wear purpose."_  
 > — **Vio** (SiegedSec)
