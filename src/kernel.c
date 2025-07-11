@@ -21,6 +21,9 @@
 #include "math/fpu_math.h"
 #include "mouse/ps2_mouse.h"
 #include "fs/file.h"
+#include "audio/sb16.h"
+#include "io/io.h"
+#include "rtc/rtc.h"
 
 int almost_equal(double a, double b, double epsilon)
 {
@@ -91,6 +94,71 @@ static void kernel_init_graphics()
     }
 }
 
+static void pc_speaker_beep(uint32_t frequency, uint32_t duration_ms)
+{
+    // Enable PC speaker
+    uint8_t port61 = inb(0x61);
+    outb(0x61, port61 | 0x03);
+    
+    // Configure PIT channel 2
+    outb(0x43, 0xB6);
+    
+    // Calculate and set divisor
+    uint16_t divisor = 1193180 / frequency;
+    outb(0x42, divisor & 0xFF);
+    outb(0x42, (divisor >> 8) & 0xFF);
+    
+    // Keep beeping for specified duration
+    if (duration_ms > 0) {
+        sleep_ms(duration_ms);
+        // Disable PC speaker
+        outb(0x61, port61 & 0xFC);
+    }
+    // If duration is 0, keep beeping indefinitely
+}
+
+static void kernel_init_audio()
+{
+    // Test PC speaker first with a short beep
+    pc_speaker_beep(1000, 500);  // 1000 Hz for 500ms
+    
+    // Then start continuous beep
+    pc_speaker_beep(800, 0);     // 800 Hz continuously
+    
+    // Also try Sound Blaster initialization
+    if (sb16_init())
+    {
+        sb16_set_master_volume(255);
+        sb16_set_pcm_volume(255);
+        sb16_play_beep(1000);
+    }
+}
+
+static const char *kernel_get_boot_mode_program()
+{
+    // Default to CLI
+    const char *fallback = "0:/terminal.elf";
+
+    int fd = fopen("0:/vios.cfg", "r");
+    if (fd < 0)
+        return fallback;
+
+    char line[128];
+    int bytes_read = fread(line, 1, sizeof(line) - 1, fd);
+    if (bytes_read > 0)
+    {
+        line[bytes_read] = '\0';
+        if (strstr(line, "mode=gui") != 0)
+        {
+            fclose(fd);
+            return "0:/desktop.elf";
+        }
+    }
+
+    fclose(fd);
+    return fallback;
+}
+
 static void kernel_launch_first_process(const char *path)
 {
     struct process *process = 0;
@@ -108,8 +176,9 @@ void kernel_main()
     kernel_init_devices();
     isr80h_register_commands();
     kernel_init_graphics();
+    kernel_init_audio();
 
-    const char *first_program = "0:/systemd.elf";
+    const char *first_program = kernel_get_boot_mode_program();
     kernel_launch_first_process(first_program);
 
     task_run_first_ever_task();

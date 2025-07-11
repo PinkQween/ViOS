@@ -41,7 +41,8 @@ FILES = \
   ./build/fonts/characters_RobotoThin.o \
   ./build/mouse/mouse.o \
   ./build/mouse/ps2_mouse.o \
-  ./build/math/fpu_math.o
+  ./build/math/fpu_math.o \
+  ./build/audio/sb16.o
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
