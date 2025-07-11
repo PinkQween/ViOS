@@ -2,12 +2,13 @@
 #include "config.h"
 #include "panic/panic.h"
 #include "kernel.h"
-#include "terminal/terminal.h"
 #include "memory/memory.h"
 #include "task/task.h"
 #include "task/process.h"
 #include "io/io.h"
 #include "status.h"
+#include "mouse/mouse.h"       // Add mouse header
+#include "keyboard/keyboard.h" // Add keyboard header
 struct idt_desc idt_descriptors[VIOS_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
 
@@ -24,7 +25,9 @@ extern void isr80h_wrapper();
 
 void no_interrupt_handler()
 {
-    outb(0x20, 0x20);
+    // Send EOI to both PICs (in case it's a spurious interrupt from slave)
+    outb(0xA0, 0x20); // Send EOI to slave PIC
+    outb(0x20, 0x20);  // Send EOI to master PIC
 }
 
 void interrupt_handler(int interrupt, struct interrupt_frame *frame)
@@ -32,17 +35,31 @@ void interrupt_handler(int interrupt, struct interrupt_frame *frame)
     kernel_page();
     if (interrupt_callbacks[interrupt] != 0)
     {
-        task_current_save_state(frame);
+        // Only save task state if there's a current task
+        if (task_current())
+        {
+            task_current_save_state(frame);
+        }
         interrupt_callbacks[interrupt](frame);
     }
 
-    task_page();
-    outb(0x20, 0x20);
+    // Only switch to task page if there's a current task
+    if (task_current())
+    {
+        task_page();
+    }
+    
+    // Send EOI to appropriate PIC
+    if (interrupt >= 0x28) // Slave PIC interrupts (IRQ 8-15)
+    {
+        outb(0xA0, 0x20); // Send EOI to slave PIC
+    }
+    outb(0x20, 0x20); // Always send EOI to master PIC
 }
 
 void idt_zero()
 {
-    print("Divide by zero error\n");
+    //print("Divide by zero error\n");
 }
 
 void idt_set(int interrupt_no, void *address)
@@ -80,8 +97,15 @@ void idt_init()
         idt_register_interrupt_callback(i, idt_handle_exception);
     }
 
+    // Register mouse and keyboard interrupt handlers
+    // Note: Keyboard and mouse drivers will register their own interrupt handlers in their init functions
+    // Don't register handlers here as keyboard_init is not an interrupt handler
+
     // Load the interrupt descriptor table
     idt_load(&idtr_descriptor);
+    
+    // Enable CPU interrupts
+    enable_interrupts();
 }
 
 int idt_register_interrupt_callback(int interrupt, INTERRUPT_CALLBACK_FUNCTION interrupt_callback)

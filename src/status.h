@@ -12,5 +12,7 @@
 #define EISTKN 8
 #define EINFORMAT 9
 #define ENOSPC 10
+#define ENODEV 11
+#define ETIMEOUT 12
 
 #endif

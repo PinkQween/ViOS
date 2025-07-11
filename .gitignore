@@ -10,6 +10,7 @@
 *.o
 *.elf
 *.iso
+*.env
 
 # Ignore bin and build folders recursively
 bin/

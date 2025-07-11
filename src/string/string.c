@@ -1,45 +1,122 @@
 #include "string.h"
-#include <stdarg.h> 
+#include <stdarg.h>
+#include <stdbool.h>
 
-static int int_to_str(int value, char* buffer, int bufsize) {
-    int pos = 0;
-    bool negative = false;
+void int_to_str(int value, char *buffer)
+{
+    char temp[20];
+    int i = 0, j = 0;
+    int is_negative = 0;
 
-    if (value < 0) {
-        negative = true;
+    if (value == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return;
+    }
+
+    if (value < 0)
+    {
+        is_negative = 1;
         value = -value;
     }
 
-    // Write digits in reverse order
-    char temp[20];
-    int i = 0;
-    do {
+    while (value != 0)
+    {
         temp[i++] = (value % 10) + '0';
         value /= 10;
-    } while (value > 0);
+    }
 
-    if (negative) {
+    if (is_negative)
+    {
         temp[i++] = '-';
     }
 
-    // Reverse into output buffer
-    int len = i;
-    if (bufsize > 0) {
-        for (int j = 0; j < i && pos < bufsize; j++) {
-            buffer[pos++] = temp[i - j - 1];
-        }
+    // reverse
+    while (i > 0)
+    {
+        buffer[j++] = temp[--i];
     }
 
-    return len; // length of string written (or would be)
+    buffer[j] = '\0';
 }
+
+char *strncpy_safe(char *dest, const char *src, size_t dest_size)
+{
+    if (dest_size == 0)
+        return dest;
+    char *res = dest;
+    size_t i = 0;
+    while (*src && i < dest_size - 1)
+    {
+        *dest++ = *src++;
+        i++;
+    }
+    *dest = '\0';
+    return res;
+}
+
+void strncat_safe(char *dest, const char *src, size_t dest_size)
+{
+    size_t dest_len = strnlen(dest, dest_size);
+    if (dest_len >= dest_size - 1)
+        return;
+
+    char *end = dest + dest_len;
+    size_t remaining = dest_size - dest_len - 1;
+
+    while (*src)
+    {
+        if (remaining-- == 0)
+            break;
+        *end++ = *src++;
+    }
+    *end = '\0';
+}
+
+// int int_to_str(int value, char *buffer, int bufsize)
+// {
+//     int pos = 0;
+//     bool negative = false;
+
+//     if (value < 0)
+//     {
+//         negative = true;
+//         value = -value;
+//     }
+
+//     char temp[20];
+//     int i = 0;
+//     do
+//     {
+//         temp[i++] = (value % 10) + '0';
+//         value /= 10;
+//     } while (value > 0);
+
+//     if (negative)
+//     {
+//         temp[i++] = '-';
+//     }
+
+//     int len = i;
+//     if (bufsize > 0)
+//     {
+//         for (int j = 0; j < i && pos < bufsize - 1; j++)
+//         {
+//             buffer[pos++] = temp[i - j - 1];
+//         }
+//         buffer[pos] = '\0';
+//     }
+
+//     return len;
+// }
 
 char tolower(char s1)
 {
-    if (s1 >= 65 && s1 <= 90)
+    if (s1 >= 'A' && s1 <= 'Z')
     {
         s1 += 32;
     }
-
     return s1;
 }
 
@@ -51,7 +128,6 @@ int strlen(const char *ptr)
         i++;
         ptr += 1;
     }
-
     return i;
 }
 
@@ -63,7 +139,6 @@ int strnlen(const char *ptr, int max)
         if (ptr[i] == 0)
             break;
     }
-
     return i;
 }
 
@@ -75,7 +150,6 @@ int strnlen_terminator(const char *str, int max, char terminator)
         if (str[i] == '\0' || str[i] == terminator)
             break;
     }
-
     return i;
 }
 
@@ -91,9 +165,9 @@ int istrncmp(const char *s1, const char *s2, int n)
         if (u1 == '\0')
             return 0;
     }
-
     return 0;
 }
+
 int strncmp(const char *str1, const char *str2, int n)
 {
     unsigned char u1, u2;
@@ -107,11 +181,10 @@ int strncmp(const char *str1, const char *str2, int n)
         if (u1 == '\0')
             return 0;
     }
-
     return 0;
 }
 
-char *strcpy(char *dest, const char *src)
+char *strcpy_new(char *dest, const char *src)
 {
     char *res = dest;
     while (*src != 0)
@@ -120,34 +193,28 @@ char *strcpy(char *dest, const char *src)
         src += 1;
         dest += 1;
     }
-
-    *dest = 0x00;
-
+    *dest = '\0';
     return res;
 }
 
 char *strncpy(char *dest, const char *src, int count)
 {
     int i = 0;
-    for (i = 0; i < count - 1; i++)
-    {
-        if (src[i] == 0x00)
-            break;
-
+    for (; i < count && src[i] != '\0'; i++)
         dest[i] = src[i];
-    }
-
-    dest[i] = 0x00;
+    for (; i < count; i++)
+        dest[i] = '\0';
     return dest;
 }
 
 bool isdigit(char c)
 {
-    return c >= 48 && c <= 57;
+    return c >= '0' && c <= '9';
 }
+
 int tonumericdigit(char c)
 {
-    return c - 48;
+    return c - '0';
 }
 
 int strcmp(const char *s1, const char *s2)
@@ -165,57 +232,76 @@ int snprintf(char *str, size_t size, const char *format, ...)
     va_list args;
     va_start(args, format);
 
-    size_t pos = 0;  // position in output buffer
-    int total_len = 0;  // total length that would have been written
+    size_t pos = 0;
+    int total_len = 0;
 
-    for (const char *p = format; *p != '\0'; p++) {
-        if (*p != '%') {
-            // Regular char
-            if (pos + 1 < size) {
+    for (const char *p = format; *p != '\0'; p++)
+    {
+        if (*p != '%')
+        {
+            if (pos + 1 < size)
+            {
                 str[pos] = *p;
             }
             pos++;
             total_len++;
-        } else {
-            p++;  // move past '%'
-
-            if (*p == 's') {
-                const char *s = va_arg(args, const char*);
-                if (!s) s = "(null)";
-                while (*s) {
-                    if (pos + 1 < size) {
+        }
+        else
+        {
+            p++;
+            if (*p == 's')
+            {
+                const char *s = va_arg(args, const char *);
+                if (!s)
+                    s = "(null)";
+                while (*s)
+                {
+                    if (pos + 1 < size)
+                    {
                         str[pos] = *s;
                     }
                     pos++;
                     total_len++;
                     s++;
                 }
-            } else if (*p == 'd') {
+            }
+            else if (*p == 'd')
+            {
                 int val = va_arg(args, int);
                 char numbuf[32];
-                int len = int_to_str(val, numbuf, sizeof(numbuf));
-                for (int i = 0; i < len; i++) {
-                    if (pos + 1 < size) {
+                int_to_str(val, numbuf);
+                int len = strlen(numbuf);
+                for (int i = 0; i < len; i++)
+                {
+                    if (pos + 1 < size)
+                    {
                         str[pos] = numbuf[i];
                     }
                     pos++;
                     total_len++;
                 }
-            } else if (*p == '%') {
-                if (pos + 1 < size) {
+            }
+            else if (*p == '%')
+            {
+                if (pos + 1 < size)
+                {
                     str[pos] = '%';
                 }
                 pos++;
                 total_len++;
-            } else {
-                // Unsupported format, just print as-is
-                if (pos + 1 < size) {
+            }
+            else
+            {
+                if (pos + 1 < size)
+                {
                     str[pos] = '%';
                 }
                 pos++;
                 total_len++;
-                if (*p != '\0') {
-                    if (pos + 1 < size) {
+                if (*p != '\0')
+                {
+                    if (pos + 1 < size)
+                    {
                         str[pos] = *p;
                     }
                     pos++;
@@ -225,14 +311,27 @@ int snprintf(char *str, size_t size, const char *format, ...)
         }
     }
 
-    if (size > 0) {
-        if (pos < size) {
+    if (size > 0)
+    {
+        if (pos < size)
+        {
             str[pos] = '\0';
-        } else {
+        }
+        else
+        {
             str[size - 1] = '\0';
         }
     }
 
     va_end(args);
     return total_len;
+}
+
+char *strcpy(char *dest, const char *src)
+{
+    char *ret = dest;
+    while ((*dest++ = *src++))
+    {
+    }
+    return ret;
 }

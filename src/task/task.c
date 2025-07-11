@@ -179,7 +179,8 @@ void task_current_save_state(struct interrupt_frame *frame)
 {
     if (!task_current())
     {
-        panic("No current task to save\n");
+        // No current task, just return (don't panic)
+        return;
     }
 
     struct task *task = task_current();
@@ -188,6 +189,12 @@ void task_current_save_state(struct interrupt_frame *frame)
 
 int task_page()
 {
+    if (!current_task)
+    {
+        // No current task, just return
+        return 0;
+    }
+    
     user_registers();
     task_switch(current_task);
     return 0;

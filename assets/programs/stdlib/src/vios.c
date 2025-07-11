@@ -59,51 +59,6 @@ int vios_getkeyblock()
     return val;
 }
 
-void vios_terminal_readline(char *out, int max, bool output_while_typing)
-{
-    int i = 0;
-
-    while (i < max - 1)
-    {
-        char key = vios_getkeyblock();
-
-        if (key == 13) // Enter
-        {
-            break;
-        }
-
-        if (key == 0x08) // Backspace
-        {
-            if (i > 0)
-            {
-                i--;
-                out[i] = '\0';
-
-                if (output_while_typing)
-                {
-                    vios_putchar('\b');
-                    vios_putchar(' ');
-                    vios_putchar('\b');
-                }
-            }
-            continue; // Skip rest of loop
-        }
-
-        // Optional: filter to printable characters
-        if (key >= 32 && key <= 126)
-        {
-            out[i++] = key;
-
-            if (output_while_typing)
-            {
-                vios_putchar(key);
-            }
-        }
-    }
-
-    out[i] = '\0';
-}
-
 int vios_system_run(const char *command)
 {
     char buf[1024];

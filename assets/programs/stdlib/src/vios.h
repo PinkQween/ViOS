@@ -7,7 +7,7 @@
 struct command_argument
 {
     char argument[512];
-    struct command_argument* next;
+    struct command_argument *next;
 };
 
 struct process_arguments
@@ -17,10 +17,9 @@ struct process_arguments
 };
 
 void vios_exit();
-void print(const char *filename);
+void vios_print(const char *str, int x, int y, int r, int g, int b, int scale);
 int vios_getkey();
-void vios_putchar(char c);
-
+void vios_putchar(char c, int x, int y, int r, int g, int b, int scale);
 void *vios_malloc(size_t size);
 void vios_free(void *ptr);
 int vios_getkeyblock();
