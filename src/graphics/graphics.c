@@ -3,6 +3,10 @@
 #include "memory/memory.h"
 #include "rtc/rtc.h"
 #include "math/fpu_math.h"
+#include "idt/idt.h"
+#include "io/io.h"
+#include "debug/simple_serial.h"
+#include "string/string.h"
 
 // Global graphics context - Windows-level architecture
 static GraphicsContext g_graphics_context;
@@ -15,11 +19,27 @@ static uint32_t g_frames_rendered = 0;
 
 // =================== INTERNAL UTILITY FUNCTIONS ===================
 
+// PIT-based millisecond timer for accurate FPS measurement
+static uint32_t g_pit_ticks = 0;
+static uint32_t g_pit_divisor = 1193; // For ~1ms intervals
+
+void _graphics_init_pit_timer(void)
+{
+    // Configure PIT channel 0 for ~1ms intervals
+    outb(0x43, 0x36);                        // Mode 3, 16-bit binary
+    outb(0x40, g_pit_divisor & 0xFF);        // Low byte
+    outb(0x40, (g_pit_divisor >> 8) & 0xFF); // High byte
+}
+
+void _graphics_pit_tick(void)
+{
+    g_pit_ticks++;
+}
+
 uint32_t _graphics_get_time_ms(void)
 {
-    struct rtc_time current_time;
-    rtc_read(&current_time);
-    return (uint32_t)(current_time.hour * 3600000 + current_time.minute * 60000 + current_time.second * 1000);
+    // Return milliseconds since boot using PIT ticks
+    return g_pit_ticks;
 }
 
 bool _graphics_is_point_visible(GraphicsSurface *surface, Point point)
@@ -124,6 +144,12 @@ bool graphics_initialize(void)
         return false;
     }
 
+    // Initialize PIT timer for accurate FPS measurement
+    _graphics_init_pit_timer();
+
+    // Register PIT interrupt handler (IRQ 0 = interrupt 32)
+    idt_register_interrupt_callback(32, graphics_pit_interrupt_handler);
+
     g_graphics_context.double_buffering_enabled = true;
     g_graphics_context.vsync_enabled = true;
     g_graphics_context.initialized = true;
@@ -131,6 +157,11 @@ bool graphics_initialize(void)
     g_graphics_context.needs_full_refresh = true;
     g_graphics_context.frame_count = 0;
     g_graphics_context.dropped_frames = 0;
+
+    // Initialize FPS control - default to unlimited for maximum performance
+    g_graphics_context.max_fps = 0; // 0 = unlimited
+    g_graphics_context.fps_limit_enabled = false;
+    g_graphics_context.target_frame_time_ms = 0;
 
     g_graphics_initialized = true;
     return true;
@@ -219,23 +250,34 @@ void graphics_present(void)
 
 void graphics_wait_vsync(void)
 {
-    if (!g_graphics_context.vsync_enabled)
+    // For maximum performance, only wait if FPS limiting is enabled
+    if (!g_graphics_context.fps_limit_enabled || g_graphics_context.max_fps == 0)
         return;
 
-    // Professional VSync implementation - target 60fps (16.67ms per frame)
+    // High-performance frame rate limiting
     static uint32_t last_frame_time = 0;
     uint32_t current_time = _graphics_get_time_ms();
-    uint32_t frame_duration = 16; // 16ms for 60fps
+    uint32_t target_frame_time = g_graphics_context.target_frame_time_ms;
 
-    uint32_t elapsed = current_time - last_frame_time;
-    if (elapsed < frame_duration)
+    if (target_frame_time > 0)
     {
-        // Precise timing using RTC-based delay
-        uint32_t sleep_time = frame_duration - elapsed;
-        sleep_ms(sleep_time);
+        uint32_t elapsed = current_time - last_frame_time;
+        if (elapsed < target_frame_time)
+        {
+            // Optimized sleep - only sleep if we have significant time remaining
+            uint32_t sleep_time = target_frame_time - elapsed;
+            if (sleep_time > 1) // Only sleep if > 1ms to avoid overhead
+            {
+                sleep_ms(sleep_time);
+            }
+        }
+        last_frame_time = _graphics_get_time_ms();
+    }
+    else
+    {
+        last_frame_time = current_time;
     }
 
-    last_frame_time = _graphics_get_time_ms();
     g_graphics_context.last_vsync_time = last_frame_time;
 }
 
@@ -795,6 +837,63 @@ void graphics_reset_stats(void)
     g_frames_rendered = 0;
 }
 
+// =================== FPS CONTROL ===================
+
+void graphics_set_max_fps(uint32_t max_fps)
+{
+    if (!g_graphics_initialized)
+        return;
+
+    g_graphics_context.max_fps = max_fps;
+
+    if (max_fps == 0)
+    {
+        // Unlimited FPS - disable frame limiting
+        g_graphics_context.fps_limit_enabled = false;
+        g_graphics_context.target_frame_time_ms = 0;
+    }
+    else
+    {
+        // Calculate target frame time in milliseconds
+        g_graphics_context.fps_limit_enabled = true;
+        g_graphics_context.target_frame_time_ms = 1000 / max_fps;
+    }
+}
+
+uint32_t graphics_get_max_fps(void)
+{
+    return g_graphics_context.max_fps;
+}
+
+void graphics_enable_fps_limit(bool enabled)
+{
+    if (!g_graphics_initialized)
+        return;
+
+    g_graphics_context.fps_limit_enabled = enabled;
+
+    // If disabling, ensure we're not accidentally limiting FPS
+    if (!enabled)
+    {
+        g_graphics_context.target_frame_time_ms = 0;
+    }
+    else if (g_graphics_context.max_fps > 0)
+    {
+        // Re-calculate target frame time
+        g_graphics_context.target_frame_time_ms = 1000 / g_graphics_context.max_fps;
+    }
+}
+
+bool graphics_is_fps_limit_enabled(void)
+{
+    return g_graphics_context.fps_limit_enabled;
+}
+
+void graphics_set_unlimited_fps(void)
+{
+    graphics_set_max_fps(0); // 0 = unlimited
+}
+
 // =================== LEGACY COMPATIBILITY ===================
 
 void Draw(int x, int y, int r, int g, int b)
@@ -892,4 +991,16 @@ void DrawAtariChar(char c, int x, int y, int r, int g, int b, int scale)
 {
     char str[2] = {c, '\0'};
     DrawAtariString(str, x, y, r, g, b, scale);
+}
+
+// PIT interrupt handler (IRQ 0)
+void graphics_pit_interrupt_handler(struct interrupt_frame *frame)
+{
+    _graphics_pit_tick();
+    simple_serial_puts("PIT tick\n");
+    char debug_str[64];
+    int_to_str((int)_graphics_get_time_ms(), debug_str);
+    simple_serial_puts("ms: ");
+    simple_serial_puts(debug_str);
+    simple_serial_puts("\n");
 }

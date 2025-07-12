@@ -169,7 +169,9 @@ ___________
 │   │   └── gdt.h
 │   ├── graphics
 │   │   ├── graphics.c
-│   │   └── graphics.h
+│   │   ├── graphics.h
+│   │   ├── renderer.c
+│   │   └── renderer.h
 │   ├── idt
 │   │   ├── idt.asm
 │   │   ├── idt.c
@@ -188,6 +190,11 @@ ___________
 │   │   ├── isr80h.h
 │   │   ├── process.c
 │   │   └── process.h
+│   ├── kernel
+│   │   ├── init.c
+│   │   ├── init.h
+│   │   ├── mainloop.c
+│   │   └── mainloop.h
 │   ├── kernel.asm
 │   ├── kernel.c
 │   ├── kernel.h
@@ -253,10 +260,12 @@ ___________
 │   │   ├── Brightly.otf
 │   │   ├── Cheri.ttf
 │   │   └── RobotoThin.ttf
-│   └── generateFonts.py
+│   ├── generateFont.py
+│   ├── generateFonts.py
+│   └── imageConvert.py
 └── ViOS_LOGO_PNG.png
 
-40 directories, 140 files
+41 directories, 148 files
 ```
 
 ___________

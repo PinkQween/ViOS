@@ -1,6 +1,6 @@
 #include "utils.h"
-#include "graphics/graphics.h"
-#include "fonts/characters_AtariST8x16SystemFont.h"
+#include "../graphics/graphics.h"
+#include "../fonts/characters_AtariST8x16SystemFont.h"
 
 void int_to_ascii(int num, char *str)
 {
@@ -38,6 +38,12 @@ void int_to_ascii(int num, char *str)
         str[j] = str[k];
         str[k] = temp;
     }
+}
+
+int almost_equal(double a, double b, double epsilon)
+{
+    double diff = a - b;
+    return (diff < 0 ? -diff : diff) < epsilon;
 }
 
 // void print_status(const char *msg, bool ok)

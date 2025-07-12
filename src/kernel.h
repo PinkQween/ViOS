@@ -5,6 +5,9 @@
 
 #define VIOS_MAX_PATH 108
 
+struct paging_4gb_chunk; // Forward declaration
+extern struct paging_4gb_chunk *kernel_chunk;
+
 // Kernel entry point
 void kernel_main(void);
 

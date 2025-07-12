@@ -3,6 +3,9 @@ STDLIBS = ./assets/programs/stdlib
 FILES = \
   ./build/kernel.asm.o \
   ./build/kernel.o \
+  ./build/kernel/init.o \
+  ./build/kernel/mainloop.o \
+  ./build/graphics/renderer.o \
   ./build/disk/disk.o \
   ./build/disk/streamer.o \
   ./build/fs/pparser.o \

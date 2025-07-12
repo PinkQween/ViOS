@@ -9,6 +9,8 @@
 #include "status.h"
 #include "mouse/mouse.h"       // Add mouse header
 #include "keyboard/keyboard.h" // Add keyboard header
+#include "debug/simple_serial.h"
+
 struct idt_desc idt_descriptors[VIOS_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
 
@@ -59,7 +61,7 @@ void interrupt_handler(int interrupt, struct interrupt_frame *frame)
 
 void idt_zero()
 {
-    //print("Divide by zero error\n");
+    simple_serial_puts("Divide by zero error\n");
 }
 
 void idt_set(int interrupt_no, void *address)
