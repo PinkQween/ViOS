@@ -39,12 +39,19 @@ jobs:
           make clean
           sudo ./build.sh
 
-      - name: Rename OS binary to include tag
+      - name: Sanitize tag name
         if: startsWith(github.ref, 'refs/tags/')
+        id: sanitize_tag
         run: |
-          mv ./bin/os.bin ./bin/os-${GITHUB_REF_NAME}.bin
+          SAFE_TAG_NAME=$(echo "${GITHUB_REF_NAME}" | tr '+:/ ' '_')
+          echo "safe_tag_name=$SAFE_TAG_NAME" >> $GITHUB_ENV
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
+
+      - name: Rename OS binary to include sanitized tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mv ./bin/os.bin ./bin/os-${safe_tag_name}.bin
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -52,6 +59,6 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Build OS ${{ github.ref_name }}
-          files: ./bin/os-${{ github.ref_name }}.bin
+          files: ./bin/os-${{ env.safe_tag_name }}.bin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
