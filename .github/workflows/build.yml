@@ -63,3 +63,4 @@ jobs:
           files: ./bin/os-${{ env.safe_tag_name }}.bin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          safe_tag_name: ${{ env.safe_tag_name }}

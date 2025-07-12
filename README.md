@@ -253,12 +253,10 @@ ___________
 │   │   ├── Brightly.otf
 │   │   ├── Cheri.ttf
 │   │   └── RobotoThin.ttf
-│   ├── generateFont.py
-│   ├── generateFonts.py
-│   └── imageConvert.py
+│   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-40 directories, 142 files
+40 directories, 140 files
 ```
 
 ___________
