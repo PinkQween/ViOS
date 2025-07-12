@@ -13,6 +13,7 @@
 *.env
 
 # Ignore bin and build folders recursively
+src/fonts/
 bin/
 build/
 out/

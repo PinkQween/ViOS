@@ -335,3 +335,23 @@ char *strcpy(char *dest, const char *src)
     }
     return ret;
 }
+
+void strcat(char *dest, const char *src)
+{
+    // Find the end of the destination string
+    while (*dest != '\0')
+    {
+        dest++;
+    }
+    
+    // Copy the source string to the end of destination
+    while (*src != '\0')
+    {
+        *dest = *src;
+        dest++;
+        src++;
+    }
+    
+    // Null terminate
+    *dest = '\0';
+}

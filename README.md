@@ -125,6 +125,9 @@ ___________
 │   ├── boot
 │   │   └── boot.asm
 │   ├── config.h
+│   ├── debug
+│   │   ├── simple_serial.c
+│   │   └── simple_serial.h
 │   ├── disk
 │   │   ├── disk.c
 │   │   ├── disk.h
@@ -233,7 +236,7 @@ ___________
 │   └── imageConvert.py
 └── ViOS_LOGO_PNG.png
 
-35 directories, 122 files
+36 directories, 124 files
 ```
 
 ___________

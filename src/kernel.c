@@ -108,28 +108,16 @@ static void update_frame_info(char *frame_info)
         return;
 
     uint32_t frame_count = graphics_get_frame_count();
+
+    // Start with the prefix
     strcpy(frame_info, "Frame: ");
 
-    // Simple integer to string
-    int i = 7;
-    uint32_t temp = frame_count;
-    if (temp == 0)
-        frame_info[i++] = '0';
-    else
-    {
-        char buf[10];
-        int digits = 0;
-        while (temp > 0)
-        {
-            buf[digits++] = '0' + (temp % 10);
-            temp /= 10;
-        }
-        while (digits--)
-        {
-            frame_info[i++] = buf[digits];
-        }
-    }
-    frame_info[i] = '\0';
+    // Convert the number to string using the available function
+    char num_str[16];
+    int_to_str((int)frame_count, num_str);
+
+    // Append the number to the frame info
+    strcat(frame_info, num_str);
 }
 
 static void draw_animated_rects(int frame, int *prev_red_x, int *prev_green_size)
@@ -195,6 +183,10 @@ static void kernel_loop(struct mouse *mouse)
         }
 
         update_frame_info(frame_info);
+
+        // Clear the area where frame info is displayed to prevent ghosting
+        DrawRect(10, 10, 200, 16, 11, 25, 69);
+
         DrawAtariString(frame_info, 10, 10, 255, 255, 255, 1);
         DrawAtariString("ViOS Enhanced Graphics System Running", 10, 30, 200, 200, 200, 1);
 
