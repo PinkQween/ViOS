@@ -19,6 +19,7 @@
 #include "fonts/characters_AtariST8x16SystemFont.h"
 #include "fonts/characters_RobotoThin.h"
 #include "math/fpu_math.h"
+#include "debug/simple_serial.h"
 
 int almost_equal(double a, double b, double epsilon)
 {
@@ -49,36 +50,51 @@ struct gdt_structured gdt_structured[VIOS_TOTAL_GDT_SEGMENTS] = {
 
 void kernel_main()
 {
+    simple_serial_init();
+    simple_serial_puts("Serial Debug Initialized\n");
     gdt_structured_to_gdt(gdt_real, gdt_structured, VIOS_TOTAL_GDT_SEGMENTS);
     gdt_load(gdt_real, sizeof(gdt_real) - 1);
+    simple_serial_puts("GDT loaded\n");
     kheap_init();
+    simple_serial_puts("Heap initialized\n");
     fs_init();
+    simple_serial_puts("Filesystem initialized\n");
     disk_search_and_init();
+    simple_serial_puts("Disk initialized\n");
     idt_init();
+    simple_serial_puts("IDT initialized\n");
     mouse_init();
     keyboard_init();
+    simple_serial_puts("Input devices initialized\n");
 
     memset(&tss, 0, sizeof(tss));
     tss.esp0 = 0x20000000;
     tss.ss0 = KERNEL_DATA_SELECTOR;
     tss_load(0x28);
+    simple_serial_puts("TSS configured\n");
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     paging_switch(kernel_chunk);
     enable_paging();
+    simple_serial_puts("Paging enabled\n");
     isr80h_register_commands();
+    simple_serial_puts("Interrupt handlers registered\n");
 
     VBEInfoBlock *VBE = (VBEInfoBlock *)VBEInfoAddress;
+    simple_serial_puts("VBE info accessed\n");
 
     // Center the mouse cursor using the mouse struct
     extern struct mouse *ps2_mouse_init();
     struct mouse *mouse = ps2_mouse_init();
     mouse->x = VBE->x_resolution / 2;
     mouse->y = VBE->y_resolution / 2;
+    simple_serial_puts("Mouse cursor centered\n");
 
     // Initialize the professional graphics system
     if (!graphics_initialize()) {
+        simple_serial_puts("Graphics initialization failed\n");
         panic("Failed to initialize graphics system");
     }
+    simple_serial_puts("Graphics system initialized\n");
     
     // struct process *process = 0;
     // int res = process_load_switch("0:/shell.elf", &process);
