@@ -19,6 +19,7 @@
 #include "math/fpu_math.h"
 #include "audio/audio.h"
 #include "mouse/ps2_mouse.h"
+#include "debug/simple_serial.h"
 
 int almost_equal(double a, double b, double epsilon)
 {
@@ -208,11 +209,31 @@ static void kernel_loop(struct mouse *mouse)
 
 void kernel_main()
 {
+    simple_serial_init();
+    simple_serial_puts("Serial Debug Initialized\n");
+
+    simple_serial_puts("Initializing GDT and TSS...\n");
     initialize_gdt_and_tss();
+    simple_serial_puts("GDT and TSS initialized\n");
+
+    simple_serial_puts("Initializing devices...\n");
     initialize_devices();
+    simple_serial_puts("Devices initialized\n");
+
+    simple_serial_puts("Initializing paging...\n");
     initialize_paging();
+    simple_serial_puts("Paging enabled\n");
+
+    simple_serial_puts("Initializing graphics system...\n");
     struct mouse *mouse = initialize_graphics();
+    simple_serial_puts("Graphics system initialized\n");
+
     draw_boot_message();
+    simple_serial_puts("Boot message drawn\n");
+
     virtual_audio_control(VIRTUAL_AUDIO_BEEP);
+    simple_serial_puts("Audio beep triggered\n");
+
+    simple_serial_puts("Entering kernel loop...\n");
     kernel_loop(mouse);
 }
