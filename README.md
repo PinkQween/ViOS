@@ -82,23 +82,18 @@ ___________
 │   └── workflows
 │       └── build.yml
 ├── .gitignore
-├── LICENSE
-├── Makefile
-├── README.md
-├── ViOS_LOGO_PNG.png
 ├── assets
 │   └── programs
 │       ├── shell
-│       │   ├── Makefile
 │       │   ├── linker.ld
+│       │   ├── Makefile
 │       │   └── src
 │       │       ├── shell.c
 │       │       └── shell.h
 │       └── stdlib
-│           ├── Makefile
 │           ├── linker.ld
+│           ├── Makefile
 │           └── src
-│               ├── audio.h
 │               ├── memory.c
 │               ├── memory.h
 │               ├── start.asm
@@ -114,7 +109,13 @@ ___________
 │               └── vios.h
 ├── build.sh
 ├── buildExternal.sh
+├── env.example
+├── generateFonts.sh
+├── LICENSE
+├── Makefile
+├── README.md
 ├── run.sh
+├── setupRemoteBuild.sh
 ├── src
 │   ├── audio
 │   │   ├── audio.c
@@ -142,24 +143,16 @@ ___________
 │   │   ├── gdt.c
 │   │   └── gdt.h
 │   ├── graphics
-│   │   ├── drawing_loop.h
 │   │   ├── graphics.c
-│   │   ├── graphics.h
-│   │   ├── graphics_server.c
-│   │   └── graphics_server.h
+│   │   └── graphics.h
 │   ├── idt
 │   │   ├── idt.asm
 │   │   ├── idt.c
 │   │   └── idt.h
-│   ├── init
-│   │   ├── init.c
-│   │   └── init.h
 │   ├── io
 │   │   ├── io.asm
 │   │   └── io.h
 │   ├── isr80h
-│   │   ├── audio.c
-│   │   ├── audio.h
 │   │   ├── file.c
 │   │   ├── file.h
 │   │   ├── heap.c
@@ -226,17 +219,21 @@ ___________
 │   └── utils
 │       ├── utils.c
 │       └── utils.h
+├── update_boot.sh
 ├── updateREADME.sh
-└── utilities
-    ├── fonts
-    │   ├── Arial.ttf
-    │   ├── AtariST8x16SystemFont.ttf
-    │   ├── Brightly.otf
-    │   ├── Cheri.ttf
-    │   └── RobotoThin.ttf
-    └── generateFont.py
+├── utilities
+│   ├── fonts
+│   │   ├── Arial.ttf
+│   │   ├── AtariST8x16SystemFont.ttf
+│   │   ├── Brightly.otf
+│   │   ├── Cheri.ttf
+│   │   └── RobotoThin.ttf
+│   ├── generateFont.py
+│   ├── generateFonts.py
+│   └── imageConvert.py
+└── ViOS_LOGO_PNG.png
 
-36 directories, 124 files
+35 directories, 122 files
 ```
 
 ___________
