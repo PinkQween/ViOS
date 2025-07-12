@@ -282,31 +282,3 @@ int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd)
 out:
     return res;
 }
-
-int fwrite(void *ptr, uint32_t size, uint32_t nmemb, int fd)
-{
-    int res = 0;
-    if (size == 0 || nmemb == 0 || fd < 1)
-    {
-        res = -EINVARG;
-        goto out;
-    }
-
-    struct file_descriptor *desc = file_get_descriptor(fd);
-    if (!desc)
-    {
-        res = -EINVARG;
-        goto out;
-    }
-
-    if (!desc->filesystem->write)
-    {
-        res = -EIO;
-        goto out;
-    }
-
-    res = desc->filesystem->write(desc->disk, desc->private, size, nmemb, ptr);
-out:
-    return res;
-}
-

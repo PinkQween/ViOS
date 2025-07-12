@@ -6,6 +6,6 @@
 #define MOUSE_INPUT_PORT 0x60
 #define ISR_MOUSE_INTERRUPT 0x2C
 
-struct mouse *ps2_mouse_init();
+struct mouse *mouse_init();
 
 #endif

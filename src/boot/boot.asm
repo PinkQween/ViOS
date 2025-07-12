@@ -31,6 +31,10 @@ VolumeIDString          db 'VIOS BOOT  '
 SystemIDString          db 'FAT16   '
 
 
+; Kernel size information (will be filled by build script)
+KernelSizeBytes         dd 0x00000000  ; Kernel size in bytes (4 bytes)
+KernelSizeSectors       dw 0x0000      ; Kernel size in sectors (2 bytes)
+
 vbe_error:
     mov ax, 0xb800
     mov es, ax
@@ -162,7 +166,7 @@ load32:
 
     ; Prepare for reading sectors via ATA
     mov eax, 1          ; LBA start sector
-    mov ecx, 220        ; sector count
+    movzx ecx, word [KernelSizeSectors]  ; dynamic sector count
     mov edi, 0x0100000  ; destination memory
 
     call ata_lba_read

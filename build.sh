@@ -99,6 +99,6 @@ run_make() {
     make all
 }
 
-# === Main ===python3-venv
+# === Main ===
 check_and_install
 run_make

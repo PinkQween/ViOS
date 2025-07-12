@@ -64,13 +64,6 @@ struct process
         int head;
     } keyboard;
 
-    struct audio_buffer
-    {
-        char buffer[VIOS_AUDIO_BUFFER_SIZE];
-        int tail;
-        int head;
-    } audio;
-
     // The arguments of the process.
     struct process_arguments arguments;
 };

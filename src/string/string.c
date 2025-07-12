@@ -335,29 +335,3 @@ char *strcpy(char *dest, const char *src)
     }
     return ret;
 }
-
-char *strstr(const char *haystack, const char *needle)
-{
-    if (!haystack || !needle)
-        return 0;
-
-    if (*needle == '\0')
-        return (char *)haystack;
-
-    for (const char *h = haystack; *h != '\0'; h++)
-    {
-        const char *n = needle;
-        const char *h2 = h;
-
-        while (*n != '\0' && *h2 != '\0' && *n == *h2)
-        {
-            n++;
-            h2++;
-        }
-
-        if (*n == '\0')
-            return (char *)h;
-    }
-
-    return 0;
-}

@@ -96,16 +96,18 @@ void sleep_ms(int ms)
     if (ms <= 0)
         return;
 
-    // Approximate PIT count without 64-bit division
-    uint16_t count = (uint16_t)(ms * 1193);
+    // Calculate countdown value (approximate)
+    // PIT runs at 1,193,182 Hz, so counts = ms * 1193
+    int count = ms * 1193;
 
+    // Setup PIT channel 2 in mode 0 (one-shot)
     outb(PIT_COMMAND, 0xB6);
+
+    // Load low byte then high byte
     outb(PIT_CHANNEL2_DATA, count & 0xFF);
     outb(PIT_CHANNEL2_DATA, (count >> 8) & 0xFF);
 
-    uint8_t port61 = inb(0x61);
-    outb(0x61, (port61 & ~0x02) | 0x01);
-
+    // Wait until counter reaches zero by polling bit 5 of port 0x61
     while (inb(0x61) & 0x20)
         ;
 }

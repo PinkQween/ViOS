@@ -34,7 +34,8 @@ fi
 
 # Audio option
 if [ "$AUDIO" = true ]; then
-    QEMU_CMD="$QEMU_CMD -audiodev coreaudio,id=audio0 -machine pcspk-audiodev=audio0"
+    # Use working audio configuration with proper format settings
+    QEMU_CMD="$QEMU_CMD -audiodev coreaudio,id=audio0,out.frequency=44100,out.channels=2,out.format=s16 -machine pcspk-audiodev=audio0"
 fi
 
 # Debug option

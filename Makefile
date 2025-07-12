@@ -1,4 +1,4 @@
-STDLIBS = ./assets/programs/stdlib ./assets/programs/stdlib++
+STDLIBS = ./assets/programs/stdlib
 
 FILES = \
   ./build/kernel.asm.o \
@@ -27,7 +27,6 @@ FILES = \
   ./build/isr80h/io.o \
   ./build/isr80h/heap.o \
   ./build/isr80h/process.o \
-  ./build/isr80h/audio.o \
   ./build/keyboard/keyboard.o \
   ./build/keyboard/ps2_keyboard.o \
   ./build/loader/formats/elfloader.o \
@@ -44,11 +43,7 @@ FILES = \
   ./build/fonts/characters_RobotoThin.o \
   ./build/mouse/mouse.o \
   ./build/mouse/ps2_mouse.o \
-  ./build/math/fpu_math.o \
-  ./build/audio/sb16.o \
-  ./build/audio/audio.o \
-  ./build/debug/serial.o \
-  ./build/debug/klog.o
+  ./build/math/fpu_math.o
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
@@ -64,7 +59,7 @@ UNAME_S := $(shell uname -s)
 prepare_dirs:
 	mkdir -p ./bin ./build ./mnt/d
 
-all: prepare_dirs fonts ./bin/boot.bin ./bin/kernel.bin user_programs install
+all: prepare_dirs fonts ./bin/boot_with_size.bin ./bin/kernel.bin user_programs install
 
 fonts:
 	./generateFonts.sh
@@ -76,14 +71,30 @@ ifeq ($(UNAME_S),Linux)
 	find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
 else ifeq ($(UNAME_S),Darwin)
 	@echo "Mounting FAT16 image on macOS..."
-	@hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d || \
-		(echo "Failed to mount. Trying manual attach..."; \
+	@# First, try to detach any existing mount to avoid conflicts
+	@hdiutil detach ./mnt/d 2>/dev/null || true
+	@# Clean up any existing ViOS mounts that might interfere
+	@echo "Cleaning up existing ViOS mounts..."
+	@for disk in $$(diskutil list | grep "VIOS BOOT" | grep -o "disk[0-9]\+" | sort -u); do \
+		echo "Detaching existing ViOS mount $$disk..."; \
+		hdiutil detach /dev/$$disk 2>/dev/null || true; \
+	done
+	@# Mount the image and capture the device identifier
+	@echo "Mounting new ViOS image..."
+	@DEVICE=$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d -plist | grep -A1 "dev-entry" | tail -1 | sed 's/.*string>\(.*\)<\/string>.*/\1/'); \
+	if [ -z "$$DEVICE" ]; then \
+		echo "Failed to mount image. Trying alternative approach..."; \
 		hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin; \
 		diskutil list; \
-		echo "Please mount the correct partition manually if needed.")
-	cp -r ./assets/* ./mnt/d || true
-	find ./assets/programs -name '*.elf' -exec cp {} ./mnt/d/ \; || true
-	@hdiutil detach ./mnt/d || true
+		echo "Please mount the correct partition manually if needed."; \
+		exit 1; \
+	fi; \
+	echo "Mounted device: $$DEVICE"; \
+	cp -r ./assets/* ./mnt/d/ || true; \
+	find ./assets/programs -name '*.elf' -exec cp {} ./mnt/d/ \; || true; \
+	echo "Detaching device: $$DEVICE"; \
+	hdiutil detach "$$DEVICE" || hdiutil detach ./mnt/d || true; \
+	rmdir ./mnt/d 2>/dev/null || true
 else
 	@echo "Skipping install (switch to linux or darwin)"
 endif
@@ -97,9 +108,14 @@ endif
 ./bin/boot.bin: prepare_dirs ./src/boot/boot.asm
 	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin
 
-./bin/os.bin: ./bin/boot.bin ./bin/kernel.bin
+# Calculate kernel size and update boot sector
+./bin/boot_with_size.bin: ./bin/boot.bin ./bin/kernel.bin
+	@echo "Calculating kernel size and updating boot sector..."
+	./update_boot.sh
+
+./bin/os.bin: ./bin/boot_with_size.bin ./bin/kernel.bin
 	rm -rf ./bin/os.bin
-	dd if=./bin/boot.bin of=./bin/os.bin bs=512 conv=notrunc
+	dd if=./bin/boot_with_size.bin of=./bin/os.bin bs=512 conv=notrunc
 	dd if=./bin/kernel.bin >> ./bin/os.bin
 	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
 
@@ -140,4 +156,22 @@ user_programs_clean:
 	done
 
 clean: user_programs_clean
-	rm -rf ./bin/boot.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o ./build/kernelfull-elf.o $(FILES) ./bin/ ./build/ ./mnt ./src/fonts
+	rm -rf ./bin/boot.bin ./bin/boot_with_size.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o ./build/kernelfull-elf.o $(FILES) ./bin/ ./build/ ./mnt ./src/fonts
+
+# Clean up any mounted disk images (macOS specific)
+clean_mounts:
+ifeq ($(UNAME_S),Darwin)
+	@echo "Cleaning up any mounted disk images..."
+	@# Detach any mount at our mount point
+	@hdiutil detach ./mnt/d 2>/dev/null || true
+	@rmdir ./mnt/d 2>/dev/null || true
+	@# Find and detach all ViOS disk images
+	@echo "Looking for ViOS disk images to detach..."
+	@for disk in $$(diskutil list | grep -E "VIOS BOOT|disk[0-9]+" | grep -o "disk[0-9]\+" | sort -u); do \
+		echo "Detaching $$disk..."; \
+		hdiutil detach /dev/$$disk 2>/dev/null || true; \
+	done
+	@echo "Mount cleanup completed."
+else
+	@echo "clean_mounts is only available on macOS"
+endif

@@ -25,6 +25,4 @@ void strcat(char *dest, const char *src);
 
 char *strcpy_new(char *dest, const char *src);
 
-char *strstr(const char *haystack, const char *needle);
-
 #endif

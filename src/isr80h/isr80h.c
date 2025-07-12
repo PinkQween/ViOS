@@ -5,7 +5,6 @@
 #include "kernel.h"
 #include "process.h"
 #include "file.h"
-#include "audio.h"
 
 void isr80h_register_commands()
 {
@@ -20,8 +19,4 @@ void isr80h_register_commands()
     isr80h_register_command(SYSTEM_COMMAND8_GET_PROGRAM_ARGUMENTS, isr80h_command8_get_program_arguments);
     isr80h_register_command(SYSTEM_COMMAND9_SLEEP, isr80h_command9_sleep);
     isr80h_register_command(SYSTEM_COMMAND10_READ, isr80h_command10_read);
-    isr80h_register_command(SYSTEM_COMMAND11_WRITE, isr80h_command11_write);
-    isr80h_register_command(SYSTEM_COMMAND12_AUDIO_PUSH, isr80h_command12_audio_push);
-    isr80h_register_command(SYSTEM_COMMAND13_AUDIO_POP, isr80h_command13_audio_pop);
-    isr80h_register_command(SYSTEM_COMMAND14_AUDIO_CONTROL, isr80h_command14_audio_control);
 }
