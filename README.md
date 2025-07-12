@@ -84,20 +84,42 @@ ___________
 ├── .gitignore
 ├── assets
 │   └── programs
+│       ├── cpp_test
+│       │   ├── Makefile
+│       │   └── src
+│       │       └── cpp_test.cpp
 │       ├── shell
 │       │   ├── linker.ld
 │       │   ├── Makefile
 │       │   └── src
 │       │       ├── shell.c
 │       │       └── shell.h
-│       └── stdlib
+│       ├── stdlib
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   └── src
+│       │       ├── memory.c
+│       │       ├── memory.h
+│       │       ├── start.asm
+│       │       ├── start.c
+│       │       ├── stdio.c
+│       │       ├── stdio.h
+│       │       ├── stdlib.c
+│       │       ├── stdlib.h
+│       │       ├── string.c
+│       │       ├── string.h
+│       │       ├── vios.asm
+│       │       ├── vios.c
+│       │       └── vios.h
+│       └── stdlib++
 │           ├── linker.ld
 │           ├── Makefile
 │           └── src
+│               ├── audio.h
 │               ├── memory.c
 │               ├── memory.h
 │               ├── start.asm
-│               ├── start.c
+│               ├── start.cpp
 │               ├── stdio.c
 │               ├── stdio.h
 │               ├── stdlib.c
@@ -236,7 +258,7 @@ ___________
 │   └── imageConvert.py
 └── ViOS_LOGO_PNG.png
 
-36 directories, 124 files
+40 directories, 142 files
 ```
 
 ___________

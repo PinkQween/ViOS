@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
   pull_request:
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         id: sanitize_tag
         run: |
-          SAFE_TAG_NAME=$(echo "${GITHUB_REF_NAME}" | tr '+:/ ' '_')
+          SAFE_TAG_NAME=$(echo "${GITHUB_REF_NAME}" | tr '/ ' '_')
           echo "safe_tag_name=$SAFE_TAG_NAME" >> $GITHUB_ENV
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
@@ -51,7 +51,8 @@ jobs:
       - name: Rename OS binary to include sanitized tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          mv ./bin/os.bin ./bin/os-${safe_tag_name}.bin
+          sudo mv ./bin/os.bin ./bin/os-${safe_tag_name}.bin
+          sudo chown $USER:$USER ./bin/os-${safe_tag_name}.bin
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
