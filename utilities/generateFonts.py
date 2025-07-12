@@ -1,12 +1,29 @@
 #!/usr/bin/env python3
 
 import os
+import sys
+import site
+sys.path.insert(0, site.getusersitepackages())
 import freetype
 
-font_dir = 'utilities/fonts'
 output_dir = 'src/fonts'
+try:
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"[DEBUG] Ensured directory exists: {output_dir}")
+except Exception as e:
+    print(f"[ERROR] Could not create directory {output_dir}: {e}")
+    raise
 
-os.makedirs(output_dir, exist_ok=True)
+font_dir = 'utilities/fonts'
+
+if not os.path.exists(font_dir):
+    print(f"❌ Font directory '{font_dir}' does not exist.")
+    sys.exit(1)
+
+font_files = [f for f in os.listdir(font_dir) if f.lower().endswith(('.ttf', '.otf'))]
+if not font_files:
+    print(f"⚠️ No .ttf or .otf fonts found in '{font_dir}'. Nothing to process.")
+    sys.exit(0)  # Consider 0 if this is a non-error skip
 
 if not os.path.exists(font_dir):
     raise RuntimeError(f"Font directory '{font_dir}' does not exist")

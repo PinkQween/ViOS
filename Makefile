@@ -1,3 +1,5 @@
+STDLIBS = ./assets/programs/stdlib ./assets/programs/stdlib++
+
 FILES = \
   ./build/kernel.asm.o \
   ./build/kernel.o \
@@ -65,27 +67,25 @@ prepare_dirs:
 all: prepare_dirs fonts ./bin/boot.bin ./bin/kernel.bin user_programs install
 
 fonts:
-	./utilities/generateFont.py
+	./generateFonts.sh
 
 install: ./bin/os.bin
 ifeq ($(UNAME_S),Linux)
 	mformat -i ./bin/os.bin@@1M -F
 	mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
 	find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
+else ifeq ($(UNAME_S),Darwin)
+	@echo "Mounting FAT16 image on macOS..."
+	@hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d || \
+		(echo "Failed to mount. Trying manual attach..."; \
+		hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin; \
+		diskutil list; \
+		echo "Please mount the correct partition manually if needed.")
+	cp -r ./assets/* ./mnt/d || true
+	find ./assets/programs -name '*.elf' -exec cp {} ./mnt/d/ \; || true
+	@hdiutil detach ./mnt/d || true
 else
-	ifeq ($(UNAME_S),Darwin)
-		@echo "Mounting FAT16 image on macOS..."
-		@hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d || \
-			(echo "Failed to mount. Trying manual attach..."; \
-			hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin; \
-			diskutil list; \
-			echo "Please mount the correct partition manually if needed.")
-		cp -r ./assets/* ./mnt/d || true
-		find ./assets/programs -name '*.elf' -exec cp {} ./mnt/d/ \; || true
-		@hdiutil detach ./mnt/d || true
-	else
-		@echo "Skipping install (switch to linux or darwin)"
-	endif
+	@echo "Skipping install (switch to linux or darwin)"
 endif
 
 ./bin/kernel.elf: prepare_dirs $(FILES)
@@ -112,12 +112,25 @@ endif
 	mkdir -p $(dir $@)
 	nasm -f elf -g $< -o $@
 
-user_programs:
-	@$(MAKE) -C ./assets/programs/stdlib all
+user_programs: user_stdlibs user_other_programs
+
+user_stdlibs:
+	@for libdir in $(STDLIBS); do \
+		echo "Building standard library $$libdir..."; \
+		$(MAKE) -C $$libdir all || exit 1; \
+	done
+
+user_other_programs:
 	@{ \
-		for dir in $(shell find ./assets/programs -mindepth 1 -maxdepth 1 -type d -not -name "stdlib"); do \
-			echo "Building $$dir..."; \
-			$(MAKE) -C $$dir all || exit 1; \
+		for dir in $(shell find ./assets/programs -mindepth 1 -maxdepth 1 -type d); do \
+			skip=0; \
+			for stdlib in $(STDLIBS); do \
+				if [ "$$dir" = "$$stdlib" ]; then skip=1; fi; \
+			done; \
+			if [ $$skip -eq 0 ]; then \
+				echo "Building user program $$dir..."; \
+				$(MAKE) -C $$dir all || exit 1; \
+			fi; \
 		done; \
 	}
 
