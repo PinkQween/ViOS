@@ -84,7 +84,7 @@ int vios_system_run(const char *command)
     return result;
 }
 
-// VIX Graphics API Implementation
+// VIOS Graphix API 
 void vix_draw_pixel(int x, int y, uint32_t color)
 {
     asm volatile("int $0x80" : : "a"(11), "b"(x), "c"(y), "d"(color) : "memory");
@@ -128,4 +128,47 @@ void vix_draw_circle(int x, int y, int radius, uint32_t color)
 void vix_fill_circle(int x, int y, int radius, uint32_t color)
 {
     asm volatile("int $0x80" : : "a"(19), "b"(x), "c"(y), "d"(radius), "S"(color) : "memory");
+}
+
+void vix_draw_text(const char *text, int x, int y, uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(20), "b"(text), "c"(x), "d"(y), "S"(color) : "memory");
+}
+
+void vix_draw_text_scaled(const char *text, int x, int y, uint32_t color, int scale)
+{
+    asm volatile("int $0x80" : : "a"(21), "b"(text), "c"(x), "d"(y), "S"(color), "D"(scale) : "memory");
+}
+
+int vix_text_width(const char *text, int scale)
+{
+    int result;
+    asm volatile("int $0x80" : "=a"(result) : "a"(22), "b"(text), "c"(scale) : "memory");
+    return result;
+}
+
+int vix_text_height(int scale)
+{
+    int result;
+    asm volatile("int $0x80" : "=a"(result) : "a"(23), "b"(scale) : "memory");
+    return result;
+}
+
+void vix_set_fps(uint32_t max_fps)
+{
+    asm volatile("int $0x80" : : "a"(24), "b"(max_fps) : "memory");
+}
+
+uint32_t vix_get_fps(void)
+{
+    uint32_t result;
+    asm volatile("int $0x80" : "=a"(result) : "a"(25) : "memory");
+    return result;
+}
+
+float vix_get_delta_time(void)
+{
+    int fixed_delta;
+    asm volatile("int $0x80" : "=a"(fixed_delta) : "a"(26) : "memory");
+    return (float)fixed_delta / 1000.0f;
 }

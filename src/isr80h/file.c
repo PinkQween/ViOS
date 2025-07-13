@@ -36,7 +36,7 @@ static int copy_path_from_task_stack(struct task *task, int index, char *kernel_
     return 0;
 }
 
-void *isr80h_command10_read(struct interrupt_frame *frame)
+void *isr80h_command9_read(struct interrupt_frame *frame)
 {
     char path[MAX_PATH_LEN] = {0};
 

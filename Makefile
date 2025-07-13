@@ -40,6 +40,7 @@ FILES = \
   ./build/isr80h/file.o \
   ./build/utils/utils.o \
   ./build/graphics/graphics.o \
+  ./build/graphics/vix_kernel.o \
   ./build/fonts/characters_Arial.o \
   ./build/fonts/characters_AtariST8x16SystemFont.o \
   ./build/fonts/characters_Brightly.o \

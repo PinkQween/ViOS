@@ -111,28 +111,24 @@ ___________
 │       │       ├── vios.asm
 │       │       ├── vios.c
 │       │       └── vios.h
-│       ├── stdlib++
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   └── src
-│       │       ├── audio.h
-│       │       ├── memory.c
-│       │       ├── memory.h
-│       │       ├── start.asm
-│       │       ├── start.cpp
-│       │       ├── stdio.c
-│       │       ├── stdio.h
-│       │       ├── stdlib.c
-│       │       ├── stdlib.h
-│       │       ├── string.c
-│       │       ├── string.h
-│       │       ├── vios.asm
-│       │       ├── vios.c
-│       │       └── vios.h
-│       └── vix_demo
+│       └── stdlib++
+│           ├── linker.ld
 │           ├── Makefile
 │           └── src
-│               └── vix_demo.c
+│               ├── audio.h
+│               ├── memory.c
+│               ├── memory.h
+│               ├── start.asm
+│               ├── start.cpp
+│               ├── stdio.c
+│               ├── stdio.h
+│               ├── stdlib.c
+│               ├── stdlib.h
+│               ├── string.c
+│               ├── string.h
+│               ├── vios.asm
+│               ├── vios.c
+│               └── vios.h
 ├── build.sh
 ├── buildExternal.sh
 ├── docs
@@ -203,7 +199,6 @@ ___________
 │   │   ├── gdt.c
 │   │   └── gdt.h
 │   ├── graphics
-│   │   ├── graphics_arc.md
 │   │   ├── graphics.c
 │   │   ├── graphics.h
 │   │   ├── renderer.c
@@ -220,14 +215,16 @@ ___________
 │   │   ├── file.h
 │   │   ├── heap.c
 │   │   ├── heap.h
-│   │   ├── io.c
-│   │   ├── io.h
 │   │   ├── isr80h.c
 │   │   ├── isr80h.h
+│   │   ├── keyboard.c
+│   │   ├── keyboard.h
 │   │   ├── process.c
 │   │   ├── process.h
-│   │   ├── vix_graphics.c
-│   │   └── vix_graphics.h
+│   │   ├── serial.c
+│   │   ├── serial.h
+│   │   ├── waits.c
+│   │   └── waits.h
 │   ├── kernel
 │   │   ├── init.c
 │   │   ├── init.h
@@ -301,7 +298,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-45 directories, 180 files
+43 directories, 179 files
 ```
 
 ___________

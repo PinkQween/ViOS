@@ -43,3 +43,19 @@ void simple_serial_puts(const char* str)
         str++;
     }
 }
+
+static char hex_digit(uint8_t nibble)
+{
+    return nibble < 10 ? ('0' + nibble) : ('A' + nibble - 10);
+}
+
+void simple_serial_put_hex(uint32_t value)
+{
+    simple_serial_puts("0x");
+
+    for (int i = 28; i >= 0; i -= 4)
+    {
+        uint8_t nibble = (value >> i) & 0xF;
+        simple_serial_putc(hex_digit(nibble));
+    }
+}

@@ -1,13 +1,6 @@
-#include "task/process.h"
-#include "task/task.h"
-#include "string/string.h"
-#include "memory/heap/kheap.h"
-#include "status.h"
-#include "config.h"
-#include "kernel.h"
-#include "string/string.h"
+#include "process.h"
 
-void *isr80h_command6_process_load_start(struct interrupt_frame *frame)
+void *isr80h_command1_process_load_start(struct interrupt_frame *frame)
 {
     void *filename_user_ptr = task_get_stack_item(task_current(), 0);
     char filename[VIOS_MAX_PATH];
@@ -35,7 +28,7 @@ out:
     return 0;
 }
 
-void *isr80h_command7_invoke_system_command(struct interrupt_frame *frame)
+void *isr80h_command2_invoke_system_command(struct interrupt_frame *frame)
 {
     struct command_argument *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
     if (!arguments)
@@ -70,7 +63,7 @@ void *isr80h_command7_invoke_system_command(struct interrupt_frame *frame)
     return 0;
 }
 
-void *isr80h_command8_get_program_arguments(struct interrupt_frame *frame)
+void *isr80h_command11_get_program_arguments(struct interrupt_frame *frame)
 {
     struct process *process = task_current()->process;
     struct process_arguments *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
@@ -82,7 +75,7 @@ void *isr80h_command8_get_program_arguments(struct interrupt_frame *frame)
 void *isr80h_command0_exit(struct interrupt_frame *frame)
 {
     struct process *process = task_current()->process;
-    
+
     process_terminate(process);
 
     task_next();

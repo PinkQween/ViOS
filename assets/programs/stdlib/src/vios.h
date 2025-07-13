@@ -64,5 +64,12 @@ void vix_get_screen_info(vix_screen_info_t *info);
 void vix_draw_line(int x1, int y1, int x2, int y2, uint32_t color);
 void vix_draw_circle(int x, int y, int radius, uint32_t color);
 void vix_fill_circle(int x, int y, int radius, uint32_t color);
+void vix_draw_text(const char *text, int x, int y, uint32_t color);
+void vix_draw_text_scaled(const char *text, int x, int y, uint32_t color, int scale);
+int vix_text_width(const char *text, int scale);
+int vix_text_height(int scale);
+void vix_set_fps(uint32_t max_fps);
+uint32_t vix_get_fps(void);
+float vix_get_delta_time(void);
 
 #endif
