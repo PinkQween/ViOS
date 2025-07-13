@@ -88,47 +88,12 @@ ___________
 │       │   ├── Makefile
 │       │   └── src
 │       │       └── cpp_test.cpp
-│       ├── shell
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   └── src
-│       │       ├── shell.c
-│       │       └── shell.h
-│       ├── stdlib
-│       │   ├── linker.ld
-│       │   ├── Makefile
-│       │   └── src
-│       │       ├── memory.c
-│       │       ├── memory.h
-│       │       ├── start.asm
-│       │       ├── start.c
-│       │       ├── stdio.c
-│       │       ├── stdio.h
-│       │       ├── stdlib.c
-│       │       ├── stdlib.h
-│       │       ├── string.c
-│       │       ├── string.h
-│       │       ├── vios.asm
-│       │       ├── vios.c
-│       │       └── vios.h
-│       └── stdlib++
+│       └── shell
 │           ├── linker.ld
 │           ├── Makefile
 │           └── src
-│               ├── audio.h
-│               ├── memory.c
-│               ├── memory.h
-│               ├── start.asm
-│               ├── start.cpp
-│               ├── stdio.c
-│               ├── stdio.h
-│               ├── stdlib.c
-│               ├── stdlib.h
-│               ├── string.c
-│               ├── string.h
-│               ├── vios.asm
-│               ├── vios.c
-│               └── vios.h
+│               ├── shell.c
+│               └── shell.h
 ├── build.sh
 ├── buildExternal.sh
 ├── docs
@@ -298,7 +263,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-43 directories, 179 files
+39 directories, 148 files
 ```
 
 ___________
