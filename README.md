@@ -131,7 +131,6 @@ ___________
 │               └── vios.h
 ├── build.sh
 ├── buildExternal.sh
-├── env.example
 ├── generateFonts.sh
 ├── LICENSE
 ├── Makefile
@@ -260,12 +259,10 @@ ___________
 │   │   ├── Brightly.otf
 │   │   ├── Cheri.ttf
 │   │   └── RobotoThin.ttf
-│   ├── generateFont.py
-│   ├── generateFonts.py
-│   └── imageConvert.py
+│   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-41 directories, 148 files
+41 directories, 145 files
 ```
 
 ___________
