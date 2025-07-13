@@ -6,8 +6,8 @@ void _start()
     vix_screen_info_t screen_info;
     vix_get_screen_info(&screen_info);
     
-    printf("VIX Graphics Demo\n");
-    printf("Screen: %dx%d, %d bpp\n", screen_info.width, screen_info.height, screen_info.bpp);
+    //printf("VIX Graphics Demo\n");
+    //printf("Screen: %dx%d, %d bpp\n", screen_info.width, screen_info.height, screen_info.bpp);
     
     // Clear screen to black
     vix_clear_screen(VIX_COLOR_BLACK);
