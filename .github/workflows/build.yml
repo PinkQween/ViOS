@@ -27,6 +27,7 @@ jobs:
             git clone https://github.com/PinkQween/ViOS-Libc.git external/ViOS-libc-tmp
             cd external/ViOS-libc-tmp
             make all
+            make install
             mkdir -p ../external/ViOS-libc/lib
             mkdir -p ../external/ViOS-libc/include
             cp build/libViOSlibc.a ../external/ViOS-libc/lib/
