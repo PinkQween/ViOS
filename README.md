@@ -1,15 +1,38 @@
-ViOS – A Custom x86 Multithreaded Kernel
-========================================
-
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-[![Build Libc](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml)
-[![Build OS](https://github.com/PinkQween/ViOS/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS/actions/workflows/build.yml)
-![Platform](https://img.shields.io/badge/Platform-x86_32-blue)
-
-![logo](/ViOS_LOGO_PNG.png)
+# ViOS – A Custom x86 Multithreaded Kernel
 
 > 🧠 A handcrafted 32-bit x86 Operating System  
 > 🕯️ Built in memory of **Vio** from SiegedSec
+
+![ViOS Logo](/ViOS_LOGO_PNG.png)
+
+---
+
+## 📊 Repository Stats
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform: x86_32](https://img.shields.io/badge/Platform-x86_32-blue)](#)
+![GitHub Repo Size](https://img.shields.io/github/repo-size/PinkQween/ViOS)
+![Files in Repo](https://img.shields.io/github/directory-file-count/PinkQween/ViOS?type=file)
+![Last Commit](https://img.shields.io/github/last-commit/PinkQween/ViOS)
+![Release](https://img.shields.io/github/v/release/PinkQween/ViOS)
+![Downloads](https://img.shields.io/github/downloads/PinkQween/ViOS/total)
+
+---
+
+## 🔧 Build Status
+
+[![Build: OS](https://github.com/PinkQween/ViOS/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS/actions/workflows/build.yml)
+[![Build: Libc](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml)
+
+---
+
+## 🧠 Community and Contribution
+
+![GitHub Discussions](https://img.shields.io/github/discussions/PinkQween/ViOS)
+![Forks](https://img.shields.io/github/forks/PinkQween/ViOS?style=social)
+![Commit Activity](https://img.shields.io/github/commit-activity/w/PinkQween/ViOS)
+![Total Issues](https://img.shields.io/github/issues-closed-raw/PinkQween/ViOS?label=total%20issues&color=blue)
+![Total PRs](https://img.shields.io/github/issues-pr-closed-raw/PinkQween/ViOS?label=total%20PRs&color=blue)
 
 ## 📚 Table of Contents
 
