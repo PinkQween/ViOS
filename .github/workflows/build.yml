@@ -37,8 +37,7 @@ jobs:
       - name: Build OS
         run: |
           make clean
-          # Ensure ViOS libc is built first
-          ./build.sh clean-libc
+          # Build with ViOS libc (will install locally if needed)
           ./build.sh build
           # Debug: Check if ViOS libc was built
           echo "Checking ViOS libc installation..."
