@@ -1,5 +1,5 @@
-#ifndef PROCESS_H
-#define PROCESS_H
+#ifndef ISR80H_PROCESS_H
+#define ISR80H_PROCESS_H
 
 #include "task/process.h"
 #include "task/task.h"
@@ -8,7 +8,6 @@
 #include "status.h"
 #include "config.h"
 #include "kernel.h"
-#include "string/string.h"
 
 struct interrupt_frame;
 void *isr80h_command1_process_load_start(struct interrupt_frame *frame);

@@ -1,11 +1,12 @@
 #include "isr80h.h"
-#include "io.h"
 #include "idt/idt.h"
 #include "heap.h"
 #include "kernel.h"
 #include "process.h"
 #include "file.h"
-#include "vix_graphics.h"
+#include "keyboard.h"
+#include "serial.h"
+#include "waits.h"
 
 /**
  * Registers all supported system commands and their handlers for interrupt 0x80h.
@@ -22,9 +23,8 @@ void isr80h_register_commands()
 
     // I/O Operations
     isr80h_register_command(SYSTEM_COMMAND3_GETKEY, isr80h_command3_getkey);
-    isr80h_register_command(SYSTEM_COMMAND4_PUTCHAR, isr80h_command4_putchar);
+    isr80h_register_command(SYSTEM_COMMAND4_PUTCHAR_SERIAL, isr80h_command4_putchar_serial);
     isr80h_register_command(SYSTEM_COMMAND5_PRINT_SERIAL, isr80h_command5_print_serial);
-    isr80h_register_command(SYSTEM_COMMAND6_PRINT_CHAR_SERIAL, isr80h_command6_print_char_serial);
 
     // Memory Management
     isr80h_register_command(SYSTEM_COMMAND7_MALLOC, isr80h_command7_malloc);

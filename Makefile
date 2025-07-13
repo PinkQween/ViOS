@@ -1,11 +1,13 @@
-STDLIBS = ./assets/programs/stdlib
 
+
+# Object files grouped by functionality
 FILES = \
   ./build/kernel.asm.o \
   ./build/kernel.o \
   ./build/kernel/init.o \
   ./build/kernel/mainloop.o \
   ./build/graphics/renderer.o \
+  ./build/graphics/graphics.o \
   ./build/disk/disk.o \
   ./build/disk/streamer.o \
   ./build/fs/pparser.o \
@@ -14,33 +16,32 @@ FILES = \
   ./build/string/string.o \
   ./build/idt/idt.asm.o \
   ./build/idt/idt.o \
-  ./build/memory/memory.o \
-  ./build/io/io.asm.o \
   ./build/gdt/gdt.o \
   ./build/gdt/gdt.asm.o \
-  ./build/task/tss.asm.o \
+  ./build/memory/memory.o \
   ./build/memory/heap/heap.o \
   ./build/memory/heap/kheap.o \
   ./build/memory/paging/paging.o \
   ./build/memory/paging/paging.asm.o \
+  ./build/io/io.asm.o \
+  ./build/task/tss.asm.o \
   ./build/task/process.o \
   ./build/task/task.o \
   ./build/task/task.asm.o \
   ./build/isr80h/isr80h.o \
-  ./build/isr80h/io.o \
   ./build/isr80h/heap.o \
   ./build/isr80h/process.o \
-  ./build/isr80h/vix_graphics.o \
+  ./build/isr80h/file.o \
+  ./build/isr80h/serial.o \
+  ./build/isr80h/waits.o \
+  ./build/isr80h/keyboard.o \
   ./build/keyboard/keyboard.o \
   ./build/keyboard/ps2_keyboard.o \
   ./build/loader/formats/elfloader.o \
   ./build/loader/formats/elf.o \
   ./build/rtc/rtc.o \
   ./build/panic/panic.o \
-  ./build/isr80h/file.o \
   ./build/utils/utils.o \
-  ./build/graphics/graphics.o \
-  ./build/graphics/vix_kernel.o \
   ./build/fonts/characters_Arial.o \
   ./build/fonts/characters_AtariST8x16SystemFont.o \
   ./build/fonts/characters_Brightly.o \
@@ -136,25 +137,11 @@ endif
 	mkdir -p $(dir $@)
 	nasm -f elf -g $< -o $@
 
-user_programs: user_stdlibs user_other_programs
-
-user_stdlibs:
-	@for libdir in $(STDLIBS); do \
-		echo "Building standard library $$libdir..."; \
-		$(MAKE) -C $$libdir all || exit 1; \
-	done
-
-user_other_programs:
+user_programs:
 	@{ \
 		for dir in $(shell find ./assets/programs -mindepth 1 -maxdepth 1 -type d); do \
-			skip=0; \
-			for stdlib in $(STDLIBS); do \
-				if [ "$$dir" = "$$stdlib" ]; then skip=1; fi; \
-			done; \
-			if [ $$skip -eq 0 ]; then \
-				echo "Building user program $$dir..."; \
-				$(MAKE) -C $$dir all || exit 1; \
-			fi; \
+			echo "Building user program $$dir..."; \
+			$(MAKE) -C $$dir all || exit 1; \
 		done; \
 	}
 
@@ -163,8 +150,8 @@ user_programs_clean:
 		$(MAKE) -C $$dir clean || true; \
 	done
 
-clean: user_programs_clean
-	rm -rf ./bin/boot.bin ./bin/boot_with_size.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o ./build/kernelfull-elf.o $(FILES) ./bin/ ./build/ ./mnt ./src/fonts
+clean: user_programs_clean clean_mounts
+	rm -rf ./bin/boot.bin ./bin/boot_with_size.bin ./bin/kernel.bin ./bin/os.bin ./build/kernelfull.o ./build/kernelfull-elf.o $(FILES) ./bin/ ./build/ ./src/fonts
 
 # Clean up any mounted disk images (macOS specific)
 clean_mounts:

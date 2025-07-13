@@ -30,42 +30,29 @@ struct gdt_structured gdt_structured[VIOS_TOTAL_GDT_SEGMENTS] = {
     {.base = 0x00, .limit = 0xffffffff, .type = 0xf2},
     {.base = (uint32_t)(uintptr_t)&tss, .limit = sizeof(tss) - 1, .type = 0x89}};
 
-
-
-
-
-
-
-
 void kernel_main()
 {
     simple_serial_init();
-    simple_serial_puts("Serial Debug Initialized\n");
+    simple_serial_puts("DEBUG: Kernel starting...\n");
 
-    simple_serial_puts("Initializing GDT and TSS...\n");
     kernel_init_gdt_and_tss();
-    simple_serial_puts("GDT and TSS initialized\n");
+    simple_serial_puts("DEBUG: GDT and TSS initialized\n");
 
-    simple_serial_puts("Initializing devices...\n");
     kernel_init_devices();
-    simple_serial_puts("Devices initialized\n");
+    simple_serial_puts("DEBUG: Devices initialized\n");
 
-    simple_serial_puts("Initializing paging...\n");
     kernel_init_paging();
-    simple_serial_puts("Paging enabled\n");
+    simple_serial_puts("DEBUG: Paging initialized\n");
 
-    simple_serial_puts("Initializing graphics system...\n");
     struct mouse *mouse = kernel_init_graphics();
-    simple_serial_puts("Graphics system initialized\n");
+    simple_serial_puts("DEBUG: Graphics initialized\n");
 
     kernel_display_boot_message();
-    simple_serial_puts("Boot message drawn\n");
-
-    virtual_audio_control(VIRTUAL_AUDIO_BEEP);
-    simple_serial_puts("Audio beep triggered\n");
+    simple_serial_puts("DEBUG: Boot message displayed\n");
 
     kernel_unmask_timer_irq();
+    simple_serial_puts("DEBUG: Timer IRQ unmasked\n");
 
-    simple_serial_puts("Entering kernel loop...\n");
+    simple_serial_puts("DEBUG: Starting main loop...\n");
     kernel_run_main_loop(mouse);
 }

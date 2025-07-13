@@ -1,16 +1,17 @@
-FILES=./build/cpp_test.o
-INCLUDES=-I./src -I../stdlib++/src
-FLAGS= -g -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -fno-rtti -fno-exceptions
+CPP_TARGET = cpp_test.elf
+CPP_SRC = src/cpp_test.cpp
+CPP_OBJ = cpp_test.o
+CPP = i686-elf-g++
+CPPFLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -I/opt/ViOS/include
+LIBS = /opt/ViOS/lib/libViOSlibc.a
 
-.PHONY: prepare_dirs
-prepare_dirs:
-	mkdir -p ./build
+all: $(CPP_TARGET)
 
-all: prepare_dirs ${FILES}
-	i686-elf-ld -m elf_i386 -relocatable ./build/cpp_test.o ../stdlib++/stdlib.elf -o ./cpp_test.elf
+$(CPP_TARGET): $(CPP_OBJ)
+	i686-elf-ld -m elf_i386 -relocatable --entry _start $(CPP_OBJ) $(LIBS) -o $(CPP_TARGET)
 
-./build/cpp_test.o: ./src/cpp_test.cpp
-	i686-elf-g++ ${INCLUDES} $(FLAGS) -c ./src/cpp_test.cpp -o ./build/cpp_test.o
+$(CPP_OBJ): $(CPP_SRC)
+	$(CPP) $(CPPFLAGS) -std=gnu++11 -c $< -o $@
 
 clean:
-	rm -rf ${FILES} ./build ./cpp_test.elf 
+	rm -f $(CPP_OBJ) $(CPP_TARGET)

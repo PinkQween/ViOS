@@ -997,10 +997,4 @@ void DrawAtariChar(char c, int x, int y, int r, int g, int b, int scale)
 void graphics_pit_interrupt_handler(struct interrupt_frame *frame)
 {
     _graphics_pit_tick();
-    simple_serial_puts("PIT tick\n");
-    char debug_str[64];
-    int_to_str((int)_graphics_get_time_ms(), debug_str);
-    simple_serial_puts("ms: ");
-    simple_serial_puts(debug_str);
-    simple_serial_puts("\n");
 }
