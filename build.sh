@@ -161,7 +161,7 @@ check_and_install() {
 run_make() {
     echo "[*] Running your project Makefile..."
 
-    make clean
+    make clean || echo "[*] make clean failed, continuing anyway..."
     make all
 }
 
