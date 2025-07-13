@@ -130,6 +130,21 @@ ___________
 │       ├── vix_clear_screen.md
 │       ├── vix_draw_pixel.md
 │       └── vix_present_frame.md
+├── external
+│   └── ViOS-libc
+│       ├── include
+│       │   ├── stdio.h
+│       │   ├── stdlib.h
+│       │   ├── string.h
+│       │   ├── sys
+│       │   │   └── types.h
+│       │   ├── termios.h
+│       │   ├── unistd.h
+│       │   └── ViOS
+│       │       ├── syscall.h
+│       │       └── vios.h
+│       └── lib
+│           └── libViOSlibc.a
 ├── generateFonts.sh
 ├── LICENSE
 ├── Makefile
@@ -205,8 +220,6 @@ ___________
 │   │   ├── keyboard.h
 │   │   ├── ps2_keyboard.c
 │   │   └── ps2_keyboard.h
-│   ├── libc
-│   │   └── README.md
 │   ├── linker.ld
 │   ├── loader
 │   │   └── formats
@@ -267,7 +280,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-40 directories, 151 files
+45 directories, 159 files
 ```
 
 ___________

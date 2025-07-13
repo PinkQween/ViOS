@@ -44,8 +44,8 @@ install_gcc() {
 check_and_install_vios_libc() {
     echo "[*] Checking for ViOS standard library..."
     
-    # Set the ViOS library path to be local within the project
-    VIOS_LIB_PATH="$(pwd)/src/libc"
+    # Set the ViOS library path to be in external/ViOS-libc
+    VIOS_LIB_PATH="$(pwd)/external/ViOS-libc"
     
     # Check if the library directory exists and contains the expected files
     if [[ -d "$VIOS_LIB_PATH" ]] && [[ -f "$VIOS_LIB_PATH/lib/libViOSlibc.a" ]] && [[ -d "$VIOS_LIB_PATH/include" ]]; then
@@ -77,12 +77,12 @@ check_and_install_vios_libc() {
             exit 1
         fi
         
-        # Create the local libc directory structure
+        # Create the external libc directory structure
         echo "[*] Installing ViOS standard library locally..."
         mkdir -p "$VIOS_LIB_PATH/lib"
         mkdir -p "$VIOS_LIB_PATH/include"
         
-        # Copy the built library and headers to the local directory
+        # Copy the built library and headers to the external directory
         if [[ -f "build/libViOSlibc.a" ]]; then
             cp build/libViOSlibc.a "$VIOS_LIB_PATH/lib/"
         else
@@ -167,8 +167,8 @@ run_make() {
 
 clean_vios_libc() {
     echo "[*] Cleaning ViOS libc installation..."
-    if [[ -d "src/libc" ]]; then
-        rm -rf src/libc
+    if [[ -d "external/ViOS-libc" ]]; then
+        rm -rf external/ViOS-libc
         echo "[✓] ViOS libc cleaned"
     else
         echo "[*] No ViOS libc installation found to clean"
