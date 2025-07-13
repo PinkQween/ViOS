@@ -41,6 +41,78 @@ install_gcc() {
     sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
 }
 
+check_and_install_vios_libc() {
+    echo "[*] Checking for ViOS standard library..."
+    
+    # First check if manually installed in /opt/ViOS
+    if [[ -d "/opt/ViOS" ]] && [[ -f "/opt/ViOS/lib/libViOSlibc.a" ]] && [[ -d "/opt/ViOS/include" ]]; then
+        echo "[✓] ViOS standard library found at /opt/ViOS (manual installation)"
+        return 0
+    fi
+    
+    # Set the ViOS library path to be local within the project
+    VIOS_LIB_PATH="$(pwd)/src/libc"
+    
+    # Check if the library directory exists and contains the expected files
+    if [[ -d "$VIOS_LIB_PATH" ]] && [[ -f "$VIOS_LIB_PATH/lib/libViOSlibc.a" ]] && [[ -d "$VIOS_LIB_PATH/include" ]]; then
+        echo "[✓] ViOS standard library found at $VIOS_LIB_PATH"
+        return 0
+    else
+        echo "[!] ViOS standard library not found at /opt/ViOS or $VIOS_LIB_PATH"
+        echo "[*] Installing ViOS standard library locally..."
+        
+        # Create temporary directory for cloning
+        TEMP_DIR=$(mktemp -d)
+        cd "$TEMP_DIR"
+        
+        # Clone the repository
+        echo "[*] Cloning ViOS-Libc repository..."
+        if ! git clone https://github.com/PinkQween/ViOS-Libc.git; then
+            echo "[!] Failed to clone ViOS-Libc repository"
+            rm -rf "$TEMP_DIR"
+            exit 1
+        fi
+        
+        cd ViOS-Libc
+        
+        # Build the library
+        echo "[*] Building ViOS standard library..."
+        if ! make all; then
+            echo "[!] Failed to build ViOS standard library"
+            rm -rf "$TEMP_DIR"
+            exit 1
+        fi
+        
+        # Create the local libc directory structure
+        echo "[*] Installing ViOS standard library locally..."
+        mkdir -p "$VIOS_LIB_PATH/lib"
+        mkdir -p "$VIOS_LIB_PATH/include"
+        
+        # Copy the built library and headers to the local directory
+        if [[ -f "libViOSlibc.a" ]]; then
+            cp libViOSlibc.a "$VIOS_LIB_PATH/lib/"
+        else
+            echo "[!] Built library file not found"
+            rm -rf "$TEMP_DIR"
+            exit 1
+        fi
+        
+        # Copy headers if they exist
+        if [[ -d "include" ]]; then
+            cp -r include/* "$VIOS_LIB_PATH/include/"
+        elif [[ -d "src" ]]; then
+            # Look for header files in src directory
+            find src -name "*.h" -exec cp --parents {} "$VIOS_LIB_PATH/include/" \;
+        fi
+        
+        # Clean up
+        cd /
+        rm -rf "$TEMP_DIR"
+        
+        echo "[✓] ViOS standard library installed successfully at $VIOS_LIB_PATH"
+    fi
+}
+
 check_and_install() {
     # Check if target gcc is installed
     if ! command -v "${TARGET}-gcc" &>/dev/null; then
@@ -99,6 +171,52 @@ run_make() {
     make all
 }
 
+clean_vios_libc() {
+    echo "[*] Cleaning ViOS libc installation..."
+    if [[ -d "src/libc" ]]; then
+        rm -rf src/libc
+        echo "[✓] ViOS libc cleaned"
+    else
+        echo "[*] No ViOS libc installation found to clean"
+    fi
+}
+
+show_help() {
+    echo "Usage: $0 [OPTION]"
+    echo ""
+    echo "Options:"
+    echo "  build     Build the project (default)"
+    echo "  clean     Clean the project and ViOS libc"
+    echo "  clean-libc Clean only ViOS libc installation"
+    echo "  help      Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0          # Build the project"
+    echo "  $0 clean    # Clean everything"
+    echo "  $0 clean-libc # Clean only libc"
+}
+
 # === Main ===
-check_and_install
-run_make
+case "${1:-build}" in
+    "build")
+        check_and_install
+        check_and_install_vios_libc
+        run_make
+        ;;
+    "clean")
+        echo "[*] Cleaning project..."
+        make clean
+        clean_vios_libc
+        ;;
+    "clean-libc")
+        clean_vios_libc
+        ;;
+    "help"|"-h"|"--help")
+        show_help
+        ;;
+    *)
+        echo "[!] Unknown option: $1"
+        show_help
+        exit 1
+        ;;
+esac

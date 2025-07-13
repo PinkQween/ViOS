@@ -204,6 +204,8 @@ ___________
 │   │   ├── keyboard.h
 │   │   ├── ps2_keyboard.c
 │   │   └── ps2_keyboard.h
+│   ├── libc
+│   │   └── README.md
 │   ├── linker.ld
 │   ├── loader
 │   │   └── formats
@@ -264,7 +266,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-39 directories, 149 files
+40 directories, 150 files
 ```
 
 ___________

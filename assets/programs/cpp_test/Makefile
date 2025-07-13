@@ -1,9 +1,14 @@
+# Check for ViOS libc location - prefer system-wide, fallback to local
+VIOS_LIBC_PATH := $(shell if [ -f "/opt/ViOS/lib/libViOSlibc.a" ]; then echo "/opt/ViOS"; else echo "../../src/libc"; fi)
+VIOS_INCLUDE_PATH := $(VIOS_LIBC_PATH)/include
+VIOS_LIB_PATH := $(VIOS_LIBC_PATH)/lib/libViOSlibc.a
+
 CPP_TARGET = cpp_test.elf
 CPP_SRC = src/cpp_test.cpp
 CPP_OBJ = cpp_test.o
 CPP = i686-elf-g++
-CPPFLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -I/opt/ViOS/include
-LIBS = /opt/ViOS/lib/libViOSlibc.a
+CPPFLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -I$(VIOS_INCLUDE_PATH)
+LIBS = $(VIOS_LIB_PATH)
 
 all: $(CPP_TARGET)
 
