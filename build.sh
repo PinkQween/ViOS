@@ -60,14 +60,14 @@ check_and_install_vios_libc() {
         cd "$TEMP_DIR"
         
         # Clone the repository
-        echo "[*] Cloning ViOS-Clib repository..."
+        echo "[*] Cloning ViOS-Libc repository..."
         if ! git clone https://github.com/PinkQween/ViOS-Libc.git; then
-            echo "[!] Failed to clone ViOS-Clib repository"
+            echo "[!] Failed to clone ViOS-Libc repository"
             rm -rf "$TEMP_DIR"
             exit 1
         fi
         
-        cd ViOS-Clib
+        cd ViOS-Libc
         
         # Build the library
         echo "[*] Building ViOS standard library..."
