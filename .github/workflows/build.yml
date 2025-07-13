@@ -37,7 +37,13 @@ jobs:
       - name: Build OS
         run: |
           make clean
-          sudo ./build.sh
+          # Ensure ViOS libc is built first
+          ./build.sh clean-libc
+          ./build.sh build
+          # Debug: Check if ViOS libc was built
+          echo "Checking ViOS libc installation..."
+          ls -la external/ViOS-libc/include/ || echo "ViOS libc include directory not found"
+          ls -la external/ViOS-libc/lib/ || echo "ViOS libc lib directory not found"
 
       - name: Sanitize tag name
         if: startsWith(github.ref, 'refs/tags/')

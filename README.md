@@ -130,21 +130,6 @@ ___________
 │       ├── vix_clear_screen.md
 │       ├── vix_draw_pixel.md
 │       └── vix_present_frame.md
-├── external
-│   └── ViOS-libc
-│       ├── include
-│       │   ├── stdio.h
-│       │   ├── stdlib.h
-│       │   ├── string.h
-│       │   ├── sys
-│       │   │   └── types.h
-│       │   ├── termios.h
-│       │   ├── unistd.h
-│       │   └── ViOS
-│       │       ├── syscall.h
-│       │       └── vios.h
-│       └── lib
-│           └── libViOSlibc.a
 ├── generateFonts.sh
 ├── LICENSE
 ├── Makefile
@@ -280,7 +265,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-45 directories, 159 files
+39 directories, 150 files
 ```
 
 ___________

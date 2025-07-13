@@ -21,3 +21,4 @@ mnt/
 **/bin/
 **/build/
 .venv/
+external/
