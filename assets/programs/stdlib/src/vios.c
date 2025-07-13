@@ -83,3 +83,49 @@ int vios_system_run(const char *command)
 
     return result;
 }
+
+// VIX Graphics API Implementation
+void vix_draw_pixel(int x, int y, uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(11), "b"(x), "c"(y), "d"(color) : "memory");
+}
+
+void vix_draw_rect(int x, int y, int width, int height, uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(12), "b"(x), "c"(y), "d"(width), "S"(height), "D"(color) : "memory");
+}
+
+void vix_fill_rect(int x, int y, int width, int height, uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(13), "b"(x), "c"(y), "d"(width), "S"(height), "D"(color) : "memory");
+}
+
+void vix_clear_screen(uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(14), "b"(color) : "memory");
+}
+
+void vix_present_frame(void)
+{
+    asm volatile("int $0x80" : : "a"(15) : "memory");
+}
+
+void vix_get_screen_info(vix_screen_info_t *info)
+{
+    asm volatile("int $0x80" : : "a"(16), "b"(info) : "memory");
+}
+
+void vix_draw_line(int x1, int y1, int x2, int y2, uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(17), "b"(x1), "c"(y1), "d"(x2), "S"(y2), "D"(color) : "memory");
+}
+
+void vix_draw_circle(int x, int y, int radius, uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(18), "b"(x), "c"(y), "d"(radius), "S"(color) : "memory");
+}
+
+void vix_fill_circle(int x, int y, int radius, uint32_t color)
+{
+    asm volatile("int $0x80" : : "a"(19), "b"(x), "c"(y), "d"(radius), "S"(color) : "memory");
+}
