@@ -44,12 +44,6 @@ install_gcc() {
 check_and_install_vios_libc() {
     echo "[*] Checking for ViOS standard library..."
     
-    # First check if manually installed in /opt/ViOS
-    if [[ -d "/opt/ViOS" ]] && [[ -f "/opt/ViOS/lib/libViOSlibc.a" ]] && [[ -d "/opt/ViOS/include" ]]; then
-        echo "[✓] ViOS standard library found at /opt/ViOS (manual installation)"
-        return 0
-    fi
-    
     # Set the ViOS library path to be local within the project
     VIOS_LIB_PATH="$(pwd)/src/libc"
     
@@ -58,7 +52,7 @@ check_and_install_vios_libc() {
         echo "[✓] ViOS standard library found at $VIOS_LIB_PATH"
         return 0
     else
-        echo "[!] ViOS standard library not found at /opt/ViOS or $VIOS_LIB_PATH"
+        echo "[!] ViOS standard library not found at $VIOS_LIB_PATH"
         echo "[*] Installing ViOS standard library locally..."
         
         # Create temporary directory for cloning
@@ -66,14 +60,14 @@ check_and_install_vios_libc() {
         cd "$TEMP_DIR"
         
         # Clone the repository
-        echo "[*] Cloning ViOS-Libc repository..."
+        echo "[*] Cloning ViOS-Clib repository..."
         if ! git clone https://github.com/PinkQween/ViOS-Libc.git; then
-            echo "[!] Failed to clone ViOS-Libc repository"
+            echo "[!] Failed to clone ViOS-Clib repository"
             rm -rf "$TEMP_DIR"
             exit 1
         fi
         
-        cd ViOS-Libc
+        cd ViOS-Clib
         
         # Build the library
         echo "[*] Building ViOS standard library..."
@@ -89,8 +83,8 @@ check_and_install_vios_libc() {
         mkdir -p "$VIOS_LIB_PATH/include"
         
         # Copy the built library and headers to the local directory
-        if [[ -f "libViOSlibc.a" ]]; then
-            cp libViOSlibc.a "$VIOS_LIB_PATH/lib/"
+        if [[ -f "build/libViOSlibc.a" ]]; then
+            cp build/libViOSlibc.a "$VIOS_LIB_PATH/lib/"
         else
             echo "[!] Built library file not found"
             rm -rf "$TEMP_DIR"
