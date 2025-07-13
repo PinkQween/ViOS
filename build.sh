@@ -171,6 +171,16 @@ run_make() {
     echo "[*] Running your project Makefile..."
 
     make clean || echo "[*] make clean failed, continuing anyway..."
+    
+    # Debug: Check ViOS libc status before building
+    echo "[*] Debug: Checking ViOS libc status..."
+    if [[ -f "external/ViOS-libc/lib/libViOSlibc.a" ]]; then
+        echo "[✓] ViOS libc found at external/ViOS-libc/lib/libViOSlibc.a"
+        ls -la external/ViOS-libc/include/
+    else
+        echo "[!] ViOS libc not found at external/ViOS-libc/lib/libViOSlibc.a"
+    fi
+    
     make all
 }
 

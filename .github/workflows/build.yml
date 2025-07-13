@@ -43,6 +43,29 @@ jobs:
           echo "Checking ViOS libc installation..."
           ls -la external/ViOS-libc/include/ || echo "ViOS libc include directory not found"
           ls -la external/ViOS-libc/lib/ || echo "ViOS libc lib directory not found"
+          # Debug: Check system-wide installation
+          echo "Checking system-wide ViOS libc..."
+          ls -la /opt/ViOS/ || echo "System-wide ViOS libc not found"
+          # Debug: Test the Makefile detection logic
+          echo "Testing Makefile detection logic..."
+          cd assets/programs/cpp_test
+          echo "Testing if /opt/ViOS/lib/libViOSlibc.a exists:"
+          if [ -f "/opt/ViOS/lib/libViOSlibc.a" ]; then
+            echo "System-wide libc found"
+          else
+            echo "System-wide libc not found, should use local"
+          fi
+          echo "VIOS_LIBC_PATH would be:"
+          if [ -f "/opt/ViOS/lib/libViOSlibc.a" ]; then
+            echo "/opt/ViOS"
+          else
+            echo "../../external/ViOS-libc"
+          fi
+          echo "Current directory: $(pwd)"
+          echo "Checking if ../../external/ViOS-libc/include exists:"
+          ls -la ../../external/ViOS-libc/include/ || echo "Local include directory not found"
+          echo "Checking if ../../external/ViOS-libc/include/stdio.h exists:"
+          ls -la ../../external/ViOS-libc/include/stdio.h || echo "stdio.h not found"
 
       - name: Sanitize tag name
         if: startsWith(github.ref, 'refs/tags/')
