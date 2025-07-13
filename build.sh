@@ -22,6 +22,9 @@ install_deps() {
 install_gcc() {
     echo "[*] Installing GCC cross-toolchain from lordmilko prebuilt binaries..."
 
+    # Store the original directory
+    ORIGINAL_DIR="$(pwd)"
+
     sudo dpkg --add-architecture i386
     sudo apt-get update
 
@@ -39,13 +42,19 @@ install_gcc() {
     unzip -o i686-elf-tools-linux.zip -d i686-elf-tools
     sudo mv -f i686-elf-tools /usr/local/i686-elf-tools
     sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
+    
+    # Return to original directory
+    cd "$ORIGINAL_DIR"
 }
 
 check_and_install_vios_libc() {
     echo "[*] Checking for ViOS standard library..."
     
+    # Store the original directory
+    ORIGINAL_DIR="$(pwd)"
+    
     # Set the ViOS library path to be in external/ViOS-libc
-    VIOS_LIB_PATH="$(pwd)/external/ViOS-libc"
+    VIOS_LIB_PATH="$ORIGINAL_DIR/external/ViOS-libc"
     
     # Check if the library directory exists and contains the expected files
     if [[ -d "$VIOS_LIB_PATH" ]] && [[ -f "$VIOS_LIB_PATH/lib/libViOSlibc.a" ]] && [[ -d "$VIOS_LIB_PATH/include" ]]; then
@@ -100,7 +109,7 @@ check_and_install_vios_libc() {
         fi
         
         # Clean up
-        cd /
+        cd "$ORIGINAL_DIR"
         rm -rf "$TEMP_DIR"
         
         echo "[✓] ViOS standard library installed successfully at $VIOS_LIB_PATH"
