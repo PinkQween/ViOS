@@ -111,26 +111,62 @@ ___________
 │       │       ├── vios.asm
 │       │       ├── vios.c
 │       │       └── vios.h
-│       └── stdlib++
-│           ├── linker.ld
+│       ├── stdlib++
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   └── src
+│       │       ├── audio.h
+│       │       ├── memory.c
+│       │       ├── memory.h
+│       │       ├── start.asm
+│       │       ├── start.cpp
+│       │       ├── stdio.c
+│       │       ├── stdio.h
+│       │       ├── stdlib.c
+│       │       ├── stdlib.h
+│       │       ├── string.c
+│       │       ├── string.h
+│       │       ├── vios.asm
+│       │       ├── vios.c
+│       │       └── vios.h
+│       └── vix_demo
 │           ├── Makefile
 │           └── src
-│               ├── audio.h
-│               ├── memory.c
-│               ├── memory.h
-│               ├── start.asm
-│               ├── start.cpp
-│               ├── stdio.c
-│               ├── stdio.h
-│               ├── stdlib.c
-│               ├── stdlib.h
-│               ├── string.c
-│               ├── string.h
-│               ├── vios.asm
-│               ├── vios.c
-│               └── vios.h
+│               └── vix_demo.c
 ├── build.sh
 ├── buildExternal.sh
+├── docs
+│   └── api
+│       ├── copy_string_from_task.md
+│       ├── disable_interrupts.md
+│       ├── enable_interrupts.md
+│       ├── heap_create.md
+│       ├── heap_free.md
+│       ├── heap_malloc.md
+│       ├── idt_init.md
+│       ├── isr80h_register_command.md
+│       ├── kfree.md
+│       ├── kheap_init.md
+│       ├── kmalloc.md
+│       ├── kzalloc.md
+│       ├── paging_new_4gb.md
+│       ├── paging_switch.md
+│       ├── process_load.md
+│       ├── process_switch.md
+│       ├── README.md
+│       ├── sys_exit.md
+│       ├── sys_free.md
+│       ├── sys_getkey.md
+│       ├── sys_malloc.md
+│       ├── sys_print.md
+│       ├── sys_sleep.md
+│       ├── task_current.md
+│       ├── task_get_stack_item.md
+│       ├── task_new.md
+│       ├── task_switch.md
+│       ├── vix_clear_screen.md
+│       ├── vix_draw_pixel.md
+│       └── vix_present_frame.md
 ├── generateFonts.sh
 ├── LICENSE
 ├── Makefile
@@ -167,6 +203,7 @@ ___________
 │   │   ├── gdt.c
 │   │   └── gdt.h
 │   ├── graphics
+│   │   ├── graphics_arc.md
 │   │   ├── graphics.c
 │   │   ├── graphics.h
 │   │   ├── renderer.c
@@ -188,7 +225,9 @@ ___________
 │   │   ├── isr80h.c
 │   │   ├── isr80h.h
 │   │   ├── process.c
-│   │   └── process.h
+│   │   ├── process.h
+│   │   ├── vix_graphics.c
+│   │   └── vix_graphics.h
 │   ├── kernel
 │   │   ├── init.c
 │   │   ├── init.h
@@ -262,7 +301,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-41 directories, 145 files
+45 directories, 180 files
 ```
 
 ___________
