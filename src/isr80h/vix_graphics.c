@@ -7,7 +7,12 @@
 #include "idt/idt.h"
 #include <stdint.h>
 
-// VIX Graphics API Implementation
+/**
+ * Draws a single pixel at the specified coordinates with the given RGB color using the VIX Graphics API.
+ *
+ * Extracts the x and y coordinates and a packed 24-bit RGB color from the interrupt frame registers,
+ * converts the color to the internal format, and sets the pixel on the current graphics context's back buffer if available.
+ */
 
 void *isr80h_command11_vix_draw_pixel(struct interrupt_frame *frame)
 {
@@ -31,6 +36,11 @@ void *isr80h_command11_vix_draw_pixel(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Draws the outline of a rectangle at the specified coordinates with the given dimensions and RGB color.
+ *
+ * Extracts the rectangle's position, size, and color from the interrupt frame registers and draws the rectangle outline on the current graphics context's back buffer if available.
+ */
 void *isr80h_command12_vix_draw_rect(struct interrupt_frame *frame)
 {
     // Parameters: EBX = x, ECX = y, EDX = width, ESI = height, EDI = color
@@ -56,6 +66,13 @@ void *isr80h_command12_vix_draw_rect(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Fills a rectangle at the specified coordinates with the given dimensions and RGB color on the current graphics context's back buffer.
+ *
+ * The rectangle's position, size, and color are extracted from the interrupt frame registers.
+ * Does nothing if no valid graphics context or back buffer is available.
+ * @returns Always returns 0.
+ */
 void *isr80h_command13_vix_fill_rect(struct interrupt_frame *frame)
 {
     // Parameters: EBX = x, ECX = y, EDX = width, ESI = height, EDI = color
@@ -81,6 +98,12 @@ void *isr80h_command13_vix_fill_rect(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Clears the entire screen to the specified RGB color.
+ *
+ * The color is provided as a packed 32-bit RGB value in the EBX register of the interrupt frame.
+ * The operation is performed on the current graphics context's back buffer if available.
+ */
 void *isr80h_command14_vix_clear_screen(struct interrupt_frame *frame)
 {
     // Parameters: EBX = color (RGB packed)
@@ -101,6 +124,12 @@ void *isr80h_command14_vix_clear_screen(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Presents the current graphics frame buffer to the display.
+ *
+ * This function triggers the graphics subsystem to display the contents of the back buffer, making all recent drawing operations visible on screen.
+ * @returns Always returns 0.
+ */
 void *isr80h_command15_vix_present_frame(struct interrupt_frame *frame)
 {
     // No parameters - just present the current frame
@@ -108,6 +137,12 @@ void *isr80h_command15_vix_present_frame(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Copies the current screen information to a user-provided structure in memory.
+ *
+ * Extracts a pointer to a `vix_screen_info` structure from the interrupt frame and populates it with the current graphics mode's width, height, bits per pixel, and refresh rate.
+ * @returns Always returns 0.
+ */
 void *isr80h_command16_vix_get_screen_info(struct interrupt_frame *frame)
 {
     // Parameters: EBX = pointer to screen_info structure
@@ -133,6 +168,11 @@ void *isr80h_command16_vix_get_screen_info(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Draws a line between two points with a specified RGB color using the VIX Graphics API.
+ *
+ * Extracts the start and end coordinates and the packed RGB color from the interrupt frame registers, converts the color, and draws the line on the current graphics context's back buffer if available.
+ */
 void *isr80h_command17_vix_draw_line(struct interrupt_frame *frame)
 {
     // Parameters: EBX = x1, ECX = y1, EDX = x2, ESI = y2, EDI = color
@@ -159,6 +199,12 @@ void *isr80h_command17_vix_draw_line(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Draws the outline of a circle at the specified coordinates with the given radius and RGB color.
+ *
+ * Extracts the center coordinates, radius, and packed RGB color from the interrupt frame registers,
+ * converts the color, and draws the circle outline on the current graphics context's back buffer if available.
+ */
 void *isr80h_command18_vix_draw_circle(struct interrupt_frame *frame)
 {
     // Parameters: EBX = x, ECX = y, EDX = radius, ESI = color
@@ -183,6 +229,11 @@ void *isr80h_command18_vix_draw_circle(struct interrupt_frame *frame)
     return 0;
 }
 
+/**
+ * Fills a circle at the specified coordinates with the given radius and RGB color on the current graphics back buffer.
+ *
+ * The circle is centered at (x, y) with the specified radius, and the fill color is determined by the packed RGB value provided in the interrupt frame.
+ */
 void *isr80h_command19_vix_fill_circle(struct interrupt_frame *frame)
 {
     // Parameters: EBX = x, ECX = y, EDX = radius, ESI = color
