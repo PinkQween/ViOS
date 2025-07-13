@@ -2,7 +2,8 @@ ViOS – A Custom x86 Multithreaded Kernel
 ========================================
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
+[![Build Libc](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml)
+[![Build OS](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml)
 ![Platform](https://img.shields.io/badge/Platform-x86_32-blue)
 
 ![logo](/ViOS_LOGO_PNG.png)
