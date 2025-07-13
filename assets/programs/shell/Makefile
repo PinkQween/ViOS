@@ -1,5 +1,5 @@
 # Check for ViOS libc location - prefer system-wide, fallback to local
-VIOS_LIBC_PATH := $(shell if [ -f "/opt/ViOS/lib/libViOSlibc.a" ]; then echo "/opt/ViOS"; else echo "../../src/libc"; fi)
+VIOS_LIBC_PATH := $(shell if [ -f "/opt/ViOS/lib/libViOSlibc.a" ]; then echo "/opt/ViOS"; else echo "../../external/ViOS-libc"; fi)
 VIOS_INCLUDE_PATH := $(VIOS_LIBC_PATH)/include
 VIOS_LIB_PATH := $(VIOS_LIBC_PATH)/lib/libViOSlibc.a
 
