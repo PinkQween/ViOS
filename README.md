@@ -79,6 +79,7 @@ ___________
 .
 ├── .env
 ├── .github
+│   ├── dependabot.yml
 │   └── workflows
 │       └── build.yml
 ├── .gitignore
@@ -266,7 +267,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-40 directories, 150 files
+40 directories, 151 files
 ```
 
 ___________
