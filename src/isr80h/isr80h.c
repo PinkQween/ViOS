@@ -7,6 +7,12 @@
 #include "file.h"
 #include "vix_graphics.h"
 
+/**
+ * Registers all supported system commands and their handlers for interrupt 0x80h.
+ *
+ * This function binds each system command identifier to its corresponding handler function,
+ * enabling the kernel to dispatch system calls and graphics operations through the interrupt 0x80h interface.
+ */
 void isr80h_register_commands()
 {
     // Process Management
