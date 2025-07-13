@@ -21,21 +21,6 @@ jobs:
         with:
           submodules: true # if you use submodules
 
-      - name: Build ViOS-libc if missing
-        run: |
-          if [ ! -f "external/ViOS-libc/lib/libViOSlibc.a" ]; then
-            git clone https://github.com/PinkQween/ViOS-Libc.git external/ViOS-libc-tmp
-            cd external/ViOS-libc-tmp
-            make all
-            make install
-            mkdir -p ../external/ViOS-libc/lib
-            mkdir -p ../external/ViOS-libc/include
-            cp build/libViOSlibc.a ../external/ViOS-libc/lib/
-            cp -r include/* ../external/ViOS-libc/include/
-            cd ..
-            rm -rf external/ViOS-libc-tmp
-          fi
-
       - name: Install dependencies and cross-compiler
         run: |
           sudo dpkg --add-architecture i386
@@ -50,6 +35,21 @@ jobs:
           i686-elf-gcc --version
           i686-elf-ld --version
           nasm -v
+
+      - name: Build ViOS-libc if missing
+        run: |
+          if [ ! -f "external/ViOS-libc/lib/libViOSlibc.a" ]; then
+            git clone https://github.com/PinkQween/ViOS-Libc.git external/ViOS-libc-tmp
+            cd external/ViOS-libc-tmp
+            make all
+            make install
+            mkdir -p ../external/ViOS-libc/lib
+            mkdir -p ../external/ViOS-libc/include
+            cp build/libViOSlibc.a ../external/ViOS-libc/lib/
+            cp -r include/* ../external/ViOS-libc/include/
+            cd ..
+            rm -rf external/ViOS-libc-tmp
+          fi
 
       - name: Build OS
         run: |
