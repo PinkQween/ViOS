@@ -30,6 +30,7 @@ FILES = \
   ./build/isr80h/io.o \
   ./build/isr80h/heap.o \
   ./build/isr80h/process.o \
+  ./build/isr80h/vix_graphics.o \
   ./build/keyboard/keyboard.o \
   ./build/keyboard/ps2_keyboard.o \
   ./build/loader/formats/elfloader.o \
