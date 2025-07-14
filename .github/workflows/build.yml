@@ -21,45 +21,10 @@ jobs:
         with:
           submodules: true # if you use submodules
 
-      - name: Install dependencies and cross-compiler
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update
-          sudo apt-get install -y build-essential gcc-multilib g++-multilib nasm wget bison flex
-
-          wget https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
-          unzip i686-elf-tools-linux.zip -d i686-elf-tools
-          sudo mv i686-elf-tools /usr/local/i686-elf-tools
-          sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
-
-          i686-elf-gcc --version
-          i686-elf-ld --version
-          nasm -v
-
-      - name: Build ViOS-libc if missing
-        run: |
-          if [ ! -f "external/ViOS-libc/lib/libViOSlibc.a" ]; then
-            git clone https://github.com/PinkQween/ViOS-Libc.git external/ViOS-libc-tmp
-            cd external/ViOS-libc-tmp
-            make all
-            make install
-            mkdir -p ../external/ViOS-libc/lib
-            mkdir -p ../external/ViOS-libc/include
-            cp build/libViOSlibc.a ../external/ViOS-libc/lib/
-            cp -r include/* ../external/ViOS-libc/include/
-            cd ..
-            rm -rf external/ViOS-libc-tmp
-          fi
-
       - name: Build OS
         run: |
           make clean
-          # Build with ViOS libc (already installed in previous step)
           ./build.sh build
-          # Verify ViOS libc installation
-          echo "Verifying ViOS libc installation..."
-          ls -la external/ViOS-libc/include/ || echo "ViOS libc include directory not found"
-          ls -la external/ViOS-libc/lib/ || echo "ViOS libc lib directory not found"
 
       - name: Sanitize tag name
         if: startsWith(github.ref, 'refs/tags/')

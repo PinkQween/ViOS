@@ -27,33 +27,45 @@ install_deps() {
 
 check_and_install_vios_binutils() {
     echo "[*] Checking for ViOS binutils..."
-    
+
     # Check if i386-vios-elf-ld is installed (binutils doesn't include GCC)
     if command -v "i386-vios-elf-ld" &>/dev/null; then
         echo "[✓] ViOS binutils found at: $(which i386-vios-elf-ld)"
         return 0
     fi
-    
+
     echo "[!] ViOS binutils not found. Attempting to install..."
-    
-    # Check if we can install via package manager
+
     if [[ "$(uname -s)" == "Darwin" ]]; then
-        # macOS - try Homebrew
-        if command -v brew &>/dev/null; then
-            echo "[*] Installing ViOS binutils via Homebrew..."
-            brew install --HEAD "../ViOS binutils/Formula/vios-binutils.rb" || {
-                echo "[!] Failed to install via Homebrew. Trying alternative path..."
-                brew install ../vios-binutils || {
-                    echo "[!] Failed to install via Homebrew. Please install manually from:"
-                    echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
-                    exit 1
-                }
+        # macOS - ensure Homebrew is installed
+        if ! command -v brew &>/dev/null; then
+            echo "[!] Homebrew not found. Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
+                echo "[!] Homebrew installation failed. Please install manually:"
+                echo "[*] https://brew.sh/"
+                exit 1
             }
-        else
-            echo "[!] Homebrew not found. Please install ViOS binutils manually from:"
-            echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
-            exit 1
+
+            # Add Homebrew to PATH for current session
+            if [[ -d "/opt/homebrew/bin" ]]; then
+                export PATH="/opt/homebrew/bin:$PATH"
+            elif [[ -d "/usr/local/bin" ]]; then
+                export PATH="/usr/local/bin:$PATH"
+            fi
+
+            echo "[✓] Homebrew installed successfully."
         fi
+
+        echo "[*] Installing ViOS binutils via Homebrew..."
+        brew install --HEAD "../ViOS binutils/Formula/vios-binutils.rb" || {
+            echo "[!] Failed to install via Homebrew. Trying alternative path..."
+            brew install ../vios-binutils || {
+                echo "[!] Failed to install via Homebrew. Please install manually from:"
+                echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
+                exit 1
+            }
+        }
+
     else
         # Linux - try to download and install from releases
         echo "[*] Downloading ViOS binutils from GitHub releases..."
