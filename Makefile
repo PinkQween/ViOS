@@ -94,12 +94,21 @@ ifeq ($(UNAME_S),Linux)
 	@sudo umount /mnt/d
 	@echo "User programs and assets installed to disk image!"
 else ifeq ($(UNAME_S),Darwin)
-	@echo "Formatting disk image as FAT16 using mformat (macOS)..."
-	@mformat -i ./bin/os.bin@@1M -F
-	@mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
-	@find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
-	@# Also copy asm_test.bin as a test binary
-	@mcopy -i ./bin/os.bin@@1M assets/programs/asm_test/asm_test.bin ::/
+	@echo "Attaching disk image (macOS)..."
+	@bash -c '\
+		DISK_ID=$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin | awk "/\/dev\// {print \$$1}"); \
+		echo "Attached as $$DISK_ID"; \
+		sudo mkdir -p /Volumes/viosmnt; \
+		sudo mount -t msdos $$DISK_ID /Volumes/viosmnt || { echo "Failed to mount $$DISK_ID"; exit 1; }; \
+		echo "Copying files..."; \
+		sudo cp -r ./assets/* /Volumes/viosmnt/ 2>/dev/null || true; \
+		find ./assets/programs -name "*.elf" -exec sudo cp {} /Volumes/viosmnt/ \;; \
+		sync; \
+		echo "Unmounting..."; \
+		sudo umount /Volumes/viosmnt; \
+		hdiutil detach $$DISK_ID; \
+		echo "User programs and assets installed to disk image!" \
+	'
 endif
 	@echo "User programs and assets installed to disk image!"
 

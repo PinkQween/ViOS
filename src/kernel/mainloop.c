@@ -14,23 +14,36 @@ void kernel_run_main_loop(struct mouse *mouse)
     simple_serial_puts("DEBUG: ===== ENTERING MAIN LOOP =====\n");
     simple_serial_puts("DEBUG: Entering main loop\n");
 
+    // EXAMPLE INJECT ARGUMENT
+
+    // struct command_argument argument;
+    // strcpy(argument.argument, "Testing!");
+    // argument.next = 0x00;
+    // process_inject_arguments(process, &argument);
+
     struct process *process = 0;
-    int res = process_load_switch("0:/cpp_test.elf", &process);
+    int res = process_load_switch("0:/asm_test.elf", &process);
     if (res != VIOS_ALL_OK)
     {
-        panic("Failed to load blank.elf\n");
+        panic("Failed to load asm_test.elf\n");
     }
 
-    struct command_argument argument;
-    strcpy(argument.argument, "Testing!");
-    argument.next = 0x00;
-
-    process_inject_arguments(process, &argument);
-
-    res = process_load_switch("0:/blank_asm.elf", &process);
+    res = process_load_switch("0:/c_print.elf", &process);
     if (res != VIOS_ALL_OK)
     {
-        panic("Failed to load blank_asm.elf\n");
+        panic("Failed to load cpp_print.elf\n");
+    }
+
+    res = process_load_switch("0:/asm_test.elf", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        panic("Failed to load asm_test.elf\n");
+    }
+
+    res = process_load_switch("0:/cpp_prnt.elf", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        panic("Failed to load cpp_print.elf\n");
     }
 
     task_run_first_ever_task();

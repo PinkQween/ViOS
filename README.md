@@ -113,6 +113,16 @@ ___________
 │       │   ├── linker.ld
 │       │   ├── main.asm
 │       │   └── Makefile
+│       ├── c_print
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   └── src
+│       │       └── main.c
+│       ├── cpp_prnt
+│       │   ├── linker.ld
+│       │   ├── Makefile
+│       │   └── src
+│       │       └── main.cpp
 │       ├── cpp_test
 │       │   ├── linker.ld
 │       │   ├── Makefile
@@ -125,6 +135,7 @@ ___________
 │               ├── shell.c
 │               └── shell.h
 ├── build.sh
+├── build+run.sh
 ├── buildExternal.sh
 ├── docs
 │   └── api
@@ -162,6 +173,7 @@ ___________
 ├── LICENSE
 ├── Makefile
 ├── README.md
+├── run
 ├── run.sh
 ├── setupRemoteBuild.sh
 ├── src
@@ -281,6 +293,7 @@ ___________
 │   └── utils
 │       ├── utils.c
 │       └── utils.h
+├── test.img
 ├── update_boot.sh
 ├── updateREADME.sh
 ├── utilities
@@ -293,7 +306,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-40 directories, 153 files
+44 directories, 162 files
 ```
 
 ___________
