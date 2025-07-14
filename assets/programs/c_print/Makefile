@@ -6,6 +6,7 @@ VIOS_LIB_PATH := $(VIOS_LIBC_PATH)/lib/libViOSlibc.a
 CPP_TARGET = c_print.elf
 CPP_SRC = src/main.c
 CPP_OBJ = c_print.o
+CRT0_OBJ = crt0.o
 CPP = i686-elf-g++
 CPPFLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -I$(VIOS_INCLUDE_PATH)
 LIBS = $(VIOS_LIB_PATH)
@@ -18,5 +19,8 @@ $(CPP_TARGET): $(CPP_OBJ)
 $(CPP_OBJ): $(CPP_SRC)
 	$(CPP) $(CPPFLAGS) -std=gnu++11 -c $< -o $@
 
+$(CRT0_OBJ): src/crt0.s
+	nasm -f elf32 $< -o $@
+
 clean:
-	rm -f $(CPP_OBJ) $(CPP_TARGET)
+	rm -f $(CPP_OBJ) $(CRT0_OBJ) $(CPP_TARGET)
