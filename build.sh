@@ -6,10 +6,11 @@ set -euo pipefail
 # export PREFIX="$HOME/opt/cross"
 # export TARGET=i686-elf
 # export PATH="$PREFIX/bin:$PATH"
-export VENV_DIR="/ubuntu/ViOS-venv"
+# Set platform-appropriate virtual environment directory
+export VENV_DIR="$HOME/ViOS-venv"
 
 echo "=================================="
-echo "  Using system i686-elf toolchain"
+echo "  Using ViOS i386-ViOS-elf toolchain"
 echo "=================================="
 
 install_deps() {
@@ -23,6 +24,185 @@ install_deps() {
 # install_gcc() {
 #     # ... removed ...
 # }
+
+check_and_install_vios_binutils() {
+    echo "[*] Checking for ViOS binutils..."
+    
+    # Check if i386-vios-elf-ld is installed (binutils doesn't include GCC)
+    if command -v "i386-vios-elf-ld" &>/dev/null; then
+        echo "[✓] ViOS binutils found at: $(which i386-vios-elf-ld)"
+        return 0
+    fi
+    
+    echo "[!] ViOS binutils not found. Attempting to install..."
+    
+    # Check if we can install via package manager
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # macOS - try Homebrew
+        if command -v brew &>/dev/null; then
+            echo "[*] Installing ViOS binutils via Homebrew..."
+            brew install --HEAD "../ViOS binutils/Formula/vios-binutils.rb" || {
+                echo "[!] Failed to install via Homebrew. Trying alternative path..."
+                brew install ../vios-binutils || {
+                    echo "[!] Failed to install via Homebrew. Please install manually from:"
+                    echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
+                    exit 1
+                }
+            }
+        else
+            echo "[!] Homebrew not found. Please install ViOS binutils manually from:"
+            echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
+            exit 1
+        fi
+    else
+        # Linux - try to download and install from releases
+        echo "[*] Downloading ViOS binutils from GitHub releases..."
+        
+        # Create temporary directory
+        TEMP_DIR=$(mktemp -d)
+        cd "$TEMP_DIR"
+        
+        # Try to download latest release - first try .tar.gz, then .deb as fallback
+        echo "[*] Attempting to download tar.gz archive..."
+        if curl -L -f -o vios-binutils.tar.gz "https://github.com/PinkQween/ViOS-binutils/releases/latest/download/vios-binutils-binaries-0.0.1.tar.gz"; then
+            INSTALL_TYPE="tar"
+        else
+            echo "[*] tar.gz download failed, trying .deb package..."
+            if curl -L -f -o vios-binutils.deb "https://github.com/PinkQween/ViOS-binutils/releases/latest/download/vios-binutils_0.0.1-1_amd64.deb"; then
+                INSTALL_TYPE="deb"
+            else
+                echo "[!] Both tar.gz and deb downloads failed. Trying to get latest release info..."
+                # Try to get the actual latest release tag and construct URLs
+                LATEST_TAG=$(curl -s https://api.github.com/repos/PinkQween/ViOS-binutils/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+                if [[ -n "$LATEST_TAG" ]]; then
+                    echo "[*] Found latest tag: $LATEST_TAG, trying versioned URLs..."
+                    # Remove 'v' prefix if present to match asset naming
+                    VERSION_NUM=${LATEST_TAG#v}
+                    echo "[*] Using version number: $VERSION_NUM"
+                    if curl -L -f -o vios-binutils.tar.gz "https://github.com/PinkQween/ViOS-binutils/releases/download/$LATEST_TAG/vios-binutils-binaries-$VERSION_NUM.tar.gz"; then
+                        INSTALL_TYPE="tar"
+                    elif curl -L -f -o vios-binutils.deb "https://github.com/PinkQween/ViOS-binutils/releases/download/$LATEST_TAG/vios-binutils_$VERSION_NUM-1_amd64.deb"; then
+                        INSTALL_TYPE="deb"
+                    else
+                        echo "[!] Failed to download ViOS binutils. Please install manually from:"
+                        echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
+                        rm -rf "$TEMP_DIR"
+                        exit 1
+                    fi
+                else
+                    echo "[!] Failed to get latest release info. Please install manually from:"
+                    echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
+                    rm -rf "$TEMP_DIR"
+                    exit 1
+                fi
+            fi
+        fi
+        
+        # Extract and install based on file type
+        if [[ "$INSTALL_TYPE" == "tar" ]]; then
+            echo "[*] Extracting and installing ViOS binutils from tar.gz..."
+            tar -xzf vios-binutils.tar.gz
+            
+            # Check for different possible archive structures
+            echo "[*] Checking archive structure..."
+            ls -la .
+            
+            # Install to /usr/local (requires sudo)
+            if [[ -d "opt/vios-binutils" ]]; then
+                echo "[*] Found opt/vios-binutils structure"
+                sudo cp -r opt/vios-binutils/* /usr/local/
+                
+                # Create uppercase symbolic links for compatibility
+                echo "[*] Creating uppercase symbolic links for compatibility..."
+                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
+                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
+                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
+                    fi
+                done
+                
+                echo "[✓] ViOS binutils installed to /usr/local"
+            elif [[ -d "bin" ]]; then
+                echo "[*] Found bin/ structure"
+                sudo cp -r bin/* /usr/local/bin/
+                
+                # Create uppercase symbolic links for compatibility
+                echo "[*] Creating uppercase symbolic links for compatibility..."
+                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
+                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
+                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
+                    fi
+                done
+                
+                echo "[✓] ViOS binutils installed to /usr/local/bin"
+            elif [[ -d "usr/local" ]]; then
+                echo "[*] Found usr/local structure"
+                sudo cp -r usr/local/* /usr/local/
+                
+                # Create uppercase symbolic links for compatibility
+                echo "[*] Creating uppercase symbolic links for compatibility..."
+                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
+                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
+                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
+                    fi
+                done
+                
+                echo "[✓] ViOS binutils installed to /usr/local"
+            elif [[ -f "i386-vios-elf-ld" ]]; then
+                echo "[*] Found binaries in root directory"
+                sudo cp i386-vios-elf-* /usr/local/bin/
+                if [[ -d "ldscripts" ]]; then
+                    sudo mkdir -p /usr/local/lib/ldscripts
+                    sudo cp -r ldscripts/* /usr/local/lib/ldscripts/
+                fi
+                
+                # Create uppercase symbolic links for compatibility
+                echo "[*] Creating uppercase symbolic links for compatibility..."
+                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
+                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
+                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
+                    fi
+                done
+                
+                echo "[✓] ViOS binutils installed to /usr/local/bin"
+            else
+                echo "[!] Unexpected archive structure. Contents:"
+                find . -type f -name "*ViOS*" -o -name "*elf*" | head -10
+                echo "[*] Please install manually from: https://github.com/PinkQween/ViOS-binutils/releases"
+                rm -rf "$TEMP_DIR"
+                exit 1
+            fi
+        elif [[ "$INSTALL_TYPE" == "deb" ]]; then
+            echo "[*] Installing ViOS binutils from .deb package..."
+            if command -v dpkg >/dev/null 2>&1; then
+                sudo dpkg -i vios-binutils.deb
+                echo "[✓] ViOS binutils installed via dpkg"
+            else
+                echo "[!] dpkg not found. Cannot install .deb package."
+                echo "[*] Please install manually from: https://github.com/PinkQween/ViOS-binutils/releases"
+                rm -rf "$TEMP_DIR"
+                exit 1
+            fi
+        fi
+        
+        # Clean up
+        cd /
+        rm -rf "$TEMP_DIR"
+        
+        # Update PATH if needed
+        if ! echo "$PATH" | grep -q "/usr/local/bin"; then
+            echo "[*] Adding /usr/local/bin to PATH"
+            export PATH="/usr/local/bin:$PATH"
+        fi
+    fi
+    
+    # Verify installation
+    if command -v "i386-vios-elf-ld" &>/dev/null; then
+        echo "[✓] ViOS binutils successfully installed!"
+    else
+        echo "[!] ViOS binutils installation failed. Please install manually."
+        exit 1
+    fi
+}
 
 check_and_install_vios_libc() {
     echo "[*] Checking for ViOS standard library..."
@@ -94,14 +274,14 @@ check_and_install_vios_libc() {
 }
 
 check_and_install() {
-    # Check if target gcc is installed
-    if ! command -v "i686-elf-gcc" &>/dev/null; then
-        echo "[!] i686-elf-gcc not found. Please install it:"
-        echo "[*] On macOS: brew install i686-elf-gcc"
+    # Check if target binutils are installed
+    if ! command -v "i386-vios-elf-ld" &>/dev/null; then
+        echo "[!] i386-vios-elf-ld not found. Please install ViOS binutils:"
+        echo "[*] On macOS: brew install ViOS-binutils"
         echo "[*] On Linux: Follow your distribution's instructions"
         exit 1
     else
-        echo "[✓] i686-elf-gcc found at: $(which i686-elf-gcc)"
+        echo "[✓] i386-vios-elf-ld found at: $(which i386-vios-elf-ld)"
     fi
 
     # Check required tools
@@ -193,8 +373,9 @@ show_help() {
 # === Main ===
 case "${1:-build}" in
     "build")
-        check_and_install
+        check_and_install_vios_binutils
         check_and_install_vios_libc
+        check_and_install
         run_make
         ;;
     "clean")

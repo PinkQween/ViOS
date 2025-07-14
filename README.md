@@ -32,7 +32,7 @@ The following components are versioned together and must be used in compatible v
 ## 🔧 Build Status
 
 [![Build: Libc](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml)
-[![Build: Binutils](https://github.com/PinkQween/ViOS-Libc/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS-binutils/actions/workflows/build.yml)
+[![Build: Binutils](https://github.com/PinkQween/ViOS-binutils/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS-binutils/actions/workflows/build.yml)
 [![Build: OS (ViOS)](https://github.com/PinkQween/ViOS/actions/workflows/build.yml/badge.svg)](https://github.com/PinkQween/ViOS/actions/workflows/build.yml)
 
 ---
@@ -125,28 +125,23 @@ ___________
 │       │   ├── main.asm
 │       │   └── Makefile
 │       ├── c_print
-│       │   ├── linker.ld
 │       │   ├── Makefile
 │       │   └── src
 │       │       └── main.c
 │       ├── cpp_prnt
-│       │   ├── linker.ld
 │       │   ├── Makefile
 │       │   └── src
 │       │       └── main.cpp
 │       ├── cpp_test
-│       │   ├── linker.ld
 │       │   ├── Makefile
 │       │   └── src
-│       │       └── cpp_test.cpp
+│       │       └── main.cpp
 │       └── shell
-│           ├── linker.ld
 │           ├── Makefile
 │           └── src
-│               ├── shell.c
+│               ├── main.c
 │               └── shell.h
 ├── build.sh
-├── build+run.sh
 ├── buildExternal.sh
 ├── docs
 │   └── api
@@ -317,7 +312,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-44 directories, 162 files
+44 directories, 157 files
 ```
 
 ___________

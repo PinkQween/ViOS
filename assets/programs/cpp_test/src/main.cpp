@@ -1,22 +1,22 @@
 #include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
+// #include <termios.h>
+// #include <unistd.h>
 
-void set_raw_mode(int enable)
-{
-    static struct termios oldt, newt;
-    if (enable)
-    {
-        tcgetattr(STDIN_FILENO, &oldt); // save old settings
-        newt = oldt;
-        newt.c_lflag &= ~(ICANON | ECHO);        // disable buffering and echo
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt); // apply new settings
-    }
-    else
-    {
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // restore old settings
-    }
-}
+// void set_raw_mode(int enable)
+// {
+//     static struct termios oldt, newt;
+//     if (enable)
+//     {
+//         tcgetattr(STDIN_FILENO, &oldt); // save old settings
+//         newt = oldt;
+//         newt.c_lflag &= ~(ICANON | ECHO);        // disable buffering and echo
+//         tcsetattr(STDIN_FILENO, TCSANOW, &newt); // apply new settings
+//     }
+//     else
+//     {
+//         tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // restore old settings
+//     }
+// }
 
 int main(int argc, char *argv[])
 {
