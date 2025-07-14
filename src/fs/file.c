@@ -7,6 +7,7 @@
 #include "fat/fat16.h"
 #include "status.h"
 #include "kernel.h"
+#include "debug/simple_serial.h"
 struct filesystem *filesystems[VIOS_MAX_FILESYSTEMS];
 struct file_descriptor *file_descriptors[VIOS_MAX_FILE_DESCRIPTORS];
 
@@ -95,16 +96,32 @@ static struct file_descriptor *file_get_descriptor(int fd)
 
 struct filesystem *fs_resolve(struct disk *disk)
 {
+    simple_serial_puts("DEBUG: Entering fs_resolve\n");
     struct filesystem *fs = 0;
+    char msg[64];
+    simple_serial_puts("DEBUG: fs_resolve: before loop\n");
     for (int i = 0; i < VIOS_MAX_FILESYSTEMS; i++)
     {
-        if (filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)
+        snprintf(msg, sizeof(msg), "DEBUG: fs_resolve: i=%d, fs=%p\n", i, filesystems[i]);
+        simple_serial_puts(msg);
+        if (filesystems[i])
         {
-            fs = filesystems[i];
-            break;
+            snprintf(msg, sizeof(msg), "DEBUG: fs_resolve: filesystems[%d]->resolve=%p\n", i, filesystems[i]->resolve);
+            simple_serial_puts(msg);
+        }
+        if (filesystems[i] && filesystems[i]->resolve)
+        {
+            simple_serial_puts("DEBUG: fs_resolve: about to call resolve\n");
+            int res = filesystems[i]->resolve(disk);
+            simple_serial_puts("DEBUG: fs_resolve: resolve returned\n");
+            if (res == 0)
+            {
+                fs = filesystems[i];
+                break;
+            }
         }
     }
-
+    simple_serial_puts("DEBUG: fs_resolve returning\n");
     return fs;
 }
 

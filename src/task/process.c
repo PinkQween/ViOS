@@ -1,21 +1,12 @@
 #include "process.h"
-#include "config.h"
-#include "status.h"
-#include "task/task.h"
-#include "memory/memory.h"
-#include "string/string.h"
-#include "fs/file.h"
-#include "memory/heap/kheap.h"
-#include "memory/paging/paging.h"
-#include "loader/formats/elfloader.h"
-#include "panic/panic.h"
-#include "kernel.h"
+#include "debug/simple_serial.h"
 
+// The current process that is running
 struct process *current_process = 0;
 
-int process_free_process(struct process *process);
-
 static struct process *processes[VIOS_MAX_PROCESSES] = {};
+
+int process_free_process(struct process *process);
 
 static void process_init(struct process *process)
 {
@@ -60,24 +51,56 @@ static int process_find_free_allocation_index(struct process *process)
 
 void *process_malloc(struct process *process, size_t size)
 {
-    void *ptr = kzalloc(size);
+    void *ptr = 0;
+    int index = -1;
+    int res = 0;
+    int max_attempts = 10; // avoid infinite loop
+    for (int attempt = 0; attempt < max_attempts; ++attempt)
+    {
+        ptr = kzalloc(size);
+        if (!ptr)
+        {
+            goto out_err;
+        }
+        index = process_find_free_allocation_index(process);
+        if (index < 0)
+        {
+            goto out_err;
+        }
+        // Check for overlap with process struct
+        uintptr_t p = (uintptr_t)ptr;
+        uintptr_t proc_start = (uintptr_t)process;
+        uintptr_t proc_end = proc_start + sizeof(struct process);
+        uintptr_t task_start = (uintptr_t)process->task;
+        uintptr_t task_end = task_start + sizeof(struct task);
+        if ((p >= proc_start && p < proc_end) || (p + size > proc_start && p < proc_end) ||
+            (p >= task_start && p < task_end) || (p + size > task_start && p < task_end))
+        {
+            // Overlaps, try again
+            kfree(ptr);
+            ptr = 0;
+            continue;
+        }
+        break;
+    }
     if (!ptr)
     {
         goto out_err;
     }
-
-    int index = process_find_free_allocation_index(process);
-    if (index < 0)
-    {
-        goto out_err;
-    }
-
-    int res = paging_map_to(process->task->page_directory, ptr, ptr, paging_align_address(ptr + size), PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+    res = paging_map_to(process->task->page_directory, ptr, ptr, paging_align_address(ptr + size), PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     if (res < 0)
     {
         goto out_err;
     }
-
+    simple_serial_puts("DEBUG: process_malloc: alloc ptr = ");
+    print_hex32((uint32_t)ptr);
+    simple_serial_puts(", size = ");
+    print_hex32(size);
+    simple_serial_puts(", process = ");
+    print_hex32((uint32_t)process);
+    simple_serial_puts(", task = ");
+    print_hex32((uint32_t)process->task);
+    simple_serial_puts("\n");
     process->allocations[index].ptr = ptr;
     process->allocations[index].size = size;
     return ptr;
@@ -152,9 +175,9 @@ int process_free_elf_data(struct process *process)
     {
         elf_close(process->elf_file);
     }
+
     return 0;
 }
-
 int process_free_program_data(struct process *process)
 {
     int res = 0;
@@ -204,12 +227,13 @@ int process_free_process(struct process *process)
     process_terminate_allocations(process);
     process_free_program_data(process);
 
+    // Free the process stack memory.
     if (process->stack)
     {
         kfree(process->stack);
         process->stack = NULL;
     }
-
+    // Free the task
     if (process->task)
     {
         task_free(process->task);
@@ -218,13 +242,22 @@ int process_free_process(struct process *process)
 
     kfree(process);
 
+out:
     return res;
 }
 
 int process_terminate(struct process *process)
 {
+    // Unlink the process from the process array.
     process_unlink(process);
+
     int res = process_free_process(process);
+    if (res < 0)
+    {
+        goto out;
+    }
+
+out:
     return res;
 }
 
@@ -275,6 +308,12 @@ int process_inject_arguments(struct process *process, struct command_argument *r
             goto out;
         }
 
+        simple_serial_puts("DEBUG: process_inject_arguments: copying to argument_str = ");
+        print_hex32((uint32_t)argument_str);
+        simple_serial_puts(", size = ");
+        print_hex32(sizeof(current->argument));
+        simple_serial_puts("\n");
+
         strncpy(argument_str, current->argument, sizeof(current->argument));
         argv[i] = argument_str;
         current = current->next;
@@ -286,12 +325,13 @@ int process_inject_arguments(struct process *process, struct command_argument *r
 out:
     return res;
 }
-
 void process_free(struct process *process, void *ptr)
 {
+    // Unlink the pages from the process for the given address
     struct process_allocation *allocation = process_get_allocation_by_addr(process, ptr);
     if (!allocation)
     {
+        // Oops its not our pointer.
         return;
     }
 
@@ -301,14 +341,17 @@ void process_free(struct process *process, void *ptr)
         return;
     }
 
+    // Unjoin the allocation
     process_allocation_unjoin(process, ptr);
+
+    // We can now free the memory.
     kfree(ptr);
 }
 
 static int process_load_binary(const char *filename, struct process *process)
 {
-    int res = 0;
     void *program_data_ptr = 0x00;
+    int res = 0;
     int fd = fopen(filename, "r");
     if (!fd)
     {
@@ -341,9 +384,12 @@ static int process_load_binary(const char *filename, struct process *process)
     process->size = stat.filesize;
 
 out:
-    if (res < 0 && program_data_ptr)
+    if (res < 0)
     {
-        kfree(program_data_ptr);
+        if (program_data_ptr)
+        {
+            kfree(program_data_ptr);
+        }
     }
     fclose(fd);
     return res;
@@ -351,13 +397,23 @@ out:
 
 static int process_load_elf(const char *filename, struct process *process)
 {
-    int res = elf_load(filename, &process->elf_file);
+    int res = 0;
+    struct elf_file *elf_file = 0;
+    res = elf_load(filename, &elf_file);
+    if (ISERR(res))
+    {
+        goto out;
+    }
+
+    process->filetype = PROCESS_FILETYPE_ELF;
+    process->elf_file = elf_file;
+out:
     return res;
 }
-
 static int process_load_data(const char *filename, struct process *process)
 {
-    int res = process_load_elf(filename, process);
+    int res = 0;
+    res = process_load_elf(filename, process);
     if (res == -EINFORMAT)
     {
         res = process_load_binary(filename, process);
@@ -368,16 +424,18 @@ static int process_load_data(const char *filename, struct process *process)
 
 int process_map_binary(struct process *process)
 {
-    return paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_ADDRESS, process->ptr, paging_align_address(process->ptr + process->size), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
+    int res = 0;
+    paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_ADDRESS, process->ptr, paging_align_address(process->ptr + process->size), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
+    return res;
 }
 
 static int process_map_elf(struct process *process)
 {
     int res = 0;
+
     struct elf_file *elf_file = process->elf_file;
     struct elf_header *header = elf_header(elf_file);
     struct elf32_phdr *phdrs = elf_pheader(header);
-
     for (int i = 0; i < header->e_phnum; i++)
     {
         struct elf32_phdr *phdr = &phdrs[i];
@@ -395,7 +453,6 @@ static int process_map_elf(struct process *process)
     }
     return res;
 }
-
 int process_map_memory(struct process *process)
 {
     int res = 0;
@@ -419,7 +476,12 @@ int process_map_memory(struct process *process)
         goto out;
     }
 
-    paging_map_to(process->task->page_directory, (void *)VIOS_PROGRAM_VIRTUAL_STACK_ADDRESS_END, process->stack, paging_align_address(process->stack + VIOS_USER_PROGRAM_STACK_SIZE), PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
+    // Finally map the stack
+    paging_map_to(process->task->page_directory,
+                  (void *)VIOS_PROGRAM_VIRTUAL_STACK_ADDRESS_END,
+                  process->stack,
+                  paging_align_address(process->stack + VIOS_USER_PROGRAM_STACK_SIZE),
+                  PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
 out:
     return res;
 }
@@ -464,46 +526,23 @@ int process_load_switch(const char *filename, struct process **process)
 int process_load_for_slot(const char *filename, struct process **process, int process_slot)
 {
     int res = 0;
-    struct process *_process = NULL;
-    char try_names[3][VIOS_MAX_PATH];
-    int try_count = 1;
+    struct process *_process;
 
-    strncpy(try_names[0], filename, VIOS_MAX_PATH);
-    try_names[0][VIOS_MAX_PATH - 1] = '\0';
-
-    if (strlen(filename) + 4 < VIOS_MAX_PATH)
+    if (process_get(process_slot) != 0)
     {
-        snprintf(try_names[1], VIOS_MAX_PATH, "%s.elf", filename);
-        snprintf(try_names[2], VIOS_MAX_PATH, "%s.bin", filename);
-        try_count = 3;
+        res = -EISTKN;
+        goto out;
     }
 
-    for (int i = 0; i < try_count; ++i)
+    _process = kzalloc(sizeof(struct process));
+    if (!_process)
     {
-        if (process_get(process_slot) != 0)
-        {
-            res = -EISTKN;
-            goto out;
-        }
-
-        _process = kzalloc(sizeof(struct process));
-        if (!_process)
-        {
-            res = -ENOMEM;
-            goto out;
-        }
-
-        process_init(_process);
-        res = process_load_data(try_names[i], _process);
-        if (res >= 0)
-        {
-            break;
-        }
-
-        process_free_process(_process);
-        _process = NULL;
+        res = -ENOMEM;
+        goto out;
     }
 
+    process_init(_process);
+    res = process_load_data(filename, _process);
     if (res < 0)
     {
         goto out;
@@ -516,13 +555,16 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
         goto out;
     }
 
-    strncpy(_process->filename, try_names[0], sizeof(_process->filename));
+    strncpy(_process->filename, filename, sizeof(_process->filename));
     _process->id = process_slot;
 
+    // Create a task
     _process->task = task_new(_process);
-    if (ISERR(_process->task))
+    if (ERROR_I(_process->task) == 0)
     {
         res = ERROR_I(_process->task);
+
+        // Task is NULL due to error code being returned in task_new.
         _process->task = NULL;
         goto out;
     }
@@ -533,7 +575,27 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
         goto out;
     }
 
+    // Ensure task segment selectors and stack pointer are correct after mapping
+    if (_process->task)
+    {
+        _process->task->registers.ss = USER_DATA_SEGMENT;
+        _process->task->registers.cs = USER_CODE_SEGMENT;
+        _process->task->registers.esp = VIOS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
+        simple_serial_puts("DEBUG: process_load_for_slot: After explicit fix\n");
+        simple_serial_puts("DEBUG: cs = ");
+        print_hex32(_process->task->registers.cs);
+        simple_serial_puts("\n");
+        simple_serial_puts("DEBUG: ss = ");
+        print_hex32(_process->task->registers.ss);
+        simple_serial_puts("\n");
+        simple_serial_puts("DEBUG: esp = ");
+        print_hex32(_process->task->registers.esp);
+        simple_serial_puts("\n");
+    }
+
     *process = _process;
+
+    // Add the process to the array
     processes[process_slot] = _process;
 
 out:
@@ -545,6 +607,8 @@ out:
             _process = NULL;
             *process = NULL;
         }
+
+        // Free the process data
     }
     return res;
 }

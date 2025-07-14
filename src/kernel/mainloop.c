@@ -11,28 +11,36 @@
 
 void kernel_run_main_loop(struct mouse *mouse)
 {
-    // struct process *process = 0;
-    // int res = process_load_switch("0:/cpp_non-existant.elf", &process);
-    // if (res != VIOS_ALL_OK)
-    // {
-    //     simple_serial_puts("Failed to load cpp_test.elf\n");
-    // }
+    simple_serial_puts("DEBUG: ===== ENTERING MAIN LOOP =====\n");
+    simple_serial_puts("DEBUG: Entering main loop\n");
 
-    // struct command_argument argument;
-    // strcpy(argument.argument, "Testing!");
-    // argument.next = 0x00;
+    struct process *process = 0;
+    int res = process_load_switch("0:/cpp_test.elf", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        panic("Failed to load blank.elf\n");
+    }
 
-    // process_inject_arguments(process, &argument);
+    struct command_argument argument;
+    strcpy(argument.argument, "Testing!");
+    argument.next = 0x00;
 
-    // task_run_first_ever_task();
+    process_inject_arguments(process, &argument);
+
+    res = process_load_switch("0:/blank_asm.elf", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        panic("Failed to load blank_asm.elf\n");
+    }
+
+    task_run_first_ever_task();
+
+    // Fallback: if no program loaded or task execution failed, run graphics loop
+    simple_serial_puts("DEBUG: Running graphics fallback loop\n");
 
     FrameState frame_state;
     renderer_init_frame_state(&frame_state);
-
-    // Set unlimited FPS
     graphics_set_unlimited_fps();
-
-    // Initialize timing
     extern uint32_t _graphics_get_time_ms(void);
     frame_state.last_time = _graphics_get_time_ms();
 
@@ -40,7 +48,6 @@ void kernel_run_main_loop(struct mouse *mouse)
     {
         graphics_begin_frame();
 
-        // Handle full screen refresh if needed
         GraphicsContext *ctx = graphics_get_context();
         if (ctx && ctx->needs_full_refresh)
         {
@@ -49,21 +56,14 @@ void kernel_run_main_loop(struct mouse *mouse)
             ctx->needs_full_refresh = false;
         }
 
-        // Update frame information
         renderer_update_frame_info(&frame_state);
         renderer_update_actual_fps(&frame_state);
-
-        // Update resolution info
-        renderer_get_resolution_string(frame_state.resolution_info,
-                                       sizeof(frame_state.resolution_info));
-
-        // Render all components
+        renderer_get_resolution_string(frame_state.resolution_info, sizeof(frame_state.resolution_info));
         renderer_draw_info_overlay(&frame_state);
         renderer_draw_animated_rects(&frame_state);
         renderer_update_mouse(&frame_state, mouse);
 
         frame_state.animation_counter++;
-
         graphics_end_frame();
         graphics_present();
     }

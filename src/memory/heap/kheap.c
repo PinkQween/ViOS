@@ -2,8 +2,8 @@
 #include "heap.h"
 #include "config.h"
 #include "kernel.h"
-#include "memory/memory.h"
 #include "panic/panic.h"
+#include "memory/memory.h"
 
 struct heap kernel_heap;
 struct heap_table kernel_heap_table;

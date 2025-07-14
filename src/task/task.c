@@ -1,14 +1,5 @@
 #include "task.h"
-#include "panic/panic.h"
-#include "status.h"
-#include "process.h"
-#include "kernel.h"
-#include "memory/heap/kheap.h"
-#include "memory/memory.h"
-#include "string/string.h"
-#include "memory/paging/paging.h"
-#include "loader/formats/elfloader.h"
-#include "idt/idt.h"
+#include "debug/simple_serial.h"
 
 // The current task that is running
 struct task *current_task = 0;
@@ -179,8 +170,7 @@ void task_current_save_state(struct interrupt_frame *frame)
 {
     if (!task_current())
     {
-        // No current task, just return (don't panic)
-        return;
+        panic("No current task to save\n");
     }
 
     struct task *task = task_current();
@@ -189,12 +179,6 @@ void task_current_save_state(struct interrupt_frame *frame)
 
 int task_page()
 {
-    if (!current_task)
-    {
-        // No current task, just return
-        return 0;
-    }
-    
     user_registers();
     task_switch(current_task);
     return 0;
@@ -214,8 +198,24 @@ void task_run_first_ever_task()
         panic("task_run_first_ever_task(): No current task exists!\n");
     }
 
+    simple_serial_puts("DEBUG: task_run_first_ever_task: About to switch to task_head\n");
+    simple_serial_puts("DEBUG: task_run_first_ever_task: task_head->registers.ip = ");
+    print_hex32(task_head->registers.ip);
+    simple_serial_puts("\n");
+    simple_serial_puts("DEBUG: task_run_first_ever_task: task_head->registers.cs = ");
+    print_hex32(task_head->registers.cs);
+    simple_serial_puts("\n");
+    simple_serial_puts("DEBUG: task_run_first_ever_task: task_head->registers.ss = ");
+    print_hex32(task_head->registers.ss);
+    simple_serial_puts("\n");
+    simple_serial_puts("DEBUG: task_run_first_ever_task: task_head->registers.esp = ");
+    print_hex32(task_head->registers.esp);
+    simple_serial_puts("\n");
+
     task_switch(task_head);
+    simple_serial_puts("DEBUG: task_run_first_ever_task: About to call task_return\n");
     task_return(&task_head->registers);
+    simple_serial_puts("DEBUG: task_run_first_ever_task: task_return returned (this shouldn't happen)\n");
 }
 
 int task_init(struct task *task, struct process *process)
@@ -237,6 +237,20 @@ int task_init(struct task *task, struct process *process)
     task->registers.ss = USER_DATA_SEGMENT;
     task->registers.cs = USER_CODE_SEGMENT;
     task->registers.esp = VIOS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
+
+    simple_serial_puts("DEBUG: task_init: Setting registers\n");
+    simple_serial_puts("DEBUG: task_init: ip = ");
+    print_hex32(task->registers.ip);
+    simple_serial_puts("\n");
+    simple_serial_puts("DEBUG: task_init: cs = ");
+    print_hex32(task->registers.cs);
+    simple_serial_puts("\n");
+    simple_serial_puts("DEBUG: task_init: ss = ");
+    print_hex32(task->registers.ss);
+    simple_serial_puts("\n");
+    simple_serial_puts("DEBUG: task_init: esp = ");
+    print_hex32(task->registers.esp);
+    simple_serial_puts("\n");
 
     task->process = process;
 
@@ -263,4 +277,14 @@ void *task_get_stack_item(struct task *task, int index)
 void *task_virtual_address_to_physical(struct task *task, void *virtual_address)
 {
     return paging_get_physical_address(task->page_directory->directory_entry, virtual_address);
+}
+
+void task_scheduler_tick()
+{
+    // For now, just call task_next() to switch to the next task
+    // This provides basic round-robin scheduling
+    if (current_task && task_head && task_head->next)
+    {
+        task_next();
+    }
 }

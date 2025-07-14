@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # === Config ===
-export PREFIX="$HOME/opt/cross"
-export TARGET=i686-elf
-export PATH="$PREFIX/bin:$PATH"
+# Use system toolchain instead of custom one
+# export PREFIX="$HOME/opt/cross"
+# export TARGET=i686-elf
+# export PATH="$PREFIX/bin:$PATH"
 export VENV_DIR="/ubuntu/ViOS-venv"
 
 echo "=================================="
-echo "  Setting up $TARGET toolchain"
-echo "  Prefix: $PREFIX"
+echo "  Using system i686-elf toolchain"
 echo "=================================="
 
 install_deps() {
@@ -19,33 +19,10 @@ install_deps() {
         wget curl git gawk xz-utils nasm python3 python3-venv libfreetype6-dev mtools
 }
 
-install_gcc() {
-    echo "[*] Installing GCC cross-toolchain from lordmilko prebuilt binaries..."
-
-    # Store the original directory
-    ORIGINAL_DIR="$(pwd)"
-
-    sudo dpkg --add-architecture i386
-    sudo apt-get update
-
-    echo "[!] WARNING: Downloading prebuilt toolchain. Verify source integrity."
-    echo "[*] Source: https://github.com/lordmilko/i686-elf-tools"
-    read -p "Continue? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Aborted by user."
-        exit 1
-    fi
-
-    cd /tmp
-    wget -N https://github.com/lordmilko/i686-elf-tools/releases/download/13.2.0/i686-elf-tools-linux.zip
-    unzip -o i686-elf-tools-linux.zip -d i686-elf-tools
-    sudo mv -f i686-elf-tools /usr/local/i686-elf-tools
-    sudo ln -sf /usr/local/i686-elf-tools/bin/* /usr/local/bin/
-    
-    # Return to original directory
-    cd "$ORIGINAL_DIR"
-}
+# Remove the custom GCC installation function since we're using system toolchain
+# install_gcc() {
+#     # ... removed ...
+# }
 
 check_and_install_vios_libc() {
     echo "[*] Checking for ViOS standard library..."
@@ -118,10 +95,13 @@ check_and_install_vios_libc() {
 
 check_and_install() {
     # Check if target gcc is installed
-    if ! command -v "${TARGET}-gcc" &>/dev/null; then
-        install_gcc
+    if ! command -v "i686-elf-gcc" &>/dev/null; then
+        echo "[!] i686-elf-gcc not found. Please install it:"
+        echo "[*] On macOS: brew install i686-elf-gcc"
+        echo "[*] On Linux: Follow your distribution's instructions"
+        exit 1
     else
-        echo "[✓] ${TARGET}-gcc already installed."
+        echo "[✓] i686-elf-gcc found at: $(which i686-elf-gcc)"
     fi
 
     # Check required tools
@@ -181,6 +161,7 @@ run_make() {
         echo "[!] ViOS libc not found at external/ViOS-libc/lib/libViOSlibc.a"
     fi
     
+    make clean
     make all
 }
 

@@ -997,4 +997,8 @@ void DrawAtariChar(char c, int x, int y, int r, int g, int b, int scale)
 void graphics_pit_interrupt_handler(struct interrupt_frame *frame)
 {
     _graphics_pit_tick();
+
+    // Call task scheduler
+    extern void task_scheduler_tick();
+    task_scheduler_tick();
 }

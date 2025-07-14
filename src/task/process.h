@@ -1,10 +1,21 @@
 #ifndef PROCESS_H
 #define PROCESS_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
 #include "task.h"
 #include "config.h"
+#include "status.h"
+#include "task/task.h"
+#include "memory/memory.h"
+#include "panic/panic.h"
+#include "string/string.h"
+#include "fs/file.h"
+#include "memory/heap/kheap.h"
+#include "memory/paging/paging.h"
+#include "loader/formats/elfloader.h"
+#include "kernel.h"
 
 #define PROCESS_FILETYPE_ELF 0
 #define PROCESS_FILETYPE_BINARY 1

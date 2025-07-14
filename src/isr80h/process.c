@@ -1,4 +1,5 @@
 #include "process.h"
+#include "debug/simple_serial.h"
 
 void *isr80h_command1_process_load_start(struct interrupt_frame *frame)
 {
@@ -78,7 +79,22 @@ void *isr80h_command0_exit(struct interrupt_frame *frame)
 
     process_terminate(process);
 
-    task_next();
+    // Check if there are any remaining tasks by trying to get the next task
+    struct task *next_task = task_get_next();
+    if (next_task)
+    {
+        task_next();
+    }
+    else
+    {
+        // No more tasks, return to kernel mode
+        // This will cause the system to halt or reboot
+        simple_serial_puts("No more tasks to run, halting system\n");
+        while (1)
+        {
+            asm volatile("hlt");
+        }
+    }
 
     return 0;
 }

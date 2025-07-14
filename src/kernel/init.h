@@ -12,6 +12,11 @@ struct mouse;
 void kernel_init_gdt_and_tss(void);
 
 /**
+ * Initialize the Task State Segment
+ */
+void kernel_init_tss(void);
+
+/**
  * Initialize memory paging subsystem
  */
 void kernel_init_paging(void);

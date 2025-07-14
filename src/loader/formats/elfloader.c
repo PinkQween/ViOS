@@ -8,6 +8,7 @@
 #include "memory/paging/paging.h"
 #include "kernel.h"
 #include "config.h"
+#include "debug/simple_serial.h"
 
 const char elf_signature[] = {0x7f, 'E', 'L', 'F'};
 
@@ -187,11 +188,22 @@ struct elf_file *elf_file_new()
 
 int elf_load(const char *filename, struct elf_file **file_out)
 {
+    simple_serial_puts("DEBUG: elf_load called with filename: ");
+    simple_serial_puts(filename);
+    simple_serial_puts("\n");
+
     struct elf_file *elf_file = elf_file_new();
     int fd = 0;
     int res = fopen(filename, "r");
+    simple_serial_puts("DEBUG: fopen returned: ");
+    char msg[32];
+    snprintf(msg, sizeof(msg), "%d", res);
+    simple_serial_puts(msg);
+    simple_serial_puts("\n");
+
     if (res <= 0)
     {
+        simple_serial_puts("DEBUG: fopen failed\n");
         res = -EIO;
         goto out;
     }
@@ -199,28 +211,50 @@ int elf_load(const char *filename, struct elf_file **file_out)
     fd = res;
     struct file_stat stat;
     res = fstat(fd, &stat);
+    simple_serial_puts("DEBUG: fstat returned: ");
+    snprintf(msg, sizeof(msg), "%d", res);
+    simple_serial_puts(msg);
+    simple_serial_puts("\n");
+
     if (res < 0)
     {
+        simple_serial_puts("DEBUG: fstat failed\n");
         goto out;
     }
 
+    simple_serial_puts("DEBUG: Allocating memory for ELF file\n");
     elf_file->elf_memory = kzalloc(stat.filesize);
     res = fread(elf_file->elf_memory, stat.filesize, 1, fd);
+    simple_serial_puts("DEBUG: fread returned: ");
+    snprintf(msg, sizeof(msg), "%d", res);
+    simple_serial_puts(msg);
+    simple_serial_puts("\n");
+
     if (res < 0)
     {
+        simple_serial_puts("DEBUG: fread failed\n");
         goto out;
     }
 
+    simple_serial_puts("DEBUG: Processing loaded ELF file\n");
     res = elf_process_loaded(elf_file);
+    simple_serial_puts("DEBUG: elf_process_loaded returned: ");
+    snprintf(msg, sizeof(msg), "%d", res);
+    simple_serial_puts(msg);
+    simple_serial_puts("\n");
+
     if (res < 0)
     {
+        simple_serial_puts("DEBUG: elf_process_loaded failed\n");
         goto out;
     }
 
+    simple_serial_puts("DEBUG: ELF loading completed successfully\n");
     *file_out = elf_file;
 out:
     if (res < 0)
     {
+        simple_serial_puts("DEBUG: ELF loading failed, cleaning up\n");
         elf_file_free(elf_file);
     }
     fclose(fd);

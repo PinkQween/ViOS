@@ -2,9 +2,10 @@
 
 import os
 import sys
-import site
-sys.path.insert(0, site.getusersitepackages())
 import freetype
+print("[DEBUG] freetype module path:", getattr(freetype, '__file__', 'no __file__'))
+print("[DEBUG] freetype module version:", getattr(freetype, '__version__', 'unknown'))
+print("[DEBUG] freetype module dir:", dir(freetype))
 
 output_dir = 'src/fonts'
 try:
@@ -25,13 +26,6 @@ if not font_files:
     print(f"⚠️ No .ttf or .otf fonts found in '{font_dir}'. Nothing to process.")
     sys.exit(0)  # Consider 0 if this is a non-error skip
 
-if not os.path.exists(font_dir):
-    raise RuntimeError(f"Font directory '{font_dir}' does not exist")
-
-font_files = [f for f in os.listdir(font_dir) if f.lower().endswith(('.ttf', '.otf'))]
-if not font_files:
-    raise RuntimeError(f"No .ttf or .otf fonts found in {font_dir}")
-
 for font_filename in font_files:
     font_path = os.path.join(font_dir, font_filename)
     font_name = os.path.splitext(font_filename)[0]
@@ -41,9 +35,6 @@ for font_filename in font_files:
     except freetype.FT_Exception as e:
         print(f"Error loading font {font_filename}: {e}")
         continue
-
-    face = freetype.Face(font_path)
-    face.set_pixel_sizes(0, 16)
 
     max_width = 0
     max_ascender = 0

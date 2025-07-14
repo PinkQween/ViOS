@@ -66,53 +66,45 @@ UNAME_S := $(shell uname -s)
 # Create bin and build directories first
 .PHONY: prepare_dirs
 prepare_dirs:
-	mkdir -p ./bin ./build ./mnt/d
+	mkdir -p ./bin ./build
 
-all: prepare_dirs fonts ./bin/boot_with_size.bin ./bin/kernel.bin user_programs install
+all: build install
+
+build: prepare_dirs fonts ./bin/boot_with_size.bin ./bin/kernel.bin user_programs ./bin/os.bin
+	@echo "Build complete! User programs built but not installed to disk image."
+	@echo "To install user programs to disk image, run: make install"
 
 fonts:
 	./generateFonts.sh
 
 install: ./bin/os.bin
 ifeq ($(UNAME_S),Linux)
-	mformat -i ./bin/os.bin@@1M -F
-	mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
-	find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
+	@echo "Installing user programs and assets to disk image (Linux)..."
+	@# Create mount point if it doesn't exist
+	@sudo mkdir -p /mnt/d
+	@# Unmount if already mounted
+	@sudo umount /mnt/d 2>/dev/null || true
+	@# Mount the disk image
+	@sudo mount -t vfat ./bin/os.bin /mnt/d
+	@# Copy all assets recursively
+	@sudo cp -r ./assets/* /mnt/d/ 2>/dev/null || true
+	@# Find and copy all .elf files from programs directory
+	@find ./assets/programs -name '*.elf' -exec sudo cp {} /mnt/d/ \;
+	@# Unmount the disk image
+	@sudo umount /mnt/d
+	@echo "User programs and assets installed to disk image!"
 else ifeq ($(UNAME_S),Darwin)
-	@echo "Mounting FAT16 image on macOS..."
-	@# First, try to detach any existing mount to avoid conflicts
-	@hdiutil detach ./mnt/d 2>/dev/null || true
-	@# Clean up any existing ViOS mounts that might interfere
-	@echo "Cleaning up existing ViOS mounts..."
-	@for disk in $$(diskutil list | grep "VIOS BOOT" | grep -o "disk[0-9]\+" | sort -u); do \
-		echo "Detaching existing ViOS mount $$disk..."; \
-		hdiutil detach /dev/$$disk 2>/dev/null || true; \
-	done
-	@# Mount the image and capture the device identifier
-	@echo "Mounting new ViOS image..."
-	@DEVICE=$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage ./bin/os.bin -mountpoint ./mnt/d -plist | grep -A1 "dev-entry" | tail -1 | sed 's/.*string>\(.*\)<\/string>.*/\1/'); \
-	if [ -z "$$DEVICE" ]; then \
-		echo "Failed to mount image. Trying alternative approach..."; \
-		hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin; \
-		diskutil list; \
-		echo "Please mount the correct partition manually if needed."; \
-		exit 1; \
-	fi; \
-	echo "Mounted device: $$DEVICE"; \
-	cp -r ./assets/* ./mnt/d/ || true; \
-	find ./assets/programs -name '*.elf' -exec cp {} ./mnt/d/ \; || true; \
-	echo "Detaching device: $$DEVICE"; \
-	hdiutil detach "$$DEVICE" || hdiutil detach ./mnt/d || true; \
-	rmdir ./mnt/d 2>/dev/null || true
-else
-	@echo "Skipping install (switch to linux or darwin)"
+	@echo "Formatting disk image as FAT16 using mformat (macOS)..."
+	@mformat -i ./bin/os.bin@@1M -F
+	@mcopy -i ./bin/os.bin@@1M -s ./assets/* ::/
+	@find ./assets/programs -name '*.elf' -exec mcopy -i ./bin/os.bin@@1M {} ::/ \;
+	@# Also copy asm_test.bin as a test binary
+	@mcopy -i ./bin/os.bin@@1M assets/programs/asm_test/asm_test.bin ::/
 endif
+	@echo "User programs and assets installed to disk image!"
 
-./bin/kernel.elf: prepare_dirs $(FILES)
-	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.elf -ffreestanding -O0 -nostdlib $(FILES)
-
-./bin/kernel.bin: ./bin/kernel.elf
-	i686-elf-objcopy -O binary ./bin/kernel.elf ./bin/kernel.bin
+./bin/kernel.bin: prepare_dirs $(FILES)
+	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib $(FILES)
 
 ./bin/boot.bin: prepare_dirs ./src/boot/boot.asm
 	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin
@@ -170,3 +162,12 @@ ifeq ($(UNAME_S),Darwin)
 else
 	@echo "clean_mounts is only available on macOS"
 endif
+
+# Build kernel ELF with symbols for debugging (separate target)
+./bin/kernel.elf.debug: prepare_dirs $(FILES)
+	@echo "Building kernel ELF with debug symbols..."
+	@# Create a temporary linker script without OUTPUT_FORMAT(binary) for ELF output
+	@cp ./src/linker.ld ./src/linker.ld.tmp
+	@sed 's/OUTPUT_FORMAT(binary)/\/\* OUTPUT_FORMAT(binary) \*\//' ./src/linker.ld > ./src/linker.ld.elf
+	i686-elf-gcc $(FLAGS) -T ./src/linker.ld.elf -o ./bin/kernel.elf.debug -ffreestanding -O0 -nostdlib -g $(FILES)
+	@rm ./src/linker.ld.elf

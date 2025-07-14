@@ -2,7 +2,17 @@
 #define TASK_H
 
 #include "config.h"
+
+#include "kernel.h"
+#include "status.h"
+#include "process.h"
+#include "memory/heap/kheap.h"
+#include "panic/panic.h"
+#include "memory/memory.h"
+#include "string/string.h"
 #include "memory/paging/paging.h"
+#include "loader/formats/elfloader.h"
+#include "idt/idt.h"
 
 struct interrupt_frame;
 struct registers
@@ -53,6 +63,7 @@ int task_page();
 int task_page_task(struct task *task);
 
 void task_run_first_ever_task();
+void task_scheduler_tick();
 
 void task_return(struct registers *regs);
 void restore_general_purpose_registers(struct registers *regs);

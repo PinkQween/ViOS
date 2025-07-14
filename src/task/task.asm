@@ -7,6 +7,14 @@ global user_registers
 
 ; void task_return(struct registers* regs);
 task_return:
+    ; Debug: Print that we entered task_return
+    push eax
+    mov eax, 0x3F8  ; COM1 port
+    mov byte [eax], 'T'
+    mov byte [eax], 'R'
+    mov byte [eax], '\n'
+    pop eax
+    
     mov ebp, esp
     ; PUSH THE DATA SEGMENT (SS WILL BE FINE)
     ; PUSH THE STACK ADDRESS
@@ -42,6 +50,14 @@ task_return:
     push dword [ebp+4]
     call restore_general_purpose_registers
     add esp, 4
+
+    ; Debug: Print that we're about to do iretd
+    push eax
+    mov eax, 0x3F8  ; COM1 port
+    mov byte [eax], 'I'
+    mov byte [eax], 'R'
+    mov byte [eax], '\n'
+    pop eax
 
     ; Let's leave kernel land and execute in user land!
     iretd

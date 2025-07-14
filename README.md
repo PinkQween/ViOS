@@ -109,6 +109,10 @@ ___________
 ├── .gitignore
 ├── assets
 │   └── programs
+│       ├── asm_test
+│       │   ├── linker.ld
+│       │   ├── main.asm
+│       │   └── Makefile
 │       ├── cpp_test
 │       │   ├── linker.ld
 │       │   ├── Makefile
@@ -289,7 +293,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-39 directories, 150 files
+40 directories, 153 files
 ```
 
 ___________

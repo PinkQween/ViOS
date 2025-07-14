@@ -9,6 +9,3 @@ tss_load:
     ltr ax
     pop ebp
     ret
-
-
-    

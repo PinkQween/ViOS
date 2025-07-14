@@ -5,6 +5,12 @@
 #include "task/tss.h"
 #include "memory/paging/paging.h"
 #include "memory/memory.h"
+#include "memory/heap/kheap.h"
+#include "fs/file.h"
+#include "disk/disk.h"
+#include "idt/idt.h"
+#include "isr80h/isr80h.h"
+#include "keyboard/keyboard.h"
 #include "config.h"
 #include "audio/audio.h"
 #include "debug/simple_serial.h"
@@ -23,36 +29,73 @@ void kernel_page()
 struct tss tss;
 struct gdt gdt_real[VIOS_TOTAL_GDT_SEGMENTS];
 struct gdt_structured gdt_structured[VIOS_TOTAL_GDT_SEGMENTS] = {
-    {.base = 0x00, .limit = 0x00, .type = 0x00},
-    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},
-    {.base = 0x00, .limit = 0xffffffff, .type = 0x92},
-    {.base = 0x00, .limit = 0xffffffff, .type = 0xf8},
-    {.base = 0x00, .limit = 0xffffffff, .type = 0xf2},
-    {.base = (uint32_t)(uintptr_t)&tss, .limit = sizeof(tss) - 1, .type = 0x89}};
+    {.base = 0x00, .limit = 0x00, .type = 0x00},       // NULL Segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a}, // Kernel code segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x92}, // Kernel data segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xfa}, // User code segment
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xf2}, // User data segment
+    {.base = 0x00, .limit = 0x00, .type = 0x00}        // TSS Segment (set at runtime)
+};
 
 void kernel_main()
 {
     simple_serial_init();
     simple_serial_puts("DEBUG: Kernel starting...\n");
 
+    // 1. GDT setup
     kernel_init_gdt_and_tss();
-    simple_serial_puts("DEBUG: GDT and TSS initialized\n");
+    simple_serial_puts("DEBUG: GDT initialized\n");
 
-    kernel_init_devices();
-    simple_serial_puts("DEBUG: Devices initialized\n");
+    // 2. Heap
+    kheap_init();
+    simple_serial_puts("DEBUG: Kernel heap initialized\n");
 
+    // 3. Filesystem
+    fs_init();
+    simple_serial_puts("DEBUG: Filesystem initialized\n");
+
+    // 4. Disk
+    disk_search_and_init();
+    simple_serial_puts("DEBUG: Disk initialized\n");
+
+    // 5. IDT
+    idt_init();
+    simple_serial_puts("DEBUG: IDT initialized\n");
+
+    // 6. TSS
+    kernel_init_tss();
+    simple_serial_puts("DEBUG: TSS initialized\n");
+
+    // 7. Paging
     kernel_init_paging();
     simple_serial_puts("DEBUG: Paging initialized\n");
 
+    // 8. ISR80H
+    isr80h_register_commands();
+    simple_serial_puts("DEBUG: ISR80H commands registered\n");
+
+    // 9. Keyboard
+    keyboard_init();
+    simple_serial_puts("DEBUG: Keyboard initialized\n");
+
+    // 10. Graphics
     struct mouse *mouse = kernel_init_graphics();
     simple_serial_puts("DEBUG: Graphics initialized\n");
 
+    // 11. Boot message
     kernel_display_boot_message();
     simple_serial_puts("DEBUG: Boot message displayed\n");
 
+    // 12. Timer IRQ
     kernel_unmask_timer_irq();
     simple_serial_puts("DEBUG: Timer IRQ unmasked\n");
 
-    simple_serial_puts("DEBUG: Starting main loop...\n");
+    // 13. Main loop
+    simple_serial_puts("DEBUG: About to start main loop...\n");
     kernel_run_main_loop(mouse);
+    simple_serial_puts("DEBUG: Main loop returned (this shouldn't happen)\n");
+    while (1)
+    {
+        asm volatile("hlt");
+    }
 }
