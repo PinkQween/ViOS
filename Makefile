@@ -1,6 +1,3 @@
-
-
-# Object files grouped by functionality
 FILES = \
   ./build/kernel.asm.o \
   ./build/kernel.o \
@@ -72,7 +69,7 @@ prepare_dirs:
 
 all: build install
 
-build: prepare_dirs fonts ./bin/boot_with_size.bin user_programs ./bin/os.bin
+build: prepare_dirs fonts ./bin/boot_with_size.bin ./bin/kernel.bin user_programs ./bin/os.bin
 	@echo "Build complete! User programs built but not installed to disk image."
 	@echo "To install user programs to disk image, run: make install"
 
@@ -82,82 +79,71 @@ fonts:
 install: ./bin/os.bin
 ifeq ($(UNAME_S),Linux)
 	@echo "Installing user programs and assets to disk image (Linux)..."
-	@# Create mount point if it doesn't exist
 	@sudo mkdir -p /mnt/d
-	@# Unmount if already mounted
 	@sudo umount /mnt/d 2>/dev/null || true
-	@# Mount the disk image
-	@sudo mount -t vfat ./bin/os.bin /mnt/d
-	@# Copy all assets recursively
-	@sudo cp -r ./assets/* /mnt/d/ 2>/dev/null || true
-	@# Find and copy all .elf files from programs directory
-	@find ./assets/etc/default/user/programs -name '*.elf' -exec sudo cp {} /mnt/d/ \;
-	@# Unmount the disk image
+	@sudo mount -t vfat ./bin/os.bin /mnt/d || { echo "Failed to mount disk image"; exit 1; }
+	@if [ -d "./assets" ]; then sudo cp -r ./assets/* /mnt/d/ || { echo "Failed to copy assets"; sudo umount /mnt/d; exit 1; }; fi
+	@if [ -d "./assets/programs" ]; then find ./assets/programs -name '*.elf' -exec sudo cp {} /mnt/d/ \; || { echo "Failed to copy .elf files"; sudo umount /mnt/d; exit 1; }; fi
 	@sudo umount /mnt/d
 	@echo "User programs and assets installed to disk image!"
 else ifeq ($(UNAME_S),Darwin)
-	@echo "Attaching disk image (macOS)..."
-	@bash -c '\
-		DISK_ID=$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin | awk "/\\/dev\\// {print \$$1}"); \
-		echo "diskutil list output for $$DISK_ID:"; \
-		diskutil list $$DISK_ID; \
-		PART_DEV=$$(ls /dev/$$(basename $$DISK_ID)s1); \
-		echo "Partition device: $$PART_DEV"; \
-		sudo mkdir -p /Volumes/viosmnt; \
-		sudo mount -t msdos $$PART_DEV /Volumes/viosmnt || { echo "Failed to mount $$PART_DEV"; hdiutil detach $$DISK_ID; exit 1; }; \
-		echo "Copying files..."; \
-		sudo cp -r ./assets/* /Volumes/viosmnt/ 2>/dev/null || true; \
-		find ./assets/etc/default/user/programs -name "*.elf" -exec sudo cp {} /Volumes/viosmnt/ \; ; \
+	@echo "Preparing disk image for macOS..."
+	@bash -c "\
+		set -e; \
+		echo 'Attaching disk image...'; \
+		ATTACH_OUTPUT=\$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin 2>/dev/null); \
+		DISK_ID=\$$(echo \"\$$ATTACH_OUTPUT\" | grep -o '/dev/disk[0-9]*' | head -1); \
+		PARTITION_ID=\"\$${DISK_ID}s1\"; \
+		if [ -z \"\$$DISK_ID\" ]; then echo 'Failed to attach disk image'; exit 1; fi; \
+		echo \"Attached as \$$DISK_ID, partition \$$PARTITION_ID\"; \
+		echo 'Formatting partition as FAT32...'; \
+		diskutil eraseVolume MS-DOS VIOSFAT32 \"\$$PARTITION_ID\" >/dev/null 2>&1 || { echo 'Failed to format partition'; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
+		echo 'Copying files...'; \
+		if [ -d './assets' ]; then \
+			echo 'Copying assets...'; \
+			cp -r ./assets/* /Volumes/VIOSFAT32/ || { echo 'Failed to copy assets'; diskutil unmount \"\$$PARTITION_ID\"; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
+		else \
+			echo 'No assets directory found, skipping...'; \
+		fi; \
+		if [ -d './assets/programs' ]; then \
+			echo 'Copying .elf files...'; \
+			find ./assets/programs -name '*.elf' -exec cp {} /Volumes/VIOSFAT32/ \; || { echo 'Failed to copy .elf files'; diskutil unmount \"\$$PARTITION_ID\"; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
+		else \
+			echo 'No programs directory found, skipping...'; \
+		fi; \
 		sync; \
-		echo "Unmounting..."; \
-		sudo umount /Volumes/viosmnt; \
-		hdiutil detach $$DISK_ID; \
-		echo "User programs and assets installed to disk image!"; \
-	'
+		echo 'Unmounting...'; \
+		diskutil unmount \"\$$PARTITION_ID\" >/dev/null 2>&1 || echo 'Unmount failed, continuing...'; \
+		hdiutil detach \"\$$DISK_ID\" >/dev/null 2>&1 || echo 'Detach failed, continuing...'; \
+		echo 'User programs and assets installed to disk image!'; \
+	"
 endif
+
 
 ./bin/kernel.bin: prepare_dirs $(FILES)
 	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib $(FILES)
 
-./bin/mbr.bin: prepare_dirs ./src/boot/mbr.asm
+./bin/boot.bin: prepare_dirs ./src/boot/mbr.asm  ./src/boot/vbr.asm
 	nasm -f bin ./src/boot/mbr.asm -o ./bin/mbr.bin
-
-./bin/vbr.bin: prepare_dirs ./src/boot/vbr.asm
 	nasm -f bin ./src/boot/vbr.asm -o ./bin/vbr.bin
+	dd if=./bin/mbr.bin of=$@ bs=512 count=1 conv=notrunc 2>/dev/null
+	dd if=./bin/vbr.bin of=$@ bs=512 seek=2048 count=1 conv=notrunc 2>/dev/null
 
 # Calculate kernel size and update boot sector
-./bin/boot_with_size.bin: ./bin/mbr.bin ./bin/vbr.bin ./bin/kernel.bin
-	@echo "Calculating kernel size and updating VBR..."
-	# ./updateBoot.sh ./bin/vbr.bin ./bin/kernel.bin
-	@echo "Combining MBR + VBR into boot image..."
-	dd if=./bin/mbr.bin of=./bin/boot_with_size.bin bs=512 count=1 conv=notrunc
-	dd if=./bin/vbr.bin of=./bin/boot_with_size.bin bs=512 seek=2048 conv=notrunc
+./bin/boot_with_size.bin: ./bin/boot.bin ./bin/kernel.bin
+	@echo "Calculating kernel size and updating boot sector..."
+	cp ./bin/boot.bin ./bin/boot_with_size.bin
 
-./bin/os.bin:
-	python3 utilities/make_mbr_partition.py ./bin/os.bin --size 128 --start 2048 --type 0x0C
-	@bash -c " \
-		set -e; \
-		ATTACH_OUTPUT=$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin); \
-		echo 'hdiutil attach output:'; \
-		echo "$$ATTACH_OUTPUT"; \
-		DISK_ID=$$(echo "$$ATTACH_OUTPUT" | awk '/\/dev\// {print $$1; exit}'); \
-		if [ -z "$$DISK_ID" ]; then \
-			echo 'ERROR: No device found. hdiutil did not recognize the image as a disk.'; \
-			exit 1; \
-		fi; \
-		echo "DISK_ID is $$DISK_ID"; \
-		PART_DEV=$$(ls /dev/$$(basename $$DISK_ID)s1 2>/dev/null || true); \
-		if [ -z "$$PART_DEV" ]; then \
-			echo 'ERROR: Partition device not found. Check the image partition table.'; \
-			hdiutil detach $$DISK_ID; \
-			exit 1; \
-		fi; \
-		echo "Formatting partition $$PART_DEV as FAT32..."; \
-		sudo newfs_msdos -F 32 -v VIOS_BOOT $$PART_DEV; \
-		hdiutil detach $$DISK_ID; \
-	"
-	@sudo dd if=./bin/vbr.bin of=./bin/os.bin bs=512 seek=2048 conv=notrunc
-	
+
+./bin/os.bin: ./bin/boot_with_size.bin
+	rm -rf ./bin/os.bin
+	dd if=./bin/boot_with_size.bin of=./bin/os.bin bs=512 conv=notrunc
+	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
+	@echo "Initializing FAT32 filesystem..."
+	python3 ./utilities/fat32_init.py ./bin/os.bin
+	@echo "Placing kernel in FAT32 data area..."
+	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=3104 conv=notrunc
+
 # Generic C and ASM file rules
 ./build/%.o: ./src/%.c
 	mkdir -p $(dir $@)
@@ -168,15 +154,17 @@ endif
 	nasm -f elf -g $< -o $@
 
 user_programs:
-	@{ \
-		for dir in $(shell find ./assets/etc/default/user/programs -mindepth 1 -maxdepth 1 -type d); do \
+	@if [ -d "./assets/programs" ]; then \
+		for dir in $$(find ./assets/programs -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
 			echo "Building user program $$dir..."; \
 			$(MAKE) -C $$dir all || exit 1; \
 		done; \
-	}
+	else \
+		echo "No user programs directory found (./assets/programs), skipping..."; \
+	fi
 
 user_programs_clean:
-	@for dir in ./assets/etc/default/user/programs/*/ ; do \
+	@for dir in ./assets/programs/*/ ; do \
 		$(MAKE) -C $$dir clean || true; \
 	done
 

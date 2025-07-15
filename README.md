@@ -190,6 +190,7 @@ ___________
 ├── generateFonts.sh
 ├── LICENSE
 ├── Makefile
+├── qemu.log
 ├── README.md
 ├── run.sh
 ├── setupRemoteBuild.sh
@@ -316,17 +317,16 @@ ___________
 │   └── utils
 │       ├── utils.c
 │       └── utils.h
-├── updateBoot.sh
 ├── updateREADME.sh
 ├── utilities
+│   ├── fat32_init.py
 │   ├── fonts
 │   │   ├── Arial.ttf
 │   │   ├── AtariST8x16SystemFont.ttf
 │   │   ├── Brightly.otf
 │   │   ├── Cheri.ttf
 │   │   └── RobotoThin.ttf
-│   ├── generateFonts.py
-│   └── make_mbr_partition.py
+│   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
 53 directories, 165 files
