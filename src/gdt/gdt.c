@@ -1,5 +1,6 @@
 #include "gdt.h"
 #include "panic/panic.h"
+#include "memory/memory.h"
 
 void encodeGdtEntry(uint8_t *target, struct gdt_structured source)
 {
@@ -8,6 +9,9 @@ void encodeGdtEntry(uint8_t *target, struct gdt_structured source)
         panic("encodeGdtEntry: Invalid argument\n");
     }
 
+    // Clear the target first
+    memset(target, 0, 8);
+    
     target[6] = 0x40;
     if (source.limit > 65536)
     {

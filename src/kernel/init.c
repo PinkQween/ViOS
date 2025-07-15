@@ -85,6 +85,16 @@ void kernel_init_tss(void)
 void kernel_init_paging(void)
 {
     simple_serial_puts("DEBUG: Starting paging initialization\n");
+    
+    // Verify heap is working before paging
+    void* test_alloc = kmalloc(4096);
+    if (!test_alloc) {
+        simple_serial_puts("DEBUG: Heap not ready for paging\n");
+        panic("Heap not ready for paging");
+    }
+    kfree(test_alloc);
+    simple_serial_puts("DEBUG: Heap verified working\n");
+    
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     if (!kernel_chunk)
     {
@@ -93,6 +103,12 @@ void kernel_init_paging(void)
     }
     simple_serial_puts("DEBUG: Kernel page directory created\n");
 
+    // Verify the page directory is valid
+    if (!kernel_chunk->directory_entry) {
+        simple_serial_puts("DEBUG: Invalid page directory\n");
+        panic("Invalid page directory");
+    }
+    
     paging_switch(kernel_chunk);
     simple_serial_puts("DEBUG: Paging switched\n");
 

@@ -41,6 +41,7 @@ void kernel_main()
 {
     simple_serial_init();
     simple_serial_puts("DEBUG: Kernel starting...\n");
+    simple_serial_puts("DEBUG: Kernel entry point reached successfully\n");
 
     // 1. GDT setup
     kernel_init_gdt_and_tss();
@@ -94,8 +95,4 @@ void kernel_main()
     simple_serial_puts("DEBUG: About to start main loop...\n");
     kernel_run_main_loop(mouse);
     simple_serial_puts("DEBUG: Main loop returned (this shouldn't happen)\n");
-    while (1)
-    {
-        asm volatile("hlt");
-    }
 }

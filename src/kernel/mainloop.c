@@ -28,7 +28,14 @@ void kernel_run_main_loop(struct mouse *mouse)
         panic("Failed to load cpp_print.elf\n");
     }
 
-    res = process_load_switch("0:/cpp_prnt.elf", &process);
+    res = process_load_switch("0:/asm_testelfelflef.elf", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        panic("Failed to load asm_testelfelflef.elf\n");
+    }
+    
+
+        res = process_load_switch("0:/cpp_prnt.elf", &process);
     if (res != VIOS_ALL_OK)
     {
         panic("Failed to load cpp_prnt.elf\n");

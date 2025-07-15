@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: aarch64-apple-darwin
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code

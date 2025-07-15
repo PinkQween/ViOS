@@ -72,8 +72,35 @@ void _graphics_update_fps_counter(void)
 bool _graphics_init_framebuffer(void)
 {
     VBEInfoBlock *vbe = (VBEInfoBlock *)VBEInfoAddress;
-    if (!vbe)
-        return false;
+    
+    // Check if VBE information is available and valid
+    if (!vbe || vbe->x_resolution == 0 || vbe->y_resolution == 0 || vbe->screen_ptr == 0)
+    {
+        // Initialize with default VBE information for QEMU/common configurations
+        static VBEInfoBlock default_vbe = {
+            .mode_attribute = 0x00BB,
+            .x_resolution = 800,
+            .y_resolution = 600,
+            .bits_per_pixel = 16,
+            .screen_ptr = 0x00A00000,  // Common framebuffer address
+            .bytes_per_scan_line = 800 * 2,
+            .memory_model = 6,  // Direct color
+            .red_mask_size = 5,
+            .red_field_position = 11,
+            .green_mask_size = 6,
+            .green_field_position = 5,
+            .blue_mask_size = 5,
+            .blue_field_position = 0
+        };
+        
+        // Copy default VBE info to the expected location
+        memcpy(vbe, &default_vbe, sizeof(VBEInfoBlock));
+        simple_serial_puts("DEBUG: Using default VBE configuration (800x600x16)\n");
+    }
+    else
+    {
+        simple_serial_puts("DEBUG: Using existing VBE configuration\n");
+    }
 
     g_graphics_context.vbe_info = vbe;
     g_graphics_context.current_mode.width = vbe->x_resolution;

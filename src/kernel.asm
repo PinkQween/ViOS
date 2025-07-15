@@ -1,5 +1,7 @@
 [BITS 32]
 
+section .text.start
+
 global _start
 global kernel_registers
 extern kernel_main

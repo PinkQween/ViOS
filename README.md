@@ -119,28 +119,40 @@ ___________
 │       └── build.yml
 ├── .gitignore
 ├── assets
-│   └── programs
-│       ├── asm_test
-│       │   ├── linker.ld
-│       │   ├── main.asm
-│       │   └── Makefile
-│       ├── c_print
-│       │   ├── Makefile
-│       │   └── src
-│       │       └── main.c
-│       ├── cpp_prnt
-│       │   ├── Makefile
-│       │   └── src
-│       │       └── main.cpp
-│       ├── cpp_test
-│       │   ├── Makefile
-│       │   └── src
-│       │       └── main.cpp
-│       └── shell
-│           ├── Makefile
-│           └── src
-│               ├── main.c
-│               └── shell.h
+│   ├── boot
+│   │   └── .keep
+│   ├── etc
+│   │   └── default
+│   │       └── user
+│   │           └── programs
+│   │               ├── asm_test
+│   │               │   ├── linker.ld
+│   │               │   ├── main.asm
+│   │               │   └── Makefile
+│   │               ├── c_print
+│   │               │   ├── Makefile
+│   │               │   └── src
+│   │               │       └── main.c
+│   │               ├── cpp_prnt
+│   │               │   ├── Makefile
+│   │               │   └── src
+│   │               │       └── main.cpp
+│   │               ├── cpp_test
+│   │               │   ├── Makefile
+│   │               │   └── src
+│   │               │       └── main.cpp
+│   │               └── shell
+│   │                   ├── Makefile
+│   │                   └── src
+│   │                       ├── main.c
+│   │                       └── shell.h
+│   ├── kernel
+│   │   └── .keep
+│   └── shells
+│       ├── vio:nova
+│       │   └── .keep
+│       └── vio:void
+│           └── .keep
 ├── build.sh
 ├── buildExternal.sh
 ├── docs
@@ -179,7 +191,6 @@ ___________
 ├── LICENSE
 ├── Makefile
 ├── README.md
-├── run
 ├── run.sh
 ├── setupRemoteBuild.sh
 ├── src
@@ -189,7 +200,8 @@ ___________
 │   │   ├── sb16.c
 │   │   └── sb16.h
 │   ├── boot
-│   │   └── boot.asm
+│   │   ├── mbr.asm
+│   │   └── vbr.asm
 │   ├── config.h
 │   ├── debug
 │   │   ├── simple_serial.c
@@ -202,7 +214,9 @@ ___________
 │   ├── fs
 │   │   ├── fat
 │   │   │   ├── fat16.c
-│   │   │   └── fat16.h
+│   │   │   ├── fat16.h
+│   │   │   ├── fat32.c
+│   │   │   └── fat32.h
 │   │   ├── file.c
 │   │   ├── file.h
 │   │   ├── pparser.c
@@ -281,6 +295,9 @@ ___________
 │   ├── panic
 │   │   ├── panic.c
 │   │   └── panic.h
+│   ├── power
+│   │   ├── power.c
+│   │   └── power.h
 │   ├── rtc
 │   │   ├── rtc.c
 │   │   └── rtc.h
@@ -299,8 +316,7 @@ ___________
 │   └── utils
 │       ├── utils.c
 │       └── utils.h
-├── test.img
-├── update_boot.sh
+├── updateBoot.sh
 ├── updateREADME.sh
 ├── utilities
 │   ├── fonts
@@ -309,10 +325,11 @@ ___________
 │   │   ├── Brightly.otf
 │   │   ├── Cheri.ttf
 │   │   └── RobotoThin.ttf
-│   └── generateFonts.py
+│   ├── generateFonts.py
+│   └── make_mbr_partition.py
 └── ViOS_LOGO_PNG.png
 
-44 directories, 157 files
+53 directories, 165 files
 ```
 
 ___________
