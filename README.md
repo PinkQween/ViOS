@@ -319,7 +319,6 @@ ___________
 │       └── utils.h
 ├── updateREADME.sh
 ├── utilities
-│   ├── fat32_init.py
 │   ├── fonts
 │   │   ├── Arial.ttf
 │   │   ├── AtariST8x16SystemFont.ttf
@@ -329,7 +328,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-53 directories, 165 files
+53 directories, 164 files
 ```
 
 ___________

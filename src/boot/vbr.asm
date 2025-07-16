@@ -50,8 +50,8 @@ VolumeLabel          db 'VIOS FAT32  '      ; Volume label (11 bytes)
 FileSystemType       db 'FAT32   '          ; File system type (8 bytes)
 
 ; --- ViOS Kernel Metadata (custom extension) ---
-KernelSizeBytes      dd 0x00000000          ; Kernel size in bytes (filled by build script)
-KernelSizeSectors    dw 0x00F0              ; Kernel size in sectors (240 sectors = 120KB)
+KernelSizeBytes      dd 0x00000000          ; Kernel size in bytes
+KernelSizeSectors    dw 0x00E6              ; Kernel size in sectors (230 sectors for 117KB)
 
 ; === VBE Fallback Error Display ===
 vbe_error:
@@ -71,19 +71,64 @@ vbe_error:
     jmp $
 
 vbe_error_msg db "VBE mode failed", 0
+hello_msg db 'VBR: start reached', 0
+
+bios_print:
+    lodsb
+    or al, al
+    jz .done
+    mov ah, 0x0E
+    int 0x10
+    jmp bios_print
+.done:
+    ret
 
 ; === Boot Entry Point ===
 start:
-    ; Try VBE Mode 0x117 (1024x768x16)
+    mov si, hello_msg
+    call bios_print
+
+    ; --- Try VBE Mode 0x17E ---
+    mov ax, 0x4F01
+    mov cx, 0x17E
+    mov bx, 0x090
+    mov es, bx
+    xor di, di
+    int 0x10
+    cmp ax, 0x004F
+    jne try_117_query
+
+    mov ax, 0x4F02
+    mov bx, 0x17E
+    int 0x10
+    cmp ax, 0x004F
+    jne try_117_query
+
+    jmp vbe_success
+
+try_117_query:
+    ; --- Fallback to VBE Mode 0x117 ---
+    mov ax, 0x4F01
+    mov cx, 0x117
+    mov bx, 0x090
+    mov es, bx
+    xor di, di
+    int 0x10
+    cmp ax, 0x004F
+    jne vbe_error
+
     mov ax, 0x4F02
     mov bx, 0x117
     int 0x10
     cmp ax, 0x004F
     jne vbe_error
 
-    ; mov si, success_msg ; REMOVED
-    ; call serial_print ; REMOVED
-    jmp step2
+vbe_success:
+    call clear
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    jmp 0:step2
 
 ; === Clear Screen ===
 clear:
@@ -166,15 +211,11 @@ load32:
     rep movsb
 
     ; Setup for ATA sector read
-    ; Kernel is stored in the FAT32 data area
-    ; LBA 2048 = VBR, LBA 3104 = FAT32 data area (kernel start)
-    mov eax, 3104                           ; LBA start (FAT32 data area)
-    movzx ecx, word [KernelSizeSectors]    ; Sector count from BPB
-    mov edi, 0x0100000                      ; Destination address (1MB)
-    
+    mov eax, 1                              ; LBA start
+    movzx ecx, word [KernelSizeSectors]    ; Sector count
+    mov edi, 0x0100000                      ; Destination address
     call ata_lba_read
-    
-    ; Jump to loaded kernel
+
     jmp CODE_SEG:0x0100000
 
 ; === ATA LBA Sector Read ===

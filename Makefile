@@ -83,7 +83,7 @@ ifeq ($(UNAME_S),Linux)
 	@sudo umount /mnt/d 2>/dev/null || true
 	@sudo mount -t vfat ./bin/os.bin /mnt/d || { echo "Failed to mount disk image"; exit 1; }
 	@if [ -d "./assets" ]; then sudo cp -r ./assets/* /mnt/d/ || { echo "Failed to copy assets"; sudo umount /mnt/d; exit 1; }; fi
-	@if [ -d "./assets/programs" ]; then find ./assets/programs -name '*.elf' -exec sudo cp {} /mnt/d/ \; || { echo "Failed to copy .elf files"; sudo umount /mnt/d; exit 1; }; fi
+	@if [ -d "./assets/etc/default/user/programs" ]; then find ./assets/etc/default/user/programs -name '*.elf' -exec sudo cp {} /mnt/d/ \; || { echo "Failed to copy .elf files"; sudo umount /mnt/d; exit 1; }; fi
 	@sudo umount /mnt/d
 	@echo "User programs and assets installed to disk image!"
 else ifeq ($(UNAME_S),Darwin)
@@ -105,9 +105,9 @@ else ifeq ($(UNAME_S),Darwin)
 		else \
 			echo 'No assets directory found, skipping...'; \
 		fi; \
-		if [ -d './assets/programs' ]; then \
+		if [ -d './assets/etc/default/user/programs' ]; then \
 			echo 'Copying .elf files...'; \
-			find ./assets/programs -name '*.elf' -exec cp {} /Volumes/VIOSFAT32/ \; || { echo 'Failed to copy .elf files'; diskutil unmount \"\$$PARTITION_ID\"; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
+			find ./assets/etc/default/user/programs -name '*.elf' -exec cp {} /Volumes/VIOSFAT32/ \; || { echo 'Failed to copy .elf files'; diskutil unmount \"\$$PARTITION_ID\"; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
 		else \
 			echo 'No programs directory found, skipping...'; \
 		fi; \
@@ -138,11 +138,8 @@ endif
 ./bin/os.bin: ./bin/boot_with_size.bin
 	rm -rf ./bin/os.bin
 	dd if=./bin/boot_with_size.bin of=./bin/os.bin bs=512 conv=notrunc
-	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
-	@echo "Initializing FAT32 filesystem..."
-	python3 ./utilities/fat32_init.py ./bin/os.bin
-	@echo "Placing kernel in FAT32 data area..."
-	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=3104 conv=notrunc
+	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=2049 conv=notrunc
+	#dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
 
 # Generic C and ASM file rules
 ./build/%.o: ./src/%.c
@@ -154,17 +151,17 @@ endif
 	nasm -f elf -g $< -o $@
 
 user_programs:
-	@if [ -d "./assets/programs" ]; then \
-		for dir in $$(find ./assets/programs -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
+	@if [ -d "./assets/etc/default/user/programs" ]; then \
+		for dir in $$(find ./assets/etc/default/user/programs -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
 			echo "Building user program $$dir..."; \
 			$(MAKE) -C $$dir all || exit 1; \
 		done; \
 	else \
-		echo "No user programs directory found (./assets/programs), skipping..."; \
+		echo "No user programs directory found (./assets/etc/default/user/programs), skipping..."; \
 	fi
 
 user_programs_clean:
-	@for dir in ./assets/programs/*/ ; do \
+	@for dir in ./assets/etc/default/user/programs/*/ ; do \
 		$(MAKE) -C $$dir clean || true; \
 	done
 

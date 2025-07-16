@@ -74,7 +74,7 @@ db 0x80                ; bootable
 db 0x01, 0x01, 0x00    ; CHS start
 db 0x0C                ; FAT32 (LBA)
 db 0xFE, 0xFF, 0xFF    ; CHS end
-dd 2048                ; LBA start
+dd 2048 - 1            ; LBA start
 dd 2048 * 128          ; sectors (4MB, just example)
 
 ; Remaining 3 partitions empty
