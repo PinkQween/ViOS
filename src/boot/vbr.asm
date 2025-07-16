@@ -1,3 +1,4 @@
+ORG 0x8000
 ; VBR (Volume Boot Record) for FAT32 - ViOS
 ; This VBR is loaded at 0x8000 by the MBR
 ; It sets up the proper FAT32 filesystem structure
@@ -5,8 +6,8 @@
 BITS 16
 
 ; === Segment Offsets ===
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
+CODE_SEG equ 0x08
+DATA_SEG equ 0x10
 
 ; --- Standard FAT32 BIOS Parameter Block (BPB) ---
 ; Jump instruction to skip BPB and start actual boot code
@@ -71,23 +72,40 @@ vbe_error:
     jmp $
 
 vbe_error_msg db "VBE mode failed", 0
-hello_msg db 'VBR: start reached', 0
 
-bios_print:
-    lodsb
-    or al, al
-    jz .done
-    mov ah, 0x0E
-    int 0x10
-    jmp bios_print
-.done:
+; === Serial Port Initialization and Print Routine ===
+serial_init:
+    mov dx, 0x3f8        ; COM1 base port
+    mov al, 0x80         ; Enable DLAB
+    out dx, al
+    mov dx, 0x3f9        ; COM1+1
+    mov al, 0x00         ; High byte divisor (115200 baud)
+    out dx, al
+    mov dx, 0x3f8        ; COM1
+    mov al, 0x01         ; Low byte divisor (115200 baud)
+    out dx, al
+    mov dx, 0x3fb        ; COM1+3
+    mov al, 0x03         ; 8 bits, no parity, one stop bit
+    out dx, al
+    mov dx, 0x3f9        ; COM1+1
+    mov al, 0x00         ; Disable interrupts
+    out dx, al
+    ret
+
+serial_print:
+    push dx
+    mov dx, 0x3fd
+.wait_serial:
+    in  al, dx
+    test al, 0x20
+    jz   .wait_serial
+    pop dx
+    mov dx, 0x3f8
+    out dx, al
     ret
 
 ; === Boot Entry Point ===
 start:
-    mov si, hello_msg
-    call bios_print
-
     ; --- Try VBE Mode 0x17E ---
     mov ax, 0x4F01
     mov cx, 0x17E
@@ -97,7 +115,7 @@ start:
     int 0x10
     cmp ax, 0x004F
     jne try_117_query
-
+    
     mov ax, 0x4F02
     mov bx, 0x17E
     int 0x10
@@ -116,7 +134,7 @@ try_117_query:
     int 0x10
     cmp ax, 0x004F
     jne vbe_error
-
+    
     mov ax, 0x4F02
     mov bx, 0x117
     int 0x10
@@ -128,7 +146,9 @@ vbe_success:
     xor ax, ax
     mov ds, ax
     mov es, ax
-    jmp 0:step2
+    
+    call serial_init     ; Initialize serial port early
+    jmp 0x800:step2      ; Far jump to step2 at 0x800:step2 (physical 0x8000 + offset of step2)
 
 ; === Clear Screen ===
 clear:
@@ -144,6 +164,7 @@ clear:
 
 ; === Protected Mode Transition ===
 step2:
+    
     cli
     xor ax, ax
     mov ds, ax
@@ -154,13 +175,24 @@ step2:
     mov sp, 0x7C00
     sti
 
-.load_protected:
+.load_protected:    
     cli
+    ; Calculate physical address of GDT (code loaded at 0x8000)
+    mov bx, gdt_start
+    add bx, 0x8000         ; Adjust for ORG 0x8000
+    mov word [gdt_descriptor + 2], bx
+    mov word [gdt_descriptor + 4], 0x0000
+    
     lgdt [gdt_descriptor]
+    
+    mov al, 'G'         ; 'G' for GDT loaded
+    call serial_print
+    
     mov eax, cr0
     or eax, 1
     mov cr0, eax
-    jmp CODE_SEG:load32
+    ; Far jump to 32-bit code
+    jmp 0x08:load32
 
 ; === GDT Setup ===
 gdt_start:
@@ -188,15 +220,21 @@ gdt_descriptor:
     dw gdt_end - gdt_start - 1
     dd gdt_start
 
-; === 32-bit Mode Entry ===
 [BITS 32]
 load32:
-    mov ax, DATA_SEG
+    mov al, 'Y'         ; Send 'Y' to show 32-bit mode reached
+    call serial_print
+    ; Set up data segments for 32-bit mode
+    mov ax, 0x10
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
+    mov esp, 0x90000      ; Set up a safe stack pointer
+
+    mov al, 'B'         ; Send 'B' to show 32-bit mode reached
+    call serial_print
 
     ; Enable A20 line
     in al, 0x92
@@ -211,10 +249,13 @@ load32:
     rep movsb
 
     ; Setup for ATA sector read
-    mov eax, 1                              ; LBA start
-    movzx ecx, word [KernelSizeSectors]    ; Sector count
+    mov eax, 2049                           ; LBA start (kernel is at sector 2049)
+    movzx ecx, word [KernelSizeSectors]     ; Sector count
     mov edi, 0x0100000                      ; Destination address
     call ata_lba_read
+    
+    mov al, 'K'         ; Send 'K' to show about to jump to kernel
+    call serial_print
 
     jmp CODE_SEG:0x0100000
 
@@ -264,5 +305,5 @@ ata_lba_read:
     ret
 
 ; === Boot Signature ===
-times 510-($ - $$) db 0
+times 1022-($ - $$) db 0
 dw 0xAA55

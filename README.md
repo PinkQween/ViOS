@@ -190,7 +190,6 @@ ___________
 ├── generateFonts.sh
 ├── LICENSE
 ├── Makefile
-├── qemu.log
 ├── README.md
 ├── run.sh
 ├── setupRemoteBuild.sh
@@ -328,7 +327,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-53 directories, 164 files
+53 directories, 163 files
 ```
 
 ___________

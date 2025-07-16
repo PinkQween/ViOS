@@ -19,6 +19,12 @@ _start:
     mov ebp, 0x00200000
     mov esp, ebp
 
+    ; Clear screen to red color for debugging - if we see red, we reached kernel
+    mov edi, 0xb8000  ; VGA text buffer
+    mov ecx, 80 * 25  ; 80 columns * 25 rows
+    mov ax, 0x4f20    ; Red background (0x4f) + space character (0x20)
+    rep stosw         ; Fill screen with red spaces
+
     ; Remap the master PIC
     mov al, 00010001b
     out 0x20, al ; Tell master PIC

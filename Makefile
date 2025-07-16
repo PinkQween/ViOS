@@ -139,7 +139,7 @@ endif
 	rm -rf ./bin/os.bin
 	dd if=./bin/boot_with_size.bin of=./bin/os.bin bs=512 conv=notrunc
 	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=2049 conv=notrunc
-	#dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
+	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
 
 # Generic C and ASM file rules
 ./build/%.o: ./src/%.c

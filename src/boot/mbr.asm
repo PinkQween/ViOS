@@ -59,7 +59,7 @@ error_msg:
 dap:
     db 0x10             ; Size of DAP
     db 0x00             ; Reserved
-    dw 0x0001           ; Number of sectors
+    dw 0x0002           ; Number of sectors (2 sectors for VBR)
     dw 0x8000           ; Offset (load VBR here)
     dw 0x0000           ; Segment
     dq 2048             ; LBA of VBR sector
