@@ -5,7 +5,7 @@ jmp near start
 nop
 
 ; FAT32 BPB (BIOS Parameter Block)
-OEMIdentifier            db 'MSWIN4.1'        ; 0x03 - 8 bytes (standard OEM ID)
+OEMIdentifier            db 'MSWIN4.1'         ; 0x03 - 8 bytes (standard OEM ID)
 BytesPerSector          dw 512                ; 0x0B - bytes per sector
 SectorsPerCluster       db 8                  ; 0x0D - sectors per cluster
 ReservedSectors         dw 32                 ; 0x0E - reserved sectors
@@ -60,8 +60,6 @@ vbe_error_msg db "VBE mode failed", 0
 
 ; === Entry Point ===
 start:
-    call clear
-
     ; Try VBE Mode 0x17E
     mov ax, 0x4F01
     mov cx, 0x17E
@@ -98,6 +96,8 @@ try_117_query:
     jne vbe_error
 
 vbe_success:
+    call clear
+
     xor ax, ax
     mov ds, ax
     mov es, ax
@@ -127,7 +127,7 @@ step2:
     mov sp, 0x7C00
     sti
 
-.load_protected:
+.load_protected:    
     cli
     lgdt [gdt_descriptor]
     mov eax, cr0
@@ -178,7 +178,7 @@ load32:
     in al, 0x92
     or al, 2
     out 0x92, al
-
+    
     ; Move temp kernel sector (VBR data)
     mov esi, 0x90000
     mov edi, 0x20000
