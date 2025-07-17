@@ -16,7 +16,6 @@ start:
     mov dl, 0x80        ; First hard disk
     int 0x13
     jc disk_error
-
     ; Far jump to loaded VBR at 0x0000:0x7E00
     jmp 0x0000:0x7E00
 
@@ -43,10 +42,10 @@ error_msg db "MBR: Disk read error!", 0
 dap:
     db 0x10             ; size of DAP
     db 0x00             ; reserved
-    dw 0x0001           ; number of sectors to read
+    dw 0x0003           ; number of sectors to read
     dw 0x7E00           ; offset
     dw 0x0000           ; segment
-    dq 2048             ; LBA - partition start
+    dq 2050             ; LBA - VBR location
 
 times 446 - ($ - $$) db 0  ; Pad to partition table
 
@@ -55,8 +54,8 @@ db 0x80                  ; Bootable
 db 0x01, 0x01, 0x00      ; CHS start — dummy
 db 0x0C                  ; FAT32 (LBA)
 db 0xFE, 0xFF, 0xFF      ; CHS end — dummy
-dd 2048                 ; LBA of first sector of partition
-dd 260096               ; Number of sectors in partition (262144 - 2048)
+dd 3000                  ; LBA of first sector of partition
+dd 260096                ; Number of sectors in partition (262144 - 2048)
 
 times 3*16 db 0          ; Empty partitions
 dw 0xAA55               ; Boot signature

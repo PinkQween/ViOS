@@ -36,8 +36,8 @@ VolumeLabel             db 'VIOS BOOT  '      ; 0x47 - volume label (11 bytes)
 SystemIDString          db 'FAT32   '         ; 0x52 - system identifier (8 bytes)
 
 ; === Kernel Metadata ===
-KernelSizeBytes         dd 117312  ; To be filled by build script
-KernelSizeSectors       dw 230      ; To be filled by build script
+KernelStartSector       dd 2050
+KernelSizeSectors       dw 230
 
 ; === VBE Error Message ===
 vbe_error:
@@ -187,8 +187,8 @@ load32:
     rep movsb
 
     ; Read kernel
-    mov eax, 2050                           ; LBA start (absolute - kernel is at LBA 2050)
-    movzx ecx, word [KernelSizeSectors]    ; Sector count
+    mov eax, 10                           ; LBA start (absolute - kernel is at LBA 2050)
+    movzx ecx, word [KernelSizeSectors]     ; Sector count
     mov edi, 0x0100000                      ; Load to 1 MB
     call ata_lba_read
 
@@ -225,12 +225,61 @@ ata_lba_read:
 
 .next_sector:
     push ecx
+    mov ebx, 0x10000    ; Timeout counter
 .try_again:
     mov dx, 0x1F7
     in al, dx
     test al, 8
-    jz .try_again
+    jz .check_timeout
+    jmp .data_ready
+.check_timeout:
+    dec ebx
+    jnz .try_again
+    ; Timeout expired – add real error handling if desired
+    jmp $               ; Hang for now on timeout
+.data_ready:
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
 
+    pop ecx
+    loop .next_sector
+    ret
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+
+    pop ecx
+    loop .next_sector
+    ret
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+
+    pop ecx
+    loop .next_sector
+    ret
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+
+    pop ecx
+    loop .next_sector
+    ret
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+
+    pop ecx
+    loop .next_sector
+    ret
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+
+    pop ecx
+    loop .next_sector
+    ret
     mov ecx, 256
     mov dx, 0x1F0
     rep insw

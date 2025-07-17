@@ -155,6 +155,7 @@ ___________
 │           └── .keep
 ├── build.sh
 ├── buildExternal.sh
+├── debug.log
 ├── docs
 │   └── api
 │       ├── copy_string_from_task.md
@@ -202,7 +203,9 @@ ___________
 │   ├── boot
 │   │   ├── fsinfo.asm
 │   │   ├── mbr.asm
-│   │   └── vbr.asm
+│   │   ├── vbrEntry.asm
+│   │   ├── vbrMain.asm
+│   │   └── vbrOld.asm
 │   ├── config.h
 │   ├── debug
 │   │   ├── simple_serial.c
@@ -328,7 +331,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-53 directories, 164 files
+53 directories, 167 files
 ```
 
 ___________
