@@ -23,5 +23,3 @@ mnt/
 **/build/
 .venv/
 external/
-
-pushTags.sh

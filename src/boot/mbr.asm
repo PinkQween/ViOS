@@ -10,7 +10,7 @@ start:
     mov si, load_msg
     call print
 
-    ; Setup Disk Address Packet (DAP) for LBA 2048
+    ; Setup Disk Address Packet (DAP) for partition start (LBA 2048)
     mov si, dap
     mov ah, 0x42
     mov dl, 0x80        ; First hard disk
@@ -46,7 +46,7 @@ dap:
     dw 0x0001           ; number of sectors to read
     dw 0x7E00           ; offset
     dw 0x0000           ; segment
-    dq 1                ; LBA
+    dq 2048             ; LBA - partition start
 
 times 446 - ($ - $$) db 0  ; Pad to partition table
 
@@ -56,7 +56,7 @@ db 0x01, 0x01, 0x00      ; CHS start — dummy
 db 0x0C                  ; FAT32 (LBA)
 db 0xFE, 0xFF, 0xFF      ; CHS end — dummy
 dd 2048                 ; LBA of first sector of partition
-dd 0x773594             ; Number of sectors in partition
+dd 260096               ; Number of sectors in partition (262144 - 2048)
 
 times 3*16 db 0          ; Empty partitions
 dw 0xAA55               ; Boot signature

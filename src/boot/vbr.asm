@@ -3,35 +3,37 @@ BITS 16
 
 jmp near start
 nop
-OEMIdentifier            db 'VIOS    '        ; 0x03
-BytesPerSector          dw 512                ; 0x0B
-SectorsPerCluster       db 8                  ; 0x0D
-ReservedSectors         dw 32                 ; 0x0E
-FATCopies               db 2                  ; 0x10
-RootDirEntries          dw 0                  ; 0x11 (must be 0 for FAT32)
-NumSectors              dw 0                  ; 0x13 (must be 0 for FAT32)
-MediaType               db 0xF8               ; 0x15
-SectorsPerFat           dw 0                  ; 0x16 (must be 0 for FAT32)
-SectorsPerTrack         dw 63                 ; 0x18
-NumberOfHeads           dw 255                ; 0x1A
-HiddenSectors           dd 2048               ; 0x1C
-SectorsBig              dd 0x773594           ; 0x20
+
+; FAT32 BPB (BIOS Parameter Block)
+OEMIdentifier            db 'MSWIN4.1'        ; 0x03 - 8 bytes (standard OEM ID)
+BytesPerSector          dw 512                ; 0x0B - bytes per sector
+SectorsPerCluster       db 8                  ; 0x0D - sectors per cluster
+ReservedSectors         dw 32                 ; 0x0E - reserved sectors
+FATCopies               db 2                  ; 0x10 - number of FATs
+RootDirEntries          dw 0                  ; 0x11 - root dir entries (0 for FAT32)
+NumSectors              dw 0                  ; 0x13 - total sectors (0 for FAT32)
+MediaType               db 0xF8               ; 0x15 - media descriptor
+SectorsPerFat           dw 0                  ; 0x16 - sectors per FAT (0 for FAT32)
+SectorsPerTrack         dw 63                 ; 0x18 - sectors per track
+NumberOfHeads           dw 255                ; 0x1A - number of heads
+HiddenSectors           dd 2048               ; 0x1C - hidden sectors
+SectorsBig              dd 262144             ; 0x20 - large sector count (128MB)
 
 ; FAT32 Extended BPB
-SectorsPerFat32         dd 0x1000             ; 0x24
-ExtFlags                dw 0                  ; 0x28
-FSVersion               dw 0                  ; 0x2A
-RootCluster             dd 2                  ; 0x2C
-FSInfoSector            dw 1                  ; 0x30
-BackupBootSector        dw 6                  ; 0x32
-ReservedEx              times 12 db 0         ; 0x34
+SectorsPerFat32         dd 2048               ; 0x24 - sectors per FAT32
+ExtFlags                dw 0                  ; 0x28 - extension flags
+FSVersion               dw 0                  ; 0x2A - filesystem version
+RootCluster             dd 2                  ; 0x2C - root directory cluster
+FSInfoSector            dw 1                  ; 0x30 - FSInfo sector
+BackupBootSector        dw 6                  ; 0x32 - backup boot sector
+ReservedEx              times 12 db 0         ; 0x34 - reserved
 
-DriveNumber             db 0x80               ; 0x40
-Reserved1               db 0                  ; 0x41
-BootSignature           db 0x29               ; 0x42
-VolumeID                dd 0xD105D105         ; 0x43
-VolumeLabel             db 'VIOS BOOT  '      ; 0x47
-SystemIDString          db 'FAT32   '         ; 0x52
+DriveNumber             db 0x80               ; 0x40 - drive number
+Reserved1               db 0                  ; 0x41 - reserved
+BootSignature           db 0x29               ; 0x42 - boot signature
+VolumeID                dd 0x12345678         ; 0x43 - volume ID
+VolumeLabel             db 'VIOS BOOT  '      ; 0x47 - volume label (11 bytes)
+SystemIDString          db 'FAT32   '         ; 0x52 - system identifier (8 bytes)
 
 ; === Kernel Metadata ===
 KernelSizeBytes         dd 117312  ; To be filled by build script
@@ -185,7 +187,7 @@ load32:
     rep movsb
 
     ; Read kernel
-    mov eax, 2                              ; LBA start
+    mov eax, 2050                           ; LBA start (absolute - kernel is at LBA 2050)
     movzx ecx, word [KernelSizeSectors]    ; Sector count
     mov edi, 0x0100000                      ; Load to 1 MB
     call ata_lba_read

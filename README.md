@@ -200,6 +200,7 @@ ___________
 │   │   ├── sb16.c
 │   │   └── sb16.h
 │   ├── boot
+│   │   ├── fsinfo.asm
 │   │   ├── mbr.asm
 │   │   └── vbr.asm
 │   ├── config.h
@@ -327,7 +328,7 @@ ___________
 │   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-53 directories, 163 files
+53 directories, 164 files
 ```
 
 ___________

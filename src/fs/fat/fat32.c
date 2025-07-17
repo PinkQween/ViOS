@@ -143,17 +143,41 @@ int fat32_resolve(struct disk *disk)
         goto out;
     }
 
-    if (diskstreamer_read(stream, &fat_private->header, sizeof(fat_private->header)) != VIOS_ALL_OK)
+    // Seek to partition start (LBA 2048) instead of disk start (LBA 0)
+    // The partition starts at LBA 2048 according to the MBR
+    simple_serial_puts("DEBUG: Seeking to partition start at LBA 2048\n");
+    if (diskstreamer_seek(stream, 2048 * 512) != VIOS_ALL_OK)
     {
+        simple_serial_puts("DEBUG: Failed to seek to partition start\n");
         res = -EIO;
         goto out;
     }
 
+    simple_serial_puts("DEBUG: Reading FAT32 header from partition start\n");
+    if (diskstreamer_read(stream, &fat_private->header, sizeof(fat_private->header)) != VIOS_ALL_OK)
+    {
+        simple_serial_puts("DEBUG: Failed to read FAT32 header\n");
+        res = -EIO;
+        goto out;
+    }
+
+    simple_serial_puts("DEBUG: Checking FAT32 signature\n");
+    simple_serial_puts("DEBUG: Found signature: 0x");
+    // Simple hex output for signature
+    uint8_t sig = fat_private->header.extended.signature;
+    char hex_digits[] = "0123456789ABCDEF";
+    char hex_str[3] = { hex_digits[sig >> 4], hex_digits[sig & 0xF], 0 };
+    simple_serial_puts(hex_str);
+    simple_serial_puts(" (expected 0x29)\n");
+    
     if (fat_private->header.extended.signature != VIOS_FAT32_SIGNATURE)
     {
+        simple_serial_puts("DEBUG: FAT32 signature mismatch\n");
         res = -EFSNOTUS;
         goto out;
     }
+
+    simple_serial_puts("DEBUG: FAT32 filesystem recognized successfully\n");
 
     out:
     if (stream)
