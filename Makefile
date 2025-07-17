@@ -123,11 +123,11 @@ endif
 ./bin/kernel.bin: prepare_dirs $(FILES)
 	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib $(FILES)
 
-./bin/boot.bin: prepare_dirs ./src/boot/mbr.asm  ./src/boot/vbr.asm
+./bin/boot.bin: prepare_dirs ./src/boot/mbr.asm ./src/boot/vbr.asm
 	nasm -f bin ./src/boot/mbr.asm -o ./bin/mbr.bin
 	nasm -f bin ./src/boot/vbr.asm -o ./bin/vbr.bin
-	dd if=./bin/mbr.bin of=$@ bs=512 count=1 conv=notrunc 2>/dev/null
-	dd if=./bin/vbr.bin of=$@ bs=512 seek=2048 count=1 conv=notrunc 2>/dev/null
+	dd if=./bin/mbr.bin of=$@ bs=512 count=1 conv=notrunc status=none
+	dd if=./bin/vbr.bin of=$@ bs=512 seek=1 count=1 conv=notrunc status=none
 
 # Calculate kernel size and update boot sector
 ./bin/boot_with_size.bin: ./bin/boot.bin ./bin/kernel.bin
@@ -138,7 +138,7 @@ endif
 ./bin/os.bin: ./bin/boot_with_size.bin
 	rm -rf ./bin/os.bin
 	dd if=./bin/boot_with_size.bin of=./bin/os.bin bs=512 conv=notrunc
-	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=2049 conv=notrunc
+	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=2 conv=notrunc
 	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
 
 # Generic C and ASM file rules

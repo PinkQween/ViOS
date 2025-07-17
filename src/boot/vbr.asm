@@ -1,60 +1,43 @@
-ORG 0x8000
-; VBR (Volume Boot Record) for FAT32 - ViOS
-; This VBR is loaded at 0x8000 by the MBR
-; It sets up the proper FAT32 filesystem structure
-
+ORG 0x7E00
 BITS 16
 
-; === Segment Offsets ===
-CODE_SEG equ 0x08
-DATA_SEG equ 0x10
-
-; --- Standard FAT32 BIOS Parameter Block (BPB) ---
-; Jump instruction to skip BPB and start actual boot code
 jmp near start
 nop
-
-; OEM Name (8 bytes)
-OEMName              db 'VIOS    '          ; OEM Name (must be 8 bytes)
-
-; Standard BPB fields
-BytesPerSector       dw 512                 ; Bytes per sector
-SectorsPerCluster    db 8                   ; Sectors per cluster (4KB clusters)
-ReservedSectors      dw 32                  ; Reserved sectors before FAT
-NumFATs              db 2                   ; Number of FATs
-
-RootEntryCount       dw 0                   ; 0 for FAT32 (root dir in data area)
-TotalSectors16       dw 0                   ; 0 means check TotalSectors32
-
-MediaDescriptor      db 0xF8                ; Fixed disk media descriptor
-SectorsPerFAT16      dw 0                   ; 0 for FAT32 (use SectorsPerFAT32)
-SectorsPerTrack      dw 63                  ; Typical CHS geometry
-NumberOfHeads        dw 255                 ; Typical CHS geometry
-HiddenSectors        dd 2048                ; Hidden sectors (LBA start of partition)
-TotalSectors32       dd 262144              ; Total sectors in partition (128 MB)
+OEMIdentifier            db 'VIOS    '        ; 0x03
+BytesPerSector          dw 512                ; 0x0B
+SectorsPerCluster       db 8                  ; 0x0D
+ReservedSectors         dw 32                 ; 0x0E
+FATCopies               db 2                  ; 0x10
+RootDirEntries          dw 0                  ; 0x11 (must be 0 for FAT32)
+NumSectors              dw 0                  ; 0x13 (must be 0 for FAT32)
+MediaType               db 0xF8               ; 0x15
+SectorsPerFat           dw 0                  ; 0x16 (must be 0 for FAT32)
+SectorsPerTrack         dw 63                 ; 0x18
+NumberOfHeads           dw 255                ; 0x1A
+HiddenSectors           dd 2048               ; 0x1C
+SectorsBig              dd 0x773594           ; 0x20
 
 ; FAT32 Extended BPB
-SectorsPerFAT32      dd 512                 ; Number of sectors per FAT
-Flags                dw 0                   ; Flags (bit 7: 0=FAT mirrored, 1=active FAT)
-Version              dw 0                   ; Version (0.0)
-RootCluster          dd 2                   ; Root directory cluster number
-FSInfoSector         dw 1                   ; FSInfo sector number (relative to VBR)
-BackupBootSector     dw 6                   ; Backup boot sector number (relative to VBR)
-Reserved             db 12 dup (0)          ; Reserved bytes
+SectorsPerFat32         dd 0x1000             ; 0x24
+ExtFlags                dw 0                  ; 0x28
+FSVersion               dw 0                  ; 0x2A
+RootCluster             dd 2                  ; 0x2C
+FSInfoSector            dw 1                  ; 0x30
+BackupBootSector        dw 6                  ; 0x32
+ReservedEx              times 12 db 0         ; 0x34
 
-; Extended boot signature fields
-DriveNumber          db 0x80                ; Drive number (0x80 = hard disk)
-Reserved1            db 0                   ; Reserved
-BootSignature        db 0x29                ; Extended boot signature
-VolumeID             dd 0x12345678          ; Volume serial number
-VolumeLabel          db 'VIOS FAT32  '      ; Volume label (11 bytes)
-FileSystemType       db 'FAT32   '          ; File system type (8 bytes)
+DriveNumber             db 0x80               ; 0x40
+Reserved1               db 0                  ; 0x41
+BootSignature           db 0x29               ; 0x42
+VolumeID                dd 0xD105D105         ; 0x43
+VolumeLabel             db 'VIOS BOOT  '      ; 0x47
+SystemIDString          db 'FAT32   '         ; 0x52
 
-; --- ViOS Kernel Metadata (custom extension) ---
-KernelSizeBytes      dd 0x00000000          ; Kernel size in bytes
-KernelSizeSectors    dw 0x00E6              ; Kernel size in sectors (230 sectors for 117KB)
+; === Kernel Metadata ===
+KernelSizeBytes         dd 117312  ; To be filled by build script
+KernelSizeSectors       dw 230      ; To be filled by build script
 
-; === VBE Fallback Error Display ===
+; === VBE Error Message ===
 vbe_error:
     mov ax, 0xB800
     mov es, ax
@@ -73,40 +56,11 @@ vbe_error:
 
 vbe_error_msg db "VBE mode failed", 0
 
-; === Serial Port Initialization and Print Routine ===
-serial_init:
-    mov dx, 0x3f8        ; COM1 base port
-    mov al, 0x80         ; Enable DLAB
-    out dx, al
-    mov dx, 0x3f9        ; COM1+1
-    mov al, 0x00         ; High byte divisor (115200 baud)
-    out dx, al
-    mov dx, 0x3f8        ; COM1
-    mov al, 0x01         ; Low byte divisor (115200 baud)
-    out dx, al
-    mov dx, 0x3fb        ; COM1+3
-    mov al, 0x03         ; 8 bits, no parity, one stop bit
-    out dx, al
-    mov dx, 0x3f9        ; COM1+1
-    mov al, 0x00         ; Disable interrupts
-    out dx, al
-    ret
-
-serial_print:
-    push dx
-    mov dx, 0x3fd
-.wait_serial:
-    in  al, dx
-    test al, 0x20
-    jz   .wait_serial
-    pop dx
-    mov dx, 0x3f8
-    out dx, al
-    ret
-
-; === Boot Entry Point ===
+; === Entry Point ===
 start:
-    ; --- Try VBE Mode 0x17E ---
+    call clear
+
+    ; Try VBE Mode 0x17E
     mov ax, 0x4F01
     mov cx, 0x17E
     mov bx, 0x090
@@ -115,7 +69,7 @@ start:
     int 0x10
     cmp ax, 0x004F
     jne try_117_query
-    
+
     mov ax, 0x4F02
     mov bx, 0x17E
     int 0x10
@@ -125,7 +79,7 @@ start:
     jmp vbe_success
 
 try_117_query:
-    ; --- Fallback to VBE Mode 0x117 ---
+    ; Fallback to VBE Mode 0x117
     mov ax, 0x4F01
     mov cx, 0x117
     mov bx, 0x090
@@ -134,7 +88,7 @@ try_117_query:
     int 0x10
     cmp ax, 0x004F
     jne vbe_error
-    
+
     mov ax, 0x4F02
     mov bx, 0x117
     int 0x10
@@ -142,13 +96,10 @@ try_117_query:
     jne vbe_error
 
 vbe_success:
-    call clear
     xor ax, ax
     mov ds, ax
     mov es, ax
-    
-    call serial_init     ; Initialize serial port early
-    jmp 0x800:step2      ; Far jump to step2 at 0x800:step2 (physical 0x8000 + offset of step2)
+    jmp 0:step2
 
 ; === Clear Screen ===
 clear:
@@ -162,9 +113,8 @@ clear:
     loop .clear_loop
     ret
 
-; === Protected Mode Transition ===
+; === Protected Mode Setup ===
 step2:
-    
     cli
     xor ax, ax
     mov ds, ax
@@ -175,43 +125,32 @@ step2:
     mov sp, 0x7C00
     sti
 
-.load_protected:    
+.load_protected:
     cli
-    ; Calculate physical address of GDT (code loaded at 0x8000)
-    mov bx, gdt_start
-    add bx, 0x8000         ; Adjust for ORG 0x8000
-    mov word [gdt_descriptor + 2], bx
-    mov word [gdt_descriptor + 4], 0x0000
-    
     lgdt [gdt_descriptor]
-    
-    mov al, 'G'         ; 'G' for GDT loaded
-    call serial_print
-    
     mov eax, cr0
     or eax, 1
     mov cr0, eax
-    ; Far jump to 32-bit code
-    jmp 0x08:load32
+    jmp CODE_SEG:load32
 
 ; === GDT Setup ===
 gdt_start:
 gdt_null:     dq 0
 
 gdt_code:
-    dw 0xFFFF           ; Limit
-    dw 0x0000           ; Base low
-    db 0x00             ; Base mid
-    db 0x9A             ; Code segment
-    db 11001111b        ; Flags
-    db 0x00             ; Base high
+    dw 0xFFFF
+    dw 0x0000
+    db 0x00
+    db 0x9A
+    db 0xCF
+    db 0x00
 
 gdt_data:
     dw 0xFFFF
     dw 0x0000
     db 0x00
-    db 0x92             ; Data segment
-    db 11001111b
+    db 0x92
+    db 0xCF
     db 0x00
 
 gdt_end:
@@ -220,42 +159,36 @@ gdt_descriptor:
     dw gdt_end - gdt_start - 1
     dd gdt_start
 
+CODE_SEG equ gdt_code - gdt_start
+DATA_SEG equ gdt_data - gdt_start
+
+; === 32-bit Protected Mode Code ===
 [BITS 32]
 load32:
-    mov al, 'Y'         ; Send 'Y' to show 32-bit mode reached
-    call serial_print
-    ; Set up data segments for 32-bit mode
-    mov ax, 0x10
+    mov ax, DATA_SEG
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov esp, 0x90000      ; Set up a safe stack pointer
 
-    mov al, 'B'         ; Send 'B' to show 32-bit mode reached
-    call serial_print
-
-    ; Enable A20 line
+    ; Enable A20
     in al, 0x92
     or al, 2
     out 0x92, al
 
-    ; Move temp kernel data
+    ; Move temp kernel sector (VBR data)
     mov esi, 0x90000
     mov edi, 0x20000
     mov ecx, 512
     cld
     rep movsb
 
-    ; Setup for ATA sector read
-    mov eax, 2049                           ; LBA start (kernel is at sector 2049)
-    movzx ecx, word [KernelSizeSectors]     ; Sector count
-    mov edi, 0x0100000                      ; Destination address
+    ; Read kernel
+    mov eax, 2                              ; LBA start
+    movzx ecx, word [KernelSizeSectors]    ; Sector count
+    mov edi, 0x0100000                      ; Load to 1 MB
     call ata_lba_read
-    
-    mov al, 'K'         ; Send 'K' to show about to jump to kernel
-    call serial_print
 
     jmp CODE_SEG:0x0100000
 
@@ -305,5 +238,5 @@ ata_lba_read:
     ret
 
 ; === Boot Signature ===
-times 1022-($ - $$) db 0
+times 510-($ - $$) db 0
 dw 0xAA55
