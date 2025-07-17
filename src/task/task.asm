@@ -9,10 +9,15 @@ global user_registers
 task_return:
     ; Debug: Print that we entered task_return
     push eax
-    mov eax, 0x3F8  ; COM1 port
-    mov byte [eax], 'T'
-    mov byte [eax], 'R'
-    mov byte [eax], '\n'
+    push edx
+    mov dx, 0x3F8   ; COM1 port
+    mov al, 'T'
+    out dx, al
+    mov al, 'R'
+    out dx, al
+    mov al, 10      ; newline
+    out dx, al
+    pop edx
     pop eax
     
     mov ebp, esp
@@ -53,10 +58,15 @@ task_return:
 
     ; Debug: Print that we're about to do iretd
     push eax
-    mov eax, 0x3F8  ; COM1 port
-    mov byte [eax], 'I'
-    mov byte [eax], 'R'
-    mov byte [eax], '\n'
+    push edx
+    mov dx, 0x3F8   ; COM1 port
+    mov al, 'I'
+    out dx, al
+    mov al, 'R'
+    out dx, al
+    mov al, 10      ; newline
+    out dx, al
+    pop edx
     pop eax
 
     ; Let's leave kernel land and execute in user land!

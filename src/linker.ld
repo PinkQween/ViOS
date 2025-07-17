@@ -5,6 +5,7 @@ SECTIONS
     . = 1M;
     .text : ALIGN(4096)
     {
+        *(.text.start)
         *(.text)
     }
 

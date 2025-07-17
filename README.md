@@ -155,6 +155,7 @@ ___________
 │           └── .keep
 ├── build.sh
 ├── buildExternal.sh
+├── debug.log
 ├── docs
 │   └── api
 │       ├── copy_string_from_task.md
@@ -200,8 +201,11 @@ ___________
 │   │   ├── sb16.c
 │   │   └── sb16.h
 │   ├── boot
+│   │   ├── fsinfo.asm
 │   │   ├── mbr.asm
-│   │   └── vbr.asm
+│   │   ├── vbrEntry.asm
+│   │   ├── vbrMain.asm
+│   │   └── vbrOld.asm
 │   ├── config.h
 │   ├── debug
 │   │   ├── simple_serial.c
@@ -316,7 +320,6 @@ ___________
 │   └── utils
 │       ├── utils.c
 │       └── utils.h
-├── updateBoot.sh
 ├── updateREADME.sh
 ├── utilities
 │   ├── fonts
@@ -325,11 +328,10 @@ ___________
 │   │   ├── Brightly.otf
 │   │   ├── Cheri.ttf
 │   │   └── RobotoThin.ttf
-│   ├── generateFonts.py
-│   └── make_mbr_partition.py
+│   └── generateFonts.py
 └── ViOS_LOGO_PNG.png
 
-53 directories, 165 files
+53 directories, 167 files
 ```
 
 ___________

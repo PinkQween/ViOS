@@ -1,63 +1,61 @@
-; MBR FAT32 Bootloader - loads first cluster of BOOT    file
-BITS 16
 ORG 0x7C00
+BITS 16
 
 start:
     cli
     xor ax, ax
     mov ds, ax
     mov es, ax
-    mov ss, ax
-    mov sp, 0x7C00
-    sti
 
-    ; Save boot drive
-    mov [boot_drive], dl
+    mov si, load_msg
+    call print
 
-    ; Set text mode
-    mov ax, 0x03
-    int 0x10
-
-    ; Load first sector of partition at LBA 2048
-    mov eax, 2048               ; Sector number to load
-    mov [dap_lba], eax
-    mov [dap_mem], word 0x8000  ; Destination segment:offset
-    mov [dap_mem + 2], word 0x0000
-
-    ; INT 13h Extended Read (0x42)
-    mov si, disk_address_packet
-    mov dl, [boot_drive]
+    ; Setup Disk Address Packet (DAP) for partition start (LBA 2048)
+    mov si, dap
     mov ah, 0x42
+    mov dl, 0x80        ; First hard disk
     int 0x13
     jc disk_error
-
-    ; Jump to loaded VBR/Stage2
-    jmp 0:0x8000
+    ; Far jump to loaded VBR at 0x0000:0x7E00
+    jmp 0x0000:0x7E00
 
 disk_error:
-    mov si, err_msg
-.print_err:
-    lodsb
-    or al, al
-    jz $
+    mov si, error_msg
+    call print
+    jmp $
+
+print:
     mov ah, 0x0E
+.next_char:
+    lodsb
+    cmp al, 0
+    je .done
     int 0x10
-    jmp .print_err
+    jmp .next_char
+.done:
+    ret
 
-; --- Disk Address Packet ---
-disk_address_packet:
-    db 0x10       ; Size
-    db 0x00       ; Reserved
-    dw 1          ; Sectors to read
-dap_mem:
-    dw 0x8000     ; Offset
-    dw 0x0000     ; Segment
-dap_lba:
-    dd 0x00000800 ; LBA = 2048
-    dd 0x00000000 ; LBA high dword
+load_msg db "MBR: Loading VBR...", 0
+error_msg db "MBR: Disk read error!", 0
 
-boot_drive: db 0
-err_msg db "Disk Error", 0
+; --- Disk Address Packet (DAP) ---
+dap:
+    db 0x10             ; size of DAP
+    db 0x00             ; reserved
+    dw 0x0003           ; number of sectors to read
+    dw 0x7E00           ; offset
+    dw 0x0000           ; segment
+    dq 2050             ; LBA - VBR location
 
-times 510 - ($ - $$) db 0
-dw 0xAA55
+times 446 - ($ - $$) db 0  ; Pad to partition table
+
+; === Partition Table ===
+db 0x80                  ; Bootable
+db 0x01, 0x01, 0x00      ; CHS start — dummy
+db 0x0C                  ; FAT32 (LBA)
+db 0xFE, 0xFF, 0xFF      ; CHS end — dummy
+dd 3000                  ; LBA of first sector of partition
+dd 260096                ; Number of sectors in partition (262144 - 2048)
+
+times 3*16 db 0          ; Empty partitions
+dw 0xAA55               ; Boot signature
