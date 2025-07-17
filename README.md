@@ -115,6 +115,7 @@ ___________
 ├── .env
 ├── .github
 │   ├── dependabot.yml
+│   ├── FUNDING.yml
 │   └── workflows
 │       └── build.yml
 ├── .gitignore
@@ -149,13 +150,18 @@ ___________
 │   ├── kernel
 │   │   └── .keep
 │   └── shells
+│       ├── etc
+│       │   └── wardenviod
+│       │       └── src
+│       │           └── main.cpp
 │       ├── vio:nova
-│       │   └── .keep
+│       │   └── src
+│       │       └── main.cpp
 │       └── vio:void
-│           └── .keep
+│           └── src
+│               └── main.cpp
 ├── build.sh
 ├── buildExternal.sh
-├── debug.log
 ├── docs
 │   └── api
 │       ├── copy_string_from_task.md
@@ -188,7 +194,6 @@ ___________
 │       ├── vix_clear_screen.md
 │       ├── vix_draw_pixel.md
 │       └── vix_present_frame.md
-├── generateFonts.sh
 ├── LICENSE
 ├── Makefile
 ├── README.md
@@ -201,11 +206,7 @@ ___________
 │   │   ├── sb16.c
 │   │   └── sb16.h
 │   ├── boot
-│   │   ├── fsinfo.asm
-│   │   ├── mbr.asm
-│   │   ├── vbrEntry.asm
-│   │   ├── vbrMain.asm
-│   │   └── vbrOld.asm
+│   │   └── boot.asm
 │   ├── config.h
 │   ├── debug
 │   │   ├── simple_serial.c
@@ -320,7 +321,6 @@ ___________
 │   └── utils
 │       ├── utils.c
 │       └── utils.h
-├── updateREADME.sh
 ├── utilities
 │   ├── fonts
 │   │   ├── Arial.ttf
@@ -328,10 +328,13 @@ ___________
 │   │   ├── Brightly.otf
 │   │   ├── Cheri.ttf
 │   │   └── RobotoThin.ttf
-│   └── generateFonts.py
+│   ├── generateFonts.py
+│   ├── generateFonts.sh
+│   ├── updateBoot.sh
+│   └── updateREADME.sh
 └── ViOS_LOGO_PNG.png
 
-53 directories, 167 files
+58 directories, 165 files
 ```
 
 ___________

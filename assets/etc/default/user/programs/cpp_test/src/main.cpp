@@ -22,10 +22,10 @@ int main(int argc, char *argv[])
 {
     // Print all arguments
     printf("Program called with %d arguments:\n", argc);
-    // for (int i = 0; i < argc; i++)
-    // {
-    //     printf("argv[%d] = %s\n", i, argv[i]);
-    // }
+    for (int i = 0; i < argc; i++)
+    {
+        printf("argv[%d] = %s\n", i, argv[i]);
+    }
 
     // printf("\nStart typing. Press 'f' to stop.\n");
 

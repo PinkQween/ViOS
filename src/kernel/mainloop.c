@@ -14,48 +14,62 @@ void kernel_run_main_loop(struct mouse *mouse)
     simple_serial_puts("DEBUG: ===== ENTERING MAIN LOOP =====\n");
     simple_serial_puts("DEBUG: Entering main loop\n");
 
-    // EXAMPLE INJECT ARGUMENT
+// List of user programs to load
+#define NUM_PROGRAMS 4
+    const char *program_paths[NUM_PROGRAMS] = {
+        "0:/etc/default/user/programs/asm_test/asm_test.elf",
+        "0:/etc/default/user/programs/cpp_prnt/cpp_prnt.elf",
+        "0:/etc/default/user/programs/cpp_test/cpp_test.elf",
+        "0:/etc/default/user/programs/c_print/c_print.elf"};
+    struct process *processes[NUM_PROGRAMS] = {0};
 
-    // struct command_argument argument;
-    // strcpy(argument.argument, "Testing!");
-    // argument.next = 0x00;
-    // process_inject_arguments(process, &argument);
-
-    struct process *process = 0;
-    int res = process_load_switch("0:/c_print.elf", &process);
-    if (res != VIOS_ALL_OK)
+    for (int i = 0; i < NUM_PROGRAMS; ++i)
     {
-        panic("Failed to load cpp_print.elf\n");
+        int res = process_load_switch(program_paths[i], &processes[i]);
+        if (res != VIOS_ALL_OK)
+        {
+            panic("Failed to load user program\n");
+        }
+        struct command_argument argument;
+        strcpy(argument.argument, "Testing!");
+        argument.next = 0x00;
+        process_inject_arguments(processes[i], &argument);
     }
 
-    res = process_load_switch("0:/asm_testelfelflef.elf", &process);
-    if (res != VIOS_ALL_OK)
+    // Debug: Print all tasks in the task list
+    simple_serial_puts("DEBUG: Task list after loading user programs:\n");
+    extern struct task *task_head;
+    struct task *t = task_head;
+    int task_count = 0;
+    while (t)
     {
-        panic("Failed to load asm_testelfelflef.elf\n");
+        simple_serial_puts("  Task at: ");
+        print_hex32((uint32_t)t);
+        simple_serial_puts(", process id: ");
+        if (t->process)
+        {
+            print_hex32((uint32_t)t->process->id);
+        }
+        else
+        {
+            simple_serial_puts("(null)");
+        }
+        simple_serial_puts("\n");
+        t = t->next;
+        task_count++;
+        if (task_count > 10)
+            break; // Prevent infinite loop if list is corrupted
     }
-    
 
-        res = process_load_switch("0:/cpp_prnt.elf", &process);
-    if (res != VIOS_ALL_OK)
-    {
-        panic("Failed to load cpp_prnt.elf\n");
-    }
-
-    res = process_load_switch("0:/cpp_test.elf", &process);
-    if (res != VIOS_ALL_OK)
-    {
-        panic("Failed to load cpp_test.elf\n");
-    }
-
-    struct command_argument argument;
-    strcpy(argument.argument, "Testing!");
-    argument.next = 0x00;
-    process_inject_arguments(process, &argument);
+    // Ensure timer IRQ is unmasked and interrupts are enabled for preemptive multitasking
+    extern void kernel_unmask_timer_irq(void);
+    extern void enable_interrupts(void);
+    kernel_unmask_timer_irq();
+    enable_interrupts();
 
     task_run_first_ever_task();
 
     // Fallback: if no program loaded or task execution failed, run graphics loop
-    simple_serial_puts("DEBUG: Running graphics fallback loop\n");
 
     FrameState frame_state;
     renderer_init_frame_state(&frame_state);

@@ -248,6 +248,12 @@ out:
 
 int process_terminate(struct process *process)
 {
+    // Debug: Print process termination
+    simple_serial_puts("DEBUG: Terminating process id: ");
+    print_hex32((uint32_t)process->id);
+    simple_serial_puts(", filename: ");
+    simple_serial_puts(process->filename);
+    simple_serial_puts("\n");
     // Unlink the process from the process array.
     process_unlink(process);
 

@@ -1,0 +1,1 @@
+// default load shell void (CLI) with setting for default shell recommended GUI is nova

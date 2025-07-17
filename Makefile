@@ -74,7 +74,7 @@ build: prepare_dirs fonts ./bin/boot_with_size.bin ./bin/kernel.bin user_program
 	@echo "To install user programs to disk image, run: make install"
 
 fonts:
-	./generateFonts.sh
+	./utilities/generateFonts.sh
 
 install: ./bin/os.bin
 ifeq ($(UNAME_S),Linux)
@@ -87,66 +87,51 @@ ifeq ($(UNAME_S),Linux)
 	@sudo umount /mnt/d
 	@echo "User programs and assets installed to disk image!"
 else ifeq ($(UNAME_S),Darwin)
-	@echo "Preparing disk image for macOS..."
-	@bash -c "\
-		set -e; \
-		echo 'Attaching disk image...'; \
-		ATTACH_OUTPUT=\$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin 2>/dev/null); \
-		DISK_ID=\$$(echo \"\$$ATTACH_OUTPUT\" | grep -o '/dev/disk[0-9]*' | head -1); \
-		PARTITION_ID=\"\$${DISK_ID}s1\"; \
-		if [ -z \"\$$DISK_ID\" ]; then echo 'Failed to attach disk image'; exit 1; fi; \
-		echo \"Attached as \$$DISK_ID, partition \$$PARTITION_ID\"; \
-		echo 'Formatting partition as FAT32...'; \
-		diskutil eraseVolume MS-DOS VIOSFAT32 \"\$$PARTITION_ID\" >/dev/null 2>&1 || { echo 'Failed to format partition'; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
-		echo 'Copying files...'; \
-		if [ -d './assets' ]; then \
-			echo 'Copying assets...'; \
-			cp -r ./assets/* /Volumes/VIOSFAT32/ || { echo 'Failed to copy assets'; diskutil unmount \"\$$PARTITION_ID\"; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
-		else \
-			echo 'No assets directory found, skipping...'; \
-		fi; \
-		if [ -d './assets/etc/default/user/programs' ]; then \
-			echo 'Copying .elf files...'; \
-			find ./assets/etc/default/user/programs -name '*.elf' -exec cp {} /Volumes/VIOSFAT32/ \; || { echo 'Failed to copy .elf files'; diskutil unmount \"\$$PARTITION_ID\"; hdiutil detach \"\$$DISK_ID\" 2>/dev/null; exit 1; }; \
-		else \
-			echo 'No programs directory found, skipping...'; \
-		fi; \
+	@echo "Attaching disk image (macOS)..."
+	@bash -c '\
+		DISK_ID=$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin | awk "/\/dev\// {print \$$1}"); \
+		echo "Attached as $$DISK_ID"; \
+		sudo mkdir -p /Volumes/viosmnt; \
+		sudo mount -t msdos $$DISK_ID /Volumes/viosmnt || { echo "Failed to mount $$DISK_ID"; exit 1; }; \
+		echo "Copying files..."; \
+		sudo cp -r ./assets/* /Volumes/viosmnt/ 2>/dev/null || true; \
 		sync; \
-		echo 'Unmounting for boot sector update...'; \
-		diskutil unmount \"\$$PARTITION_ID\" >/dev/null 2>&1 || echo 'Unmount failed, continuing...'; \
-		echo 'Installing custom boot sector...'; \
-		dd if=./bin/vbr.bin of=\"\$$PARTITION_ID\" bs=512 count=1 conv=notrunc 2>/dev/null || echo 'Warning: Failed to install custom boot sector'; \
-		hdiutil detach \"\$$DISK_ID\" >/dev/null 2>&1 || echo 'Detach failed, continuing...'; \
-		echo 'User programs and assets installed to disk image!'; \
-	"
+		echo "Unmounting..."; \
+		sudo umount /Volumes/viosmnt; \
+		hdiutil detach $$DISK_ID; \
+		echo "User programs and assets installed to disk image!" \
+	'
 endif
 
 
 ./bin/kernel.bin: prepare_dirs $(FILES)
 	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib $(FILES)
 
-./bin/boot.bin: prepare_dirs ./src/boot/mbr.asm ./src/boot/vbrEntry.asm ./src/boot/vbrMain.asm ./src/boot/fsinfo.asm
-	nasm -f bin ./src/boot/mbr.asm -o ./bin/mbr.bin
-	nasm -f bin ./src/boot/vbrEntry.asm -o ./bin/vbrEntry.bin
-	nasm -f bin ./src/boot/vbrMain.asm -o ./bin/vbrMain.bin
-	nasm -f bin ./src/boot/fsinfo.asm -o ./bin/fsinfo.bin
-	dd if=./bin/vbrEntry.bin of=./bin/vbr.bin bs=512 count=1 conv=notrunc status=none
-	dd if=./bin/vbrMain.bin of=./bin/vbr.bin bs=512 seek=1 count=2 conv=notrunc status=none
-	dd if=./bin/mbr.bin of=$@ bs=512 count=1 conv=notrunc status=none
-	dd if=./bin/vbr.bin of=$@ bs=512 seek=2050 count=3 conv=notrunc status=none
-	dd if=./bin/fsinfo.bin of=$@ bs=512 seek=2060 count=1 conv=notrunc status=none
+./bin/boot.bin: prepare_dirs ./src/boot/boot.asm
+	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin
 
 # Calculate kernel size and update boot sector
 ./bin/boot_with_size.bin: ./bin/boot.bin ./bin/kernel.bin
 	@echo "Calculating kernel size and updating boot sector..."
-	cp ./bin/boot.bin ./bin/boot_with_size.bin
+	./utilities/updateBoot.sh
+
+# ./bin/boot.bin: prepare_dirs ./src/boot/mbr.asm ./src/boot/vbrEntry.asm ./src/boot/vbrMain.asm ./src/boot/fsinfo.asm
+# 	# nasm -f bin ./src/boot/mbr.asm -o ./bin/mbr.bin
+# 	# nasm -f bin ./src/boot/vbrEntry.asm -o ./bin/vbrEntry.bin
+# 	# nasm -f bin ./src/boot/vbrMain.asm -o ./bin/vbrMain.bin
+# 	# nasm -f bin ./src/boot/fsinfo.asm -o ./bin/fsinfo.bin
+# 	# dd if=./bin/vbrEntry.bin of=./bin/vbr.bin bs=512 count=1 conv=notrunc status=none
+# 	# dd if=./bin/vbrMain.bin of=./bin/vbr.bin bs=512 seek=1 count=2 conv=notrunc status=none
+# 	# dd if=./bin/mbr.bin of=$@ bs=512 count=1 conv=notrunc status=none
+# 	# dd if=./bin/vbr.bin of=$@ bs=512 seek=2050 count=3 conv=notrunc status=none
+# 	# dd if=./bin/fsinfo.bin of=$@ bs=512 seek=2060 count=1 conv=notrunc status=nonez
 
 
-./bin/os.bin: ./bin/boot_with_size.bin
+./bin/os.bin: ./bin/boot_with_size.bin ./bin/kernel.bin
 	rm -rf ./bin/os.bin
 	dd if=./bin/boot_with_size.bin of=./bin/os.bin bs=512 conv=notrunc
-	dd if=./bin/kernel.bin of=./bin/os.bin bs=512 seek=2070 conv=notrunc
-	dd if=/dev/zero bs=1048576 count=128 >> ./bin/os.bin
+	dd if=./bin/kernel.bin >> ./bin/os.bin
+	dd if=/dev/zero bs=1048576 count=1500 >> ./bin/os.bin
 
 # Generic C and ASM file rules
 ./build/%.o: ./src/%.c
