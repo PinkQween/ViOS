@@ -1,29 +1,73 @@
+global inb
+global inw
+global inl
 global insb
 global insw
 global outb
 global outw
-global inb
+global outl
 
-; void insb(uint16_t port);
-insb:
+section .text
+
+; uint8_t inb(uint16_t port);
+inb:
     push ebp
     mov ebp, esp
 
-    mov edx, [ebp+8]   ; get port argument (uint16_t)
-    xor eax, eax
-    in al, dx          ; read byte from port into al
+    mov edx, [ebp+8]     ; port
+    in al, dx            ; read 8-bit
+    movzx eax, al        ; zero-extend to 32-bit
 
     pop ebp
     ret
 
-; void insw(uint16_t port);
+; uint16_t inw(uint16_t port);
+inw:
+    push ebp
+    mov ebp, esp
+
+    mov edx, [ebp+8]     ; port
+    in ax, dx            ; read 16-bit
+    movzx eax, ax        ; zero-extend to 32-bit
+
+    pop ebp
+    ret
+
+; uint32_t inl(uint16_t port);
+inl:
+    push ebp
+    mov ebp, esp
+
+    mov edx, [ebp+8]     ; port
+    in eax, dx           ; read 32-bit
+
+    pop ebp
+    ret
+
+; void insb(uint16_t port, void* buffer, uint32_t count);
+insb:
+    push ebp
+    mov ebp, esp
+
+    mov edx, [ebp+8]     ; port
+    mov edi, [ebp+12]    ; buffer
+    mov ecx, [ebp+16]    ; count
+    cld
+    rep insb             ; read ECX bytes from port DX into [EDI]
+
+    pop ebp
+    ret
+
+; void insw(uint16_t port, void* buffer, uint32_t count);
 insw:
     push ebp
     mov ebp, esp
 
-    mov edx, [ebp+8]   ; get port argument
-    xor eax, eax
-    in ax, dx          ; read word from port into ax
+    mov edx, [ebp+8]     ; port
+    mov edi, [ebp+12]    ; buffer
+    mov ecx, [ebp+16]    ; count
+    cld
+    rep insw             ; read ECX words from port DX into [EDI]
 
     pop ebp
     ret
@@ -33,9 +77,9 @@ outb:
     push ebp
     mov ebp, esp
 
-    mov edx, [ebp+8]    ; port
-    mov eax, [ebp+12]   ; val (byte)
-    out dx, al          ; output byte to port
+    mov edx, [ebp+8]     ; port
+    mov eax, [ebp+12]    ; val
+    out dx, al           ; write 8-bit
 
     pop ebp
     ret
@@ -45,21 +89,21 @@ outw:
     push ebp
     mov ebp, esp
 
-    mov edx, [ebp+8]    ; port
-    mov eax, [ebp+12]   ; val (word)
-    out dx, ax          ; output word to port
+    mov edx, [ebp+8]     ; port
+    mov eax, [ebp+12]    ; val
+    out dx, ax           ; write 16-bit
 
     pop ebp
     ret
 
-; uint8_t inb(uint16_t port);
-inb:
+; void outl(uint16_t port, uint32_t val);
+outl:
     push ebp
     mov ebp, esp
 
-    mov edx, [ebp+8]   ; port
-    in al, dx          ; read byte from port
-    movzx eax, al      ; zero extend AL to EAX
+    mov edx, [ebp+8]     ; port
+    mov eax, [ebp+12]    ; val
+    out dx, eax          ; write 32-bit
 
     pop ebp
     ret

@@ -20,16 +20,19 @@ int disk_read_sector(int lba, int total, void *buf)
     for (int b = 0; b < total; b++)
     {
         // Wait for the buffer to be ready
-        char c = insb(0x1F7);
-        while (!(c & 0x08))
+        uint8_t value;
+        insb(0x1F7, &value, 1);
+        while (!(value & 0x08))
         {
-            c = insb(0x1F7);
+            insb(0x1F7, &value, 1);
         }
 
         // Copy from hard disk to memory
         for (int i = 0; i < 256; i++)
         {
-            *ptr = insw(0x1F0);
+            uint16_t value;
+            insw(0x1F0, &value, 1);
+            *ptr = value;
             ptr++;
         }
     }

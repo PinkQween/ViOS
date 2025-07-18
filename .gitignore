@@ -5,21 +5,11 @@
 # macOS metadata
 .DS_Store
 
-# Compiled binary/object/ELF files
-*.bin
-*.o
-*.elf
-*.iso
-*.env
-**.tmp
-
 # Ignore bin and build folders recursively
 src/fonts/
-bin/
+/bin/
 build/
 out/
-mnt/
-**/bin/
-**/build/
+/mnt/
 .venv/
 external/

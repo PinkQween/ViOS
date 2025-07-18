@@ -1,6 +1,5 @@
 #include "mainloop.h"
-#include "graphics/graphics.h"
-#include "graphics/renderer.h"
+#include "vigfx/vigfx.h"
 #include "mouse/mouse.h"
 #include "status.h"
 #include "task/process.h"
@@ -13,28 +12,16 @@ void kernel_run_main_loop(struct mouse *mouse)
 {
     simple_serial_puts("DEBUG: ===== ENTERING MAIN LOOP =====\n");
     simple_serial_puts("DEBUG: Entering main loop\n");
+    
+    struct process *process = 0;
+    int res = process_load_switch("0:/sbin/reloivd", &process);
 
-// List of user programs to load
-#define NUM_PROGRAMS 4
-    const char *program_paths[NUM_PROGRAMS] = {
-        "0:/etc/default/user/programs/asm_test/asm_test.elf",
-        "0:/etc/default/user/programs/cpp_prnt/cpp_prnt.elf",
-        "0:/etc/default/user/programs/cpp_test/cpp_test.elf",
-        "0:/etc/default/user/programs/c_print/c_print.elf"};
-    struct process *processes[NUM_PROGRAMS] = {0};
-
-    for (int i = 0; i < NUM_PROGRAMS; ++i)
+    if (res != VIOS_ALL_OK)
     {
-        int res = process_load_switch(program_paths[i], &processes[i]);
-        if (res != VIOS_ALL_OK)
-        {
-            panic("Failed to load user program\n");
-        }
-        struct command_argument argument;
-        strcpy(argument.argument, "Testing!");
-        argument.next = 0x00;
-        process_inject_arguments(processes[i], &argument);
+        panic("Failed to load reloivd.\n");
     }
+
+    task_run_first_ever_task();
 
     // Debug: Print all tasks in the task list
     simple_serial_puts("DEBUG: Task list after loading user programs:\n");
@@ -69,35 +56,18 @@ void kernel_run_main_loop(struct mouse *mouse)
 
     task_run_first_ever_task();
 
-    // Fallback: if no program loaded or task execution failed, run graphics loop
-
-    FrameState frame_state;
-    renderer_init_frame_state(&frame_state);
-    graphics_set_unlimited_fps();
-    extern uint32_t _graphics_get_time_ms(void);
-    frame_state.last_time = _graphics_get_time_ms();
-
+    // Fallback: if no program loaded or task execution failed, run ViGFX loop
+    simple_serial_puts("DEBUG: Starting VirGFX rendering loop\n");
+    
+    struct vigfx_context *ctx = vigfx_create_context(NULL);
+    if (!ctx) {
+        simple_serial_puts("DEBUG: Failed to create VirGFX context\n");
+        return;
+    }
+    
     while (1)
     {
-        graphics_begin_frame();
-
-        GraphicsContext *ctx = graphics_get_context();
-        if (ctx && ctx->needs_full_refresh)
-        {
-            ClearScreen(11, 25, 69);
-            frame_state.prev_mouse_x = frame_state.prev_mouse_y = -1;
-            ctx->needs_full_refresh = false;
-        }
-
-        renderer_update_frame_info(&frame_state);
-        renderer_update_actual_fps(&frame_state);
-        renderer_get_resolution_string(frame_state.resolution_info, sizeof(frame_state.resolution_info));
-        renderer_draw_info_overlay(&frame_state);
-        renderer_draw_animated_rects(&frame_state);
-        renderer_update_mouse(&frame_state, mouse);
-
-        frame_state.animation_counter++;
-        graphics_end_frame();
-        graphics_present();
+        // TODO: Submit real GPU commands for raytracing, etc.
+        vigfx_present(ctx, NULL);
     }
 }

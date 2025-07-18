@@ -5,6 +5,16 @@ AUDIO=true
 DEBUG=false
 SERIAL=true
 
+# Get max resolution using macOS system profiler
+SCREEN_WIDTH=$(system_profiler SPDisplaysDataType | awk -F': ' '/Resolution/ {print $2; exit}' | awk '{print $1}')
+SCREEN_HEIGHT=$(system_profiler SPDisplaysDataType | awk -F': ' '/Resolution/ {print $2; exit}' | awk '{print $3}')
+
+# Fallback if detection fails
+if [ -z "$SCREEN_WIDTH" ] || [ -z "$SCREEN_HEIGHT" ]; then
+    SCREEN_WIDTH=1920
+    SCREEN_HEIGHT=1080
+fi
+
 # Parse arguments
 for arg in "$@"; do
     case $arg in
@@ -26,6 +36,7 @@ done
 
 # Base QEMU command
 QEMU_CMD="qemu-system-i386 -m 512M -drive file=bin/os.bin,if=ide,index=0,media=disk,format=raw"
+QEMU_CMD="$QEMU_CMD -device virtio-gpu-pci,xres=$SCREEN_WIDTH,yres=$SCREEN_HEIGHT"
 
 # Serial option
 if [ "$SERIAL" = true ]; then
@@ -34,7 +45,6 @@ fi
 
 # Audio option
 if [ "$AUDIO" = true ]; then
-    # Use working audio configuration with proper format settings
     QEMU_CMD="$QEMU_CMD -audiodev coreaudio,id=audio0,out.frequency=44100,out.channels=2,out.format=s16 -machine pcspk-audiodev=audio0"
 fi
 

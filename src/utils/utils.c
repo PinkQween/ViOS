@@ -1,6 +1,7 @@
 #include "utils.h"
-#include "../graphics/graphics.h"
-#include "../fonts/characters_AtariST8x16SystemFont.h"
+#include <stdint.h>
+#include "debug/simple_serial.h"
+#include "vigfx/vigfx.h"
 
 void int_to_ascii(int num, char *str)
 {
@@ -46,44 +47,48 @@ int almost_equal(double a, double b, double epsilon)
     return (diff < 0 ? -diff : diff) < epsilon;
 }
 
-// void print_status(const char *msg, bool ok)
-// {
-//     VBEInfoBlock *VBE = (VBEInfoBlock *)VBEInfoAddress;
-//     int term_width = VBE->x_resolution;
-//     int x = 0;
-//     extern int cursor_x, cursor_y; // Use terminal's cursor
-//     x = cursor_x;
+// Stub framebuffer variables
+// static void *vigfx_virtio_gpu_framebuffer = NULL;
+// static uint32_t vigfx_virtio_gpu_fb_width = 800;
+// static uint32_t vigfx_virtio_gpu_fb_height = 600;
 
-//     // Print the message
-//     print(msg);
-//     int msg_len = 0;
-//     for (const char *p = msg; *p; ++p)
-//         msg_len++;
-//     int px = x + msg_len * FONT_ATARIST8X16SYSTEMFONT_WIDTH;
+// Stub print_hex32 function
+extern void print_hex32(uint32_t value);
 
-//     // Calculate how many dots to fill
-//     int status_width = 7 * FONT_ATARIST8X16SYSTEMFONT_WIDTH; // e.g. " [OK] "
-//     int dots = (term_width - px - status_width) / FONT_ATARIST8X16SYSTEMFONT_WIDTH;
-//     for (int i = 0; i < dots; ++i)
-//     {
-//         terminal_putchar('.');
-//     }
-//     // Print space before status
-//     terminal_putchar(' ');
-//     // Print status box
-//     int status_x = cursor_x;
-//     int status_y = cursor_y;
-//     int color_r = ok ? 0 : 255;
-//     int color_g = ok ? 255 : 0;
-//     int color_b = 0;
-//     // Draw background box
-//     DrawRect(status_x, status_y, 5 * FONT_ATARIST8X16SYSTEMFONT_WIDTH, FONT_ATARIST8X16SYSTEMFONT_HEIGHT, color_r, color_g, color_b);
-//     // Print [OK] or [FAIL] in box
-//     const char *status_str = ok ? "[OK]" : "[FAIL]";
-//     int text_r = 255, text_g = 255, text_b = 255;
-//     DrawString(getAtariST8x16SystemFontCharacter, FONT_ATARIST8X16SYSTEMFONT_WIDTH, FONT_ATARIST8X16SYSTEMFONT_HEIGHT, (char *)status_str, status_x, status_y, text_r, text_g, text_b, 1);
-//     cursor_x += 5 * FONT_ATARIST8X16SYSTEMFONT_WIDTH;
-//     Flush();
-//     // Move to next line
-//     terminal_putchar('\n');
-// }
+// Clear screen using GPU framebuffer
+void kernel_clear_screen_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+    simple_serial_puts("DEBUG: kernel_clear_screen_rgb called\n");
+    // Create a persistent context and command buffer for screen clearing
+    struct vigfx_context *ctx = vigfx_create_context(NULL);
+    if (!ctx)
+    {
+        simple_serial_puts("DEBUG: Failed to create VirGFX context\n");
+        return;
+    }
+    struct vigfx_command_buffer *cmd = vigfx_create_command_buffer(NULL);
+    if (!cmd)
+    {
+        simple_serial_puts("DEBUG: Failed to create VirGFX command buffer\n");
+        vigfx_destroy_context(ctx);
+        return;
+    }
+    // Begin command buffer recording
+    vigfx_begin_command_buffer(cmd);
+    // Convert RGB values to float (0.0-1.0)
+    float fr = r / 255.0f;
+    float fg = g / 255.0f;
+    float fb = b / 255.0f;
+    // Clear the framebuffer with the specified color
+    vigfx_cmd_clear(cmd, fr, fg, fb, 1.0f);
+    // End command buffer recording
+    vigfx_end_command_buffer(cmd);
+    // Submit the command buffer to the GPU
+    vigfx_submit_command_buffer(ctx, cmd);
+    // Present the cleared frame to the display
+    vigfx_present(ctx, NULL);
+    // Clean up resources
+    vigfx_destroy_command_buffer(cmd);
+    vigfx_destroy_context(ctx);
+    simple_serial_puts("DEBUG: Screen cleared and presented\n");
+}

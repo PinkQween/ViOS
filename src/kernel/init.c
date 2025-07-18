@@ -11,16 +11,18 @@
 #include "task/task.h"
 #include "keyboard/keyboard.h"
 #include "mouse/mouse.h"
+#include "mouse/ps2_mouse.h"
 #include "memory/paging/paging.h"
 #include "isr80h/isr80h.h"
 #include "panic/panic.h"
-#include "graphics/graphics.h"
-#include "audio/audio.h"
-#include "mouse/ps2_mouse.h"
+#include "vigfx/vigfx.h"
+#include "vigfx/virtio_gpu.h"
 #include "io/io.h"
 #include "config.h"
 #include "string/string.h"
+#include "audio/audio.h"
 #include "debug/simple_serial.h"
+#include "utils/utils.h"
 
 // External declarations
 extern struct tss tss;
@@ -85,16 +87,17 @@ void kernel_init_tss(void)
 void kernel_init_paging(void)
 {
     simple_serial_puts("DEBUG: Starting paging initialization\n");
-    
+
     // Verify heap is working before paging
-    void* test_alloc = kmalloc(4096);
-    if (!test_alloc) {
+    void *test_alloc = kmalloc(4096);
+    if (!test_alloc)
+    {
         simple_serial_puts("DEBUG: Heap not ready for paging\n");
         panic("Heap not ready for paging");
     }
     kfree(test_alloc);
     simple_serial_puts("DEBUG: Heap verified working\n");
-    
+
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     if (!kernel_chunk)
     {
@@ -104,11 +107,12 @@ void kernel_init_paging(void)
     simple_serial_puts("DEBUG: Kernel page directory created\n");
 
     // Verify the page directory is valid
-    if (!kernel_chunk->directory_entry) {
+    if (!kernel_chunk->directory_entry)
+    {
         simple_serial_puts("DEBUG: Invalid page directory\n");
         panic("Invalid page directory");
     }
-    
+
     paging_switch(kernel_chunk);
     simple_serial_puts("DEBUG: Paging switched\n");
 
@@ -155,8 +159,17 @@ void kernel_init_devices(void)
 
 struct mouse *kernel_init_graphics(void)
 {
-    simple_serial_puts("DEBUG: Starting graphics initialization\n");
+    simple_serial_puts("DEBUG: Starting ViGFX initialization\n");
 
+    // Initialize ViGFX (registration is handled internally)
+    vigfx_virtio_gpu_register();
+    simple_serial_puts("DEBUG: ViGFX virtio gpu registered\n");
+
+    // Note: vigfx_init() takes a struct vigfx_device* argument (can be NULL)
+    vigfx_init(NULL);
+    simple_serial_puts("DEBUG: ViGFX initialized\n");
+
+    // Mouse initialization with dynamic screen size calculation
     simple_serial_puts("DEBUG: About to initialize PS/2 mouse\n");
     struct mouse *mouse = ps2_mouse_init();
     if (!mouse)
@@ -166,19 +179,21 @@ struct mouse *kernel_init_graphics(void)
     }
     simple_serial_puts("DEBUG: PS/2 mouse initialized\n");
 
-    simple_serial_puts("DEBUG: About to get VBE info\n");
-    VBEInfoBlock *VBE = (VBEInfoBlock *)VBEInfoAddress;
-    mouse->x = VBE->x_resolution / 2;
-    mouse->y = VBE->y_resolution / 2;
-    simple_serial_puts("DEBUG: Mouse position set\n");
+    // Get screen dimensions and set mouse position to center
+    uint32_t screen_width = 800;  // Default width
+    uint32_t screen_height = 600; // Default height
 
-    simple_serial_puts("DEBUG: About to initialize graphics system\n");
-    if (!graphics_initialize())
-    {
-        simple_serial_puts("DEBUG: Failed to initialize graphics system\n");
-        panic("Failed to initialize graphics system");
-    }
-    simple_serial_puts("DEBUG: Graphics system initialized\n");
+    // TODO: Get actual screen dimensions from GPU/framebuffer
+    // For now, use default VGA-compatible resolution
+
+    mouse->x = screen_width / 2;
+    mouse->y = screen_height / 2;
+
+    simple_serial_puts("DEBUG: Mouse position set to center: ");
+    print_hex32(mouse->x);
+    simple_serial_puts(", ");
+    print_hex32(mouse->y);
+    simple_serial_puts("\n");
 
     return mouse;
 }
@@ -186,9 +201,9 @@ struct mouse *kernel_init_graphics(void)
 void kernel_display_boot_message(void)
 {
     simple_serial_puts("DEBUG: Displaying boot message\n");
-    ClearScreen(11, 25, 69);
-    DrawAtariString("ViOS Graphics System Initialized", 10, 10, 255, 255, 255, 1);
-    Flush();
+    // Clear the screen to magenta (255, 0, 255)
+    kernel_clear_screen_rgb(255, 0, 255);
+    simple_serial_puts("ViOS ViGFX System Initialized\n");
     simple_serial_puts("DEBUG: Boot message displayed\n");
 }
 

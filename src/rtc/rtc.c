@@ -9,7 +9,9 @@
 static uint8_t rtc_read_register(uint8_t reg)
 {
     outb(CMOS_ADDRESS, reg);
-    return insb(CMOS_DATA);
+    uint8_t value;
+    insb(CMOS_DATA, &value, 1);
+    return value;
 }
 
 static int is_update_in_progress()

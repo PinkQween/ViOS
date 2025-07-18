@@ -3,8 +3,11 @@ FILES = \
   ./build/kernel.o \
   ./build/kernel/init.o \
   ./build/kernel/mainloop.o \
-  ./build/graphics/renderer.o \
-  ./build/graphics/graphics.o \
+  ./build/pci/pci.o \
+  ./build/pci/virtio_pci.o \
+  ./build/pci/virtio_gpu_pci.o \
+  ./build/vigfx/vigfx.o \
+  ./build/vigfx/virtio_gpu.o \
   ./build/disk/disk.o \
   ./build/disk/streamer.o \
   ./build/fs/pparser.o \
@@ -143,17 +146,18 @@ endif
 	nasm -f elf -g $< -o $@
 
 user_programs:
-	@if [ -d "./assets/etc/default/user/programs" ]; then \
-		for dir in $$(find ./assets/etc/default/user/programs -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
-			echo "Building user program $$dir..."; \
-			$(MAKE) -C $$dir all || exit 1; \
-		done; \
-	else \
-		echo "No user programs directory found (./assets/etc/default/user/programs), skipping..."; \
-	fi
+	@for mk in $$(find ./assets -name Makefile \
+		! -path "./assets/etc/default/user/programs/*"); do \
+		dir=$$(dirname $$mk); \
+		echo "Building in $$dir..."; \
+		$(MAKE) -C $$dir all || exit 1; \
+	done
 
 user_programs_clean:
-	@for dir in ./assets/etc/default/user/programs/*/ ; do \
+	@for mk in $$(find ./assets -name Makefile \
+		! -path "./assets/etc/default/user/programs/*"); do \
+		dir=$$(dirname $$mk); \
+		echo "Cleaning in $$dir..."; \
 		$(MAKE) -C $$dir clean || true; \
 	done
 

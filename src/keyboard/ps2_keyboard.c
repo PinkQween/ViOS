@@ -48,16 +48,25 @@ void set_keyboard_leds(bool caps, bool num, bool scroll)
     // Send the command
     outb(0x60, led_cmd);
     // Wait for ACK (0xFA)
-    while (timeout-- > 0 && insb(0x60) != 0xFA)
-        ;
+    uint8_t ack;
+    while (timeout-- > 0)
+    {
+        insb(0x60, &ack, 1);
+        if (ack == 0xFA)
+            break;
+    }
     if (timeout <= 0)
         return; // Timeout occurred
 
     // Send LED state
     outb(0x60, led_state);
     timeout = 1000;
-    while (timeout-- > 0 && insb(0x60) != 0xFA)
-        ;
+    while (timeout-- > 0)
+    {
+        insb(0x60, &ack, 1);
+        if (ack == 0xFA)
+            break;
+    }
 }
 
 int classic_keyboard_init()
@@ -69,7 +78,8 @@ int classic_keyboard_init()
     keyboard_set_caps_lock(&classic_keyboard, KEYBOARD_CAPS_LOCK_OFF);
 
     // Enable IRQ 1 (keyboard) and IRQ 2 (cascade to slave PIC) on the master PIC
-    uint8_t mask = insb(0x21);
+    uint8_t mask;
+    insb(0x21, &mask, 1);
     mask &= ~(1 << 1); // Clear bit 1 for IRQ 1 (keyboard)
     mask &= ~(1 << 2); // Clear bit 2 for IRQ 2 (cascade to slave PIC)
     outb(0x21, mask);
@@ -95,8 +105,10 @@ uint8_t classic_keyboard_scancode_to_char(uint8_t scancode)
 
 void classic_keyboard_handle_interrupt()
 {
-    uint8_t scancode = insb(KEYBOARD_INPUT_PORT);
-    insb(KEYBOARD_INPUT_PORT); // discard extra byte if needed
+    uint8_t scancode;
+    insb(KEYBOARD_INPUT_PORT, &scancode, 1);
+    uint8_t discard;
+    insb(KEYBOARD_INPUT_PORT, &discard, 1); // discard extra byte if needed
 
     // Handle release
     if (scancode & CLASSIC_KEYBOARD_KEY_RELEASED)
