@@ -25,4 +25,6 @@ void strcat(char *dest, const char *src);
 
 char *strcpy_new(char *dest, const char *src);
 
+void strncat_safe(char *dest, const char *src, size_t dest_size);
+
 #endif

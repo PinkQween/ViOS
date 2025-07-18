@@ -4,23 +4,24 @@
 #include "memory/heap/kheap.h"
 #include "memory/memory.h"
 #include "fs/file.h"
-#include "disk/disk.h"
+#include "drivers/io/storage/disk.h"
 #include "idt/idt.h"
 #include "task/tss.h"
 #include "task/process.h"
 #include "task/task.h"
-#include "keyboard/keyboard.h"
-#include "mouse/mouse.h"
+#include "drivers/input/keyboard/keyboard.h"
+#include "drivers/input/mouse/mouse.h"
+#include "drivers/input/mouse/ps2_mouse.h"
 #include "memory/paging/paging.h"
 #include "isr80h/isr80h.h"
 #include "panic/panic.h"
-#include "graphics/graphics.h"
-#include "audio/audio.h"
-#include "mouse/ps2_mouse.h"
-#include "io/io.h"
+#include "drivers/io/io.h"
 #include "config.h"
 #include "string/string.h"
+#include "drivers/output/audio/audio.h"
 #include "debug/simple_serial.h"
+#include "utils/utils.h"
+#include "drivers/output/vigfx/vigfx.h"
 
 // External declarations
 extern struct tss tss;
@@ -85,16 +86,17 @@ void kernel_init_tss(void)
 void kernel_init_paging(void)
 {
     simple_serial_puts("DEBUG: Starting paging initialization\n");
-    
+
     // Verify heap is working before paging
-    void* test_alloc = kmalloc(4096);
-    if (!test_alloc) {
+    void *test_alloc = kmalloc(4096);
+    if (!test_alloc)
+    {
         simple_serial_puts("DEBUG: Heap not ready for paging\n");
         panic("Heap not ready for paging");
     }
     kfree(test_alloc);
     simple_serial_puts("DEBUG: Heap verified working\n");
-    
+
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     if (!kernel_chunk)
     {
@@ -104,11 +106,12 @@ void kernel_init_paging(void)
     simple_serial_puts("DEBUG: Kernel page directory created\n");
 
     // Verify the page directory is valid
-    if (!kernel_chunk->directory_entry) {
+    if (!kernel_chunk->directory_entry)
+    {
         simple_serial_puts("DEBUG: Invalid page directory\n");
         panic("Invalid page directory");
     }
-    
+
     paging_switch(kernel_chunk);
     simple_serial_puts("DEBUG: Paging switched\n");
 
@@ -127,6 +130,8 @@ void kernel_init_devices(void)
     simple_serial_puts("DEBUG: Initializing filesystem\n");
     fs_init();
     simple_serial_puts("DEBUG: Filesystem initialized\n");
+
+    // No need to register /sys/dev/usb/null or call ps2_mouse_init/ps2_keyboard_init here
 
     simple_serial_puts("DEBUG: Searching and initializing disk\n");
     disk_search_and_init();
@@ -155,8 +160,7 @@ void kernel_init_devices(void)
 
 struct mouse *kernel_init_graphics(void)
 {
-    simple_serial_puts("DEBUG: Starting graphics initialization\n");
-
+    // Mouse initialization with dynamic screen size calculation
     simple_serial_puts("DEBUG: About to initialize PS/2 mouse\n");
     struct mouse *mouse = ps2_mouse_init();
     if (!mouse)
@@ -166,19 +170,21 @@ struct mouse *kernel_init_graphics(void)
     }
     simple_serial_puts("DEBUG: PS/2 mouse initialized\n");
 
-    simple_serial_puts("DEBUG: About to get VBE info\n");
-    VBEInfoBlock *VBE = (VBEInfoBlock *)VBEInfoAddress;
-    mouse->x = VBE->x_resolution / 2;
-    mouse->y = VBE->y_resolution / 2;
-    simple_serial_puts("DEBUG: Mouse position set\n");
+    // Get screen dimensions and set mouse position to center
+    uint32_t screen_width = 800;  // Default width
+    uint32_t screen_height = 600; // Default height
 
-    simple_serial_puts("DEBUG: About to initialize graphics system\n");
-    if (!graphics_initialize())
-    {
-        simple_serial_puts("DEBUG: Failed to initialize graphics system\n");
-        panic("Failed to initialize graphics system");
-    }
-    simple_serial_puts("DEBUG: Graphics system initialized\n");
+    // TODO: Get actual screen dimensions from GPU/framebuffer
+    // For now, use default VGA-compatible resolution
+
+    mouse->x = screen_width / 2;
+    mouse->y = screen_height / 2;
+
+    simple_serial_puts("DEBUG: Mouse position set to center: ");
+    print_hex32(mouse->x);
+    simple_serial_puts(", ");
+    print_hex32(mouse->y);
+    simple_serial_puts("\n");
 
     return mouse;
 }
@@ -186,9 +192,29 @@ struct mouse *kernel_init_graphics(void)
 void kernel_display_boot_message(void)
 {
     simple_serial_puts("DEBUG: Displaying boot message\n");
-    ClearScreen(11, 25, 69);
-    DrawAtariString("ViOS Graphics System Initialized", 10, 10, 255, 255, 255, 1);
-    Flush();
+    // Create a graphics context
+    struct vigfx_context *ctx = vigfx_create_context(NULL);
+    if (!ctx)
+    {
+        simple_serial_puts("DEBUG: Failed to create ViGFX context\n");
+        return;
+    }
+    // Create a command buffer and assign the context
+    struct vigfx_command_buffer *cmd = vigfx_create_command_buffer(NULL);
+    if (!cmd)
+    {
+        simple_serial_puts("DEBUG: Failed to create ViGFX command buffer\n");
+        vigfx_destroy_context(ctx);
+        return;
+    }
+    vigfx_command_buffer_set_context(cmd, ctx); // Assign context to command buffer
+    vigfx_begin_command_buffer(cmd);
+    vigfx_cmd_clear(cmd, 1.0f, 0.0f, 1.0f, 1.0f); // Magenta
+    vigfx_end_command_buffer(cmd);
+    vigfx_submit_command_buffer(ctx, cmd);
+    vigfx_destroy_command_buffer(cmd);
+    vigfx_destroy_context(ctx);
+    simple_serial_puts("ViOS ViGFX System Initialized\n");
     simple_serial_puts("DEBUG: Boot message displayed\n");
 }
 

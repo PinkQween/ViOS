@@ -1,7 +1,7 @@
 #include "fat32.h"
 #include "string/string.h"
-#include "disk/disk.h"
-#include "disk/streamer.h"
+#include "drivers/io/storage/disk.h"
+#include "drivers/io/storage/streamer.h"
 #include "memory/heap/kheap.h"
 #include "memory/memory.h"
 #include "status.h"
@@ -166,10 +166,10 @@ int fat32_resolve(struct disk *disk)
     // Simple hex output for signature
     uint8_t sig = fat_private->header.extended.signature;
     char hex_digits[] = "0123456789ABCDEF";
-    char hex_str[3] = { hex_digits[sig >> 4], hex_digits[sig & 0xF], 0 };
+    char hex_str[3] = {hex_digits[sig >> 4], hex_digits[sig & 0xF], 0};
     simple_serial_puts(hex_str);
     simple_serial_puts(" (expected 0x29)\n");
-    
+
     if (fat_private->header.extended.signature != VIOS_FAT32_SIGNATURE)
     {
         simple_serial_puts("DEBUG: FAT32 signature mismatch\n");
@@ -179,7 +179,7 @@ int fat32_resolve(struct disk *disk)
 
     simple_serial_puts("DEBUG: FAT32 filesystem recognized successfully\n");
 
-    out:
+out:
     if (stream)
     {
         diskstreamer_close(stream);
@@ -223,4 +223,3 @@ int fat32_close(void *private)
     // Placeholder implementation - returns error for now
     return -EUNIMP;
 }
-

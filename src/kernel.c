@@ -7,13 +7,14 @@
 #include "memory/memory.h"
 #include "memory/heap/kheap.h"
 #include "fs/file.h"
-#include "disk/disk.h"
+#include "drivers/io/storage/disk.h"
 #include "idt/idt.h"
 #include "isr80h/isr80h.h"
-#include "keyboard/keyboard.h"
+#include "drivers/input/keyboard/keyboard.h"
 #include "config.h"
-#include "audio/audio.h"
+#include "drivers/output/audio/audio.h"
 #include "debug/simple_serial.h"
+#include "drivers/output/vigfx/vigfx.h"
 
 struct paging_4gb_chunk *kernel_chunk = 0;
 
@@ -40,7 +41,7 @@ struct gdt_structured gdt_structured[VIOS_TOTAL_GDT_SEGMENTS] = {
 void kernel_main()
 {
     simple_serial_init();
-    simple_serial_puts("DEBUG: Kernel starting...\n");
+    simple_serial_puts("==== Kernel starting ====\n");
     simple_serial_puts("DEBUG: Kernel entry point reached successfully\n");
 
     // 1. GDT setup
@@ -75,23 +76,32 @@ void kernel_main()
     isr80h_register_commands();
     simple_serial_puts("DEBUG: ISR80H commands registered\n");
 
-    // 9. Keyboard
+    // // 9. PCI Bus
+    // pci_init();
+    // simple_serial_puts("DEBUG: PCI subsystem initialized\n");
+
+    // // 10. VirtIO Transport
+    // virtio_pci_init();
+    // simple_serial_puts("DEBUG: VirtIO PCI transport initialized\n");
+
+    // 11. Keyboard
     keyboard_init();
     simple_serial_puts("DEBUG: Keyboard initialized\n");
 
-    // 10. Graphics
+    // 12. Graphics
+    vigfx_select_driver();
     struct mouse *mouse = kernel_init_graphics();
     simple_serial_puts("DEBUG: Graphics initialized\n");
 
-    // 11. Boot message
+    // 13. Boot message
     kernel_display_boot_message();
     simple_serial_puts("DEBUG: Boot message displayed\n");
 
-    // 12. Timer IRQ
+    // 14. Timer IRQ
     kernel_unmask_timer_irq();
     simple_serial_puts("DEBUG: Timer IRQ unmasked\n");
 
-    // 13. Main loop
+    // 15. Main loop
     simple_serial_puts("DEBUG: About to start main loop...\n");
     kernel_run_main_loop(mouse);
     simple_serial_puts("DEBUG: Main loop returned (this shouldn't happen)\n");

@@ -3,12 +3,13 @@
 #include "memory/memory.h"
 #include "memory/heap/kheap.h"
 #include "string/string.h"
-#include "disk/disk.h"
+#include "drivers/io/storage/disk.h"
 #include "fat/fat16.h"
 #include "fat/fat32.h"
 #include "status.h"
 #include "kernel.h"
 #include "debug/simple_serial.h"
+
 struct filesystem *filesystems[VIOS_MAX_FILESYSTEMS];
 struct file_descriptor *file_descriptors[VIOS_MAX_FILE_DESCRIPTORS];
 

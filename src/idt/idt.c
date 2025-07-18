@@ -4,7 +4,7 @@
 #include "memory/memory.h"
 #include "task/task.h"
 #include "task/process.h"
-#include "io/io.h"
+#include "drivers/io/io.h"
 #include "status.h"
 struct idt_desc idt_descriptors[VIOS_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
@@ -40,7 +40,8 @@ void interrupt_handler(int interrupt, struct interrupt_frame *frame)
 
 void idt_zero()
 {
-    while(1);
+    while (1)
+        ;
 }
 
 void idt_set(int interrupt_no, void *address)

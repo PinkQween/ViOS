@@ -25,10 +25,10 @@ int memcmp(void *s1, void *s2, int count)
     return 0;
 }
 
-void *memcpy(void *dest, void *src, int len)
+void *memcpy(void *dest, const void *src, int len)
 {
     char *d = dest;
-    char *s = src;
+    const char *s = src;
     while (len--)
     {
         *d++ = *s++;

@@ -3,55 +3,57 @@ FILES = \
   ./build/kernel.o \
   ./build/kernel/init.o \
   ./build/kernel/mainloop.o \
-  ./build/graphics/renderer.o \
-  ./build/graphics/graphics.o \
-  ./build/disk/disk.o \
-  ./build/disk/streamer.o \
-  ./build/fs/pparser.o \
+  ./build/drivers/io/io.asm.o \
+  ./build/drivers/io/power/power.o \
+  ./build/drivers/io/storage/disk.o \
+  ./build/drivers/io/storage/streamer.o \
+  ./build/drivers/io/timing/rtc.o \
+  ./build/drivers/io/timing/timer.o \
+  ./build/drivers/input/keyboard/keyboard.o \
+  ./build/drivers/input/keyboard/ps2_keyboard.o \
+  ./build/drivers/input/mouse/mouse.o \
+  ./build/drivers/input/mouse/ps2_mouse.o \
+  ./build/drivers/output/audio/audio.o \
+  ./build/drivers/output/audio/sb16.o \
+  ./build/drivers/output/vigfx/vigfx.o \
+  ./build/drivers/output/vigfx/vigfx_vesa.o \
   ./build/fs/file.o \
   ./build/fs/fat/fat16.o \
   ./build/fs/fat/fat32.o \
-  ./build/string/string.o \
+  ./build/fs/pparser.o \
+  ./build/gdt/gdt.asm.o \
+  ./build/gdt/gdt.o \
   ./build/idt/idt.asm.o \
   ./build/idt/idt.o \
-  ./build/gdt/gdt.o \
-  ./build/gdt/gdt.asm.o \
-  ./build/memory/memory.o \
+  ./build/loader/formats/elf.o \
+  ./build/loader/formats/elfloader.o \
   ./build/memory/heap/heap.o \
   ./build/memory/heap/kheap.o \
-  ./build/memory/paging/paging.o \
+  ./build/memory/memory.o \
   ./build/memory/paging/paging.asm.o \
-  ./build/io/io.asm.o \
-  ./build/task/tss.asm.o \
+  ./build/memory/paging/paging.o \
   ./build/task/process.o \
-  ./build/task/task.o \
   ./build/task/task.asm.o \
-  ./build/isr80h/isr80h.o \
-  ./build/isr80h/heap.o \
-  ./build/isr80h/process.o \
+  ./build/task/task.o \
+  ./build/task/tss.asm.o \
+  ./build/isr80h/audio.o \
   ./build/isr80h/file.o \
-  ./build/isr80h/serial.o \
-  ./build/isr80h/waits.o \
+  ./build/isr80h/heap.o \
+  ./build/isr80h/isr80h.o \
   ./build/isr80h/keyboard.o \
-  ./build/keyboard/keyboard.o \
-  ./build/keyboard/ps2_keyboard.o \
-  ./build/loader/formats/elfloader.o \
-  ./build/loader/formats/elf.o \
-  ./build/rtc/rtc.o \
+  ./build/isr80h/process.o \
+  ./build/isr80h/serial.o \
+  ./build/isr80h/timers.o \
   ./build/panic/panic.o \
+  ./build/debug/simple_serial.o \
+  ./build/string/string.o \
   ./build/utils/utils.o \
   ./build/fonts/characters_Arial.o \
   ./build/fonts/characters_AtariST8x16SystemFont.o \
   ./build/fonts/characters_Brightly.o \
   ./build/fonts/characters_Cheri.o \
   ./build/fonts/characters_RobotoThin.o \
-  ./build/mouse/mouse.o \
-  ./build/mouse/ps2_mouse.o \
-  ./build/math/fpu_math.o \
-  ./build/power/power.o \
-  ./build/debug/simple_serial.o \
-  ./build/audio/audio.o \
-  ./build/audio/sb16.o
+  ./build/math/fpu_math.o
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
@@ -103,6 +105,22 @@ else ifeq ($(UNAME_S),Darwin)
 	'
 endif
 
+mount: ./bin/os.bin
+ifeq ($(UNAME_S),Linux)
+	@echo "Installing user programs and assets to disk image (Linux)..."
+	@sudo mkdir -p /mnt/d
+	@sudo umount /mnt/d 2>/dev/null || true
+	@sudo mount -t vfat ./bin/os.bin /mnt/d || { echo "Failed to mount disk image"; exit 1; }
+else ifeq ($(UNAME_S),Darwin)
+	@echo "Attaching disk image (macOS)..."
+	@bash -c '\
+		DISK_ID=$$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount ./bin/os.bin | awk "/\/dev\// {print \$$1}"); \
+		echo "Attached as $$DISK_ID"; \
+		sudo mkdir -p /Volumes/viosmnt; \
+		sudo mount -t msdos $$DISK_ID /Volumes/viosmnt || { echo "Failed to mount $$DISK_ID"; exit 1; }; \
+	'
+endif
+
 
 ./bin/kernel.bin: prepare_dirs $(FILES)
 	i686-elf-gcc $(FLAGS) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib $(FILES)
@@ -143,17 +161,18 @@ endif
 	nasm -f elf -g $< -o $@
 
 user_programs:
-	@if [ -d "./assets/etc/default/user/programs" ]; then \
-		for dir in $$(find ./assets/etc/default/user/programs -mindepth 1 -maxdepth 1 -type d 2>/dev/null); do \
-			echo "Building user program $$dir..."; \
-			$(MAKE) -C $$dir all || exit 1; \
-		done; \
-	else \
-		echo "No user programs directory found (./assets/etc/default/user/programs), skipping..."; \
-	fi
+	@for mk in $$(find ./assets -name Makefile \
+		! -path "./assets/etc/default/user/programs/*"); do \
+		dir=$$(dirname $$mk); \
+		echo "Building in $$dir..."; \
+		$(MAKE) -C $$dir all || exit 1; \
+	done
 
 user_programs_clean:
-	@for dir in ./assets/etc/default/user/programs/*/ ; do \
+	@for mk in $$(find ./assets -name Makefile \
+		! -path "./assets/etc/default/user/programs/*"); do \
+		dir=$$(dirname $$mk); \
+		echo "Cleaning in $$dir..."; \
 		$(MAKE) -C $$dir clean || true; \
 	done
 

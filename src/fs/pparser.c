@@ -151,13 +151,13 @@ struct path_root *pathparser_parse(const char *path, const char *current_directo
     }
 
 out:
-     if (res < 0)
- {
-     if (path_root)
-     {
-        pathparser_free(path_root);
-        path_root = NULL;
-     }
- }
+    if (res < 0)
+    {
+        if (path_root)
+        {
+            pathparser_free(path_root);
+            path_root = NULL;
+        }
+    }
     return path_root;
 }

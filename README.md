@@ -42,8 +42,8 @@ The following components are versioned together and must be used in compatible v
 ![GitHub Discussions](https://img.shields.io/github/discussions/PinkQween/ViOS)
 ![Forks](https://img.shields.io/github/forks/PinkQween/ViOS?style=social)
 ![Commit Activity](https://img.shields.io/github/commit-activity/w/PinkQween/ViOS)
-![Total Issues](https://img.shields.io/github/issues-closed-raw/PinkQween/ViOS?label=total%20issues&color=blue)
-![Total PRs](https://img.shields.io/github/issues-pr-closed-raw/PinkQween/ViOS?label=total%20PRs&color=blue)
+![Total Issues](https://img.shields.io/github/issues/PinkQween/ViOS?label=total%20issues&color=blue)
+![Total PRs](https://img.shields.io/github/issues-pr/PinkQween/ViOS?label=total%20PRs&color=blue)
 
 ## 📚 Table of Contents
 
@@ -120,46 +120,57 @@ ___________
 │       └── build.yml
 ├── .gitignore
 ├── assets
-│   ├── boot
-│   │   └── .keep
 │   ├── etc
-│   │   └── default
-│   │       └── user
-│   │           └── programs
-│   │               ├── asm_test
-│   │               │   ├── linker.ld
-│   │               │   ├── main.asm
-│   │               │   └── Makefile
-│   │               ├── c_print
-│   │               │   ├── Makefile
-│   │               │   └── src
-│   │               │       └── main.c
-│   │               ├── cpp_prnt
-│   │               │   ├── Makefile
-│   │               │   └── src
-│   │               │       └── main.cpp
-│   │               ├── cpp_test
-│   │               │   ├── Makefile
-│   │               │   └── src
-│   │               │       └── main.cpp
-│   │               └── shell
-│   │                   ├── Makefile
-│   │                   └── src
-│   │                       ├── main.c
-│   │                       └── shell.h
-│   ├── kernel
+│   │   ├── passwd
+│   │   └── shadow
+│   ├── shared
+│   │   ├── fonts
+│   │   │   └── .keep
+│   │   └── lib
+│   │       └── .keep
+│   ├── sys
+│   │   └── src
+│   │       └── reloivd
+│   │           ├── Makefile
+│   │           └── src
+│   │               └── main.cpp
+│   ├── tmp
 │   │   └── .keep
-│   └── shells
-│       ├── etc
-│       │   └── wardenviod
-│       │       └── src
-│       │           └── main.cpp
-│       ├── vio:nova
-│       │   └── src
-│       │       └── main.cpp
-│       └── vio:void
-│           └── src
-│               └── main.cpp
+│   ├── usr
+│   │   └── src
+│   │       ├── programs
+│   │       │   ├── echo
+│   │       │   │   ├── Makefile
+│   │       │   │   └── src
+│   │       │   │       └── main.cpp
+│   │       │   ├── ls
+│   │       │   │   ├── Makefile
+│   │       │   │   └── src
+│   │       │   │       └── main.cpp
+│   │       │   ├── öviash
+│   │       │   │   ├── Makefile
+│   │       │   │   └── src
+│   │       │   │       └── main.cpp
+│   │       │   ├── pwd
+│   │       │   │   ├── Makefile
+│   │       │   │   └── src
+│   │       │   │       └── main.cpp
+│   │       │   └── v
+│   │       │       ├── Makefile
+│   │       │       └── src
+│   │       │           └── main.cpp
+│   │       └── realms
+│   │           ├── vio:nova
+│   │           │   ├── Makefile
+│   │           │   └── src
+│   │           │       └── main.cpp
+│   │           └── vio:void
+│   │               ├── Makefile
+│   │               └── src
+│   │                   └── main.cpp
+│   └── var
+│       └── log
+│           └── .keep
 ├── build.sh
 ├── buildExternal.sh
 ├── docs
@@ -230,11 +241,6 @@ ___________
 │   │   ├── gdt.asm
 │   │   ├── gdt.c
 │   │   └── gdt.h
-│   ├── graphics
-│   │   ├── graphics.c
-│   │   ├── graphics.h
-│   │   ├── renderer.c
-│   │   └── renderer.h
 │   ├── idt
 │   │   ├── idt.asm
 │   │   ├── idt.c
@@ -300,6 +306,13 @@ ___________
 │   ├── panic
 │   │   ├── panic.c
 │   │   └── panic.h
+│   ├── pci
+│   │   ├── pci.c
+│   │   ├── pci.h
+│   │   ├── virtio_gpu_pci.c
+│   │   ├── virtio_gpu_pci.h
+│   │   ├── virtio_pci.c
+│   │   └── virtio_pci.h
 │   ├── power
 │   │   ├── power.c
 │   │   └── power.h
@@ -318,9 +331,14 @@ ___________
 │   │   ├── task.h
 │   │   ├── tss.asm
 │   │   └── tss.h
-│   └── utils
-│       ├── utils.c
-│       └── utils.h
+│   ├── utils
+│   │   ├── utils.c
+│   │   └── utils.h
+│   └── vigfx
+│       ├── vigfx.c
+│       ├── vigfx.h
+│       ├── virtio_gpu.c
+│       └── virtio_gpu.h
 ├── utilities
 │   ├── fonts
 │   │   ├── Arial.ttf
@@ -334,7 +352,7 @@ ___________
 │   └── updateREADME.sh
 └── ViOS_LOGO_PNG.png
 
-58 directories, 165 files
+65 directories, 176 files
 ```
 
 ___________
