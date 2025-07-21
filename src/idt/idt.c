@@ -6,6 +6,8 @@
 #include "task/process.h"
 #include "drivers/io/io.h"
 #include "status.h"
+#include "drivers/io/timing/timer.h"
+
 struct idt_desc idt_descriptors[VIOS_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
 
@@ -62,10 +64,10 @@ void idt_handle_exception()
 
 void idt_clock()
 {
+    timer_tick();
     outb(0x20, 0x20);
-
     // Switch to the next task
-    task_next();
+    task_scheduler_tick();
 }
 
 void idt_init()

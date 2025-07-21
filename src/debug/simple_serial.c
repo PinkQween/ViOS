@@ -1,5 +1,5 @@
 #include "simple_serial.h"
-#include "io/io.h"
+#include "drivers/io/io.h"
 
 void simple_serial_init(void)
 {

@@ -27,9 +27,7 @@ void *isr80h_command_audio(struct interrupt_frame *frame)
         if (freq <= 0 || duration <= 0)
             return ERROR(-EINVARG);
         virtual_audio_beep_frequency((uint32_t)freq);
-        extern void timer_sleep_ms(int ms);
-        timer_sleep_ms(duration);
-        virtual_audio_control(VIRTUAL_AUDIO_STOP);
+        // Do not block or stop here; userland will handle sleep and stop
         return 0;
     }
     case AUDIO_CMD_PLAY_PCM:

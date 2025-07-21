@@ -10,7 +10,7 @@ static struct keyboard *keyboard_list_last = 0;
 
 void keyboard_init()
 {
-    keyboard_insert(classic_init());
+    keyboard_insert(PS2_init());
 }
 
 int keyboard_insert(struct keyboard *keyboard)

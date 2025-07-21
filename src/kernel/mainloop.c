@@ -13,8 +13,13 @@ void kernel_run_main_loop(struct mouse *mouse)
     simple_serial_puts("DEBUG: Entering main loop\n");
 
     struct process *process = 0;
-    // int res = process_load_switch("0:/sbin/reloivd", &process);
-    int res = process_load_switch("0:/bin/beep", &process);
+    int res = process_load_switch("0:/sbin/idle", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        panic("Failed to load idle.\n");
+    }
+
+    res = process_load_switch("0:/bin/beep", &process); // TODO: update to ("0:/sbin/reloivd", &process);
 
     if (res != VIOS_ALL_OK)
     {

@@ -51,6 +51,11 @@ struct task
 
     // Previous task in the linked list
     struct task *prev;
+
+    // Sleep state: 0 = running, 1 = sleeping
+    int sleeping;
+    // Wakeup time in ticks (ms since boot)
+    unsigned long wakeup_tick;
 };
 
 struct task *task_new(struct process *process);

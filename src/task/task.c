@@ -1,5 +1,6 @@
 #include "task.h"
 #include "debug/simple_serial.h"
+#include "drivers/io/timing/timer.h"
 
 // The current task that is running
 struct task *current_task = 0;
@@ -55,12 +56,21 @@ out:
 
 struct task *task_get_next()
 {
-    if (!current_task->next)
+    struct task *start = current_task;
+    struct task *next = current_task->next ? current_task->next : task_head;
+    while (next != start)
     {
-        return task_head;
+        if (!next->sleeping)
+        {
+            return next;
+        }
+        next = next->next ? next->next : task_head;
     }
-
-    return current_task->next;
+    // If only one task is not sleeping, return it
+    if (!start->sleeping)
+        return start;
+    // All tasks are sleeping
+    return NULL;
 }
 
 static void task_list_remove(struct task *task)
@@ -281,9 +291,20 @@ void *task_virtual_address_to_physical(struct task *task, void *virtual_address)
 
 void task_scheduler_tick()
 {
-    // For now, just call task_next() to switch to the next task
-    // This provides basic round-robin scheduling
-    if (current_task && task_head && task_head->next)
+    // Wake up any sleeping tasks whose wakeup_tick has passed
+    struct task *t = task_head;
+    unsigned long now = timer_get_ticks();
+    do
+    {
+        if (t->sleeping && t->wakeup_tick <= now)
+        {
+            t->sleeping = 0;
+        }
+        t = t->next;
+    } while (t && t != task_head);
+    // Only switch if there is a runnable task
+    struct task *next = task_get_next();
+    if (next && next != current_task)
     {
         task_next();
     }

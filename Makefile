@@ -16,7 +16,7 @@ FILES = \
   ./build/drivers/output/audio/audio.o \
   ./build/drivers/output/audio/sb16.o \
   ./build/drivers/output/vigfx/vigfx.o \
-  ./build/drivers/output/vigfx/vigfx_vesa.o \
+  ./build/drivers/output/vigfx/vesa.o \
   ./build/fs/file.o \
   ./build/fs/fat/fat16.o \
   ./build/fs/fat/fat32.o \

@@ -8,9 +8,12 @@ void *isr80h_command10_sleep(struct interrupt_frame *frame)
     int ms = (int)task_get_stack_item(task_current(), 0);
     if (ms < 0)
     {
-        return (void *)-1; // Return error for negative values
+        return (void *)-1;
     }
-    timer_sleep_ms(ms);
+    struct task *t = task_current();
+    t->sleeping = 1;
+    t->wakeup_tick = timer_get_ticks() + (unsigned long)ms;
+    task_next(); // Yield to next task
     return 0;
 }
 
@@ -22,7 +25,10 @@ void *isr80h_command12_usleep(struct interrupt_frame *frame)
     {
         return (void *)-1;
     }
-    usleep((unsigned int)usec);
+    struct task *t = task_current();
+    t->sleeping = 1;
+    t->wakeup_tick = timer_get_ticks() + (unsigned long)(usec / 1000);
+    task_next();
     return 0;
 }
 
@@ -34,6 +40,9 @@ void *isr80h_command13_nanosleep(struct interrupt_frame *frame)
     {
         return (void *)-1;
     }
-    nanosleep((unsigned int)nsec);
+    struct task *t = task_current();
+    t->sleeping = 1;
+    t->wakeup_tick = timer_get_ticks() + (unsigned long)(nsec / 1000000);
+    task_next();
     return 0;
 }

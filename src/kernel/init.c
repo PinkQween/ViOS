@@ -153,6 +153,8 @@ void kernel_init_devices(void)
     audio_init();
     simple_serial_puts("DEBUG: Audio initialized\n");
 
+    virtual_audio_control(VIRTUAL_AUDIO_BEEP);
+
     simple_serial_puts("DEBUG: Registering ISR80H commands\n");
     isr80h_register_commands();
     simple_serial_puts("DEBUG: ISR80H commands registered\n");
@@ -192,29 +194,18 @@ struct mouse *kernel_init_graphics(void)
 void kernel_display_boot_message(void)
 {
     simple_serial_puts("DEBUG: Displaying boot message\n");
-    // Create a graphics context
-    struct vigfx_context *ctx = vigfx_create_context(NULL);
-    if (!ctx)
-    {
-        simple_serial_puts("DEBUG: Failed to create ViGFX context\n");
-        return;
-    }
-    // Create a command buffer and assign the context
-    struct vigfx_command_buffer *cmd = vigfx_create_command_buffer(NULL);
-    if (!cmd)
-    {
-        simple_serial_puts("DEBUG: Failed to create ViGFX command buffer\n");
-        vigfx_destroy_context(ctx);
-        return;
-    }
-    vigfx_command_buffer_set_context(cmd, ctx); // Assign context to command buffer
-    vigfx_begin_command_buffer(cmd);
-    vigfx_cmd_clear(cmd, 1.0f, 0.0f, 1.0f, 1.0f); // Magenta
-    vigfx_end_command_buffer(cmd);
-    vigfx_submit_command_buffer(ctx, cmd);
-    vigfx_destroy_command_buffer(cmd);
-    vigfx_destroy_context(ctx);
+    graphics_init();
     simple_serial_puts("ViOS ViGFX System Initialized\n");
+    for(int i = 0; i < gpu_screen_height(); i++)
+    {
+        for(int j = 0; j < gpu_screen_width(); j++)
+        {
+            gpu_draw(j, i, 255, 255, 255); // Clear screen to black
+        }
+    }
+
+    gpu_flush_screen();
+
     simple_serial_puts("DEBUG: Boot message displayed\n");
 }
 
