@@ -196,9 +196,9 @@ void kernel_display_boot_message(void)
     simple_serial_puts("DEBUG: Displaying boot message\n");
     graphics_init();
     simple_serial_puts("ViOS ViGFX System Initialized\n");
-    for(int i = 0; i < gpu_screen_height(); i++)
+    for (int i = 0; i < gpu_screen_height(); i++)
     {
-        for(int j = 0; j < gpu_screen_width(); j++)
+        for (int j = 0; j < gpu_screen_width(); j++)
         {
             gpu_draw(j, i, 255, 255, 255); // Clear screen to black
         }
