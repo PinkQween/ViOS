@@ -3,7 +3,7 @@
 > 🧠 A handcrafted 32-bit x86 Operating System  
 > 🕯️ Built in memory of **Vio** from SiegedSec
 
-![ViOS Logo](/ViOS_LOGO_PNG.png)
+![ViOS Logo](/logo.png)
 
 ---
 
