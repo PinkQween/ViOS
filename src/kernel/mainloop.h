@@ -7,6 +7,6 @@ struct mouse;
  * Run the main kernel loop
  * @param mouse Pointer to mouse interface
  */
-void kernel_run_main_loop(struct mouse *mouse);
+void kernel_run_main_loop();
 
 #endif // KERNEL_MAINLOOP_H

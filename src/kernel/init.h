@@ -30,7 +30,7 @@ void kernel_init_devices(void);
  * Initialize graphics system and return mouse interface
  * @return Pointer to initialized mouse interface, or NULL on failure
  */
-struct mouse *kernel_init_graphics(void);
+void kernel_init_graphics(void);
 
 /**
  * Display initial boot message

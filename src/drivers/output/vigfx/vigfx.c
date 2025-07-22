@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "vigfx.h"
 #include "vesa.h"
 
@@ -34,4 +35,11 @@ int gpu_screen_width(void)
 int gpu_screen_height(void)
 {
     return active_gpu ? active_gpu->height : 0;
+}
+
+uint32_t gpu_get_pixel(int x, int y) {
+    if (active_gpu && active_gpu->get_pixel) {
+        return active_gpu->get_pixel(x, y);
+    }
+    return 0;
 }

@@ -3,13 +3,27 @@
 #include <stddef.h>
 
 // PIT (Programmable Interval Timer) definitions
+#define PIT_CHANNEL0_DATA 0x40
 #define PIT_CHANNEL2_DATA 0x42
 #define PIT_COMMAND 0x43
+
+// PIT frequency constants
+#define PIT_FREQUENCY 1193182
+#define DESIRED_TIMER_FREQUENCY 1000  // 1000 Hz for 1ms timer ticks
 
 // Initialize all timer hardware (RTC, PIT, etc.)
 void timer_init()
 {
-    // Currently nothing to initialize for PIT or RTC
+    // Calculate the divisor for the desired frequency
+    int divisor = PIT_FREQUENCY / DESIRED_TIMER_FREQUENCY;
+    
+    // Send command to PIT control port:
+    // Channel 0, Access mode: low byte then high byte, Mode 2: rate generator, Binary mode
+    outb(PIT_COMMAND, 0x34);
+    
+    // Send the divisor (low byte first, then high byte)
+    outb(PIT_CHANNEL0_DATA, divisor & 0xFF);
+    outb(PIT_CHANNEL0_DATA, (divisor >> 8) & 0xFF);
 }
 
 // Sleep for the specified number of milliseconds (uses PIT)

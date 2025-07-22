@@ -11,7 +11,6 @@
 #include "task/task.h"
 #include "drivers/input/keyboard/keyboard.h"
 #include "drivers/input/mouse/mouse.h"
-#include "drivers/input/mouse/ps2_mouse.h"
 #include "memory/paging/paging.h"
 #include "isr80h/isr80h.h"
 #include "panic/panic.h"
@@ -119,76 +118,32 @@ void kernel_init_paging(void)
     simple_serial_puts("DEBUG: Paging enabled\n");
 }
 
-void kernel_init_devices(void)
-{
-    simple_serial_puts("DEBUG: Starting device initialization\n");
-
-    simple_serial_puts("DEBUG: Initializing kernel heap\n");
-    kheap_init();
-    simple_serial_puts("DEBUG: Kernel heap initialized\n");
-
-    simple_serial_puts("DEBUG: Initializing filesystem\n");
-    fs_init();
-    simple_serial_puts("DEBUG: Filesystem initialized\n");
-
-    // No need to register /sys/dev/usb/null or call ps2_mouse_init/ps2_keyboard_init here
-
-    simple_serial_puts("DEBUG: Searching and initializing disk\n");
-    disk_search_and_init();
-    simple_serial_puts("DEBUG: Disk initialized\n");
-
-    simple_serial_puts("DEBUG: Initializing IDT\n");
-    idt_init();
-    simple_serial_puts("DEBUG: IDT initialized\n");
-
-    simple_serial_puts("DEBUG: Initializing keyboard\n");
-    keyboard_init();
-    simple_serial_puts("DEBUG: Keyboard initialized\n");
-
-    simple_serial_puts("DEBUG: Initializing mouse\n");
-    mouse_init();
-    simple_serial_puts("DEBUG: Mouse initialized\n");
-
-    simple_serial_puts("DEBUG: Initializing audio\n");
-    audio_init();
-    simple_serial_puts("DEBUG: Audio initialized\n");
-
-    virtual_audio_control(VIRTUAL_AUDIO_BEEP);
-
-    simple_serial_puts("DEBUG: Registering ISR80H commands\n");
-    isr80h_register_commands();
-    simple_serial_puts("DEBUG: ISR80H commands registered\n");
-}
-
-struct mouse *kernel_init_graphics(void)
+void kernel_init_graphics(void)
 {
     graphics_init();
-    simple_serial_puts("DEBUG: About to initialize PS/2 mouse\n");
-    struct mouse *mouse = ps2_mouse_init();
-    if (!mouse)
-    {
-        simple_serial_puts("DEBUG: Failed to initialize PS/2 mouse\n");
-        panic("Failed to initialize PS/2 mouse");
-    }
-    simple_serial_puts("DEBUG: PS/2 mouse initialized\n");
-
-    mouse->x = gpu_screen_width() / 2;
-    mouse->y = gpu_screen_height() / 2;
     
-    simple_serial_puts("DEBUG: Mouse position set to center: ");
-    print_hex32(mouse->x);
-    simple_serial_puts(", ");
-    print_hex32(mouse->y);
-    simple_serial_puts("\n");
-
-    return mouse;
+    global_mouse->x = gpu_screen_width() / 2;
+    global_mouse->y = gpu_screen_height() / 2;   
 }
 
 void kernel_display_boot_message(void)
 {
     simple_serial_puts("DEBUG: Displaying boot message\n");
 
-    draw_scaled_rgb_fill("0:/sys/assets/logo.rgb", 0, 0, gpu_screen_width(), gpu_screen_height());
+    DRAW_CALLBACK bg_draw_func = NULL;
+    void *bg_draw_ctx = NULL;
+
+    getFuncToDrawScaledRGBFill("0:/sys/assets/logo.rgb", 0, 0, gpu_screen_width(), gpu_screen_height(), &bg_draw_func, &bg_draw_ctx);
+
+    if (bg_draw_func)
+    {
+        bg_draw_func(bg_draw_ctx); // Draw background initially
+    }
+    else
+    {
+        simple_serial_puts("DEBUG: Failed to load background image\n");
+        panic("Failed to load background image");
+    }
 
     const int scale = 4.5;
     char* bootMessage = "Booting...";

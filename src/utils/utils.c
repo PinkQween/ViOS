@@ -86,53 +86,77 @@ int almost_equal(double a, double b, double epsilon)
     return (diff < 0 ? -diff : diff) < epsilon;
 }
 
-void draw_scaled_rgb_fill(const char *path, int start_x, int start_y, int dest_width, int dest_height)
+void draw_scaled_rgb_fill(void *ctx_ptr)
+{
+    struct ScaledRGBDrawContext *ctx = (struct ScaledRGBDrawContext *)ctx_ptr;
+
+    for (int y = 0; y < ctx->dest_height; y++)
+    {
+        int src_y = (int)(y * ctx->scale_y);
+        if (src_y >= ctx->src_height)
+            src_y = ctx->src_height - 1;
+
+        for (int x = 0; x < ctx->dest_width; x++)
+        {
+            int src_x = (int)(x * ctx->scale_x);
+            if (src_x >= ctx->src_width)
+                src_x = ctx->src_width - 1;
+
+            int idx = (src_y * ctx->src_width + src_x) * 3;
+            int r = ctx->rgb_data[idx];
+            int g = ctx->rgb_data[idx + 1];
+            int b = ctx->rgb_data[idx + 2];
+
+            gpu_draw(ctx->start_x + x, ctx->start_y + y, r, g, b);
+        }
+    }
+}
+
+int getFuncToDrawScaledRGBFill(
+    const char *path,
+    int start_x, int start_y,
+    int dest_width, int dest_height,
+    DRAW_CALLBACK *out_func,
+    void **out_ctx)
 {
     int fd = fopen(path, "r");
     if (ISERR(fd))
     {
         simple_serial_puts("Failed to open .rgb file.\n");
-        return;
+        return -1;
     }
 
     uint32_t src_width = 0, src_height = 0;
-    if (fread(&src_width, sizeof(uint32_t), 1, fd) != 1)
-    {
-        simple_serial_puts("Failed to read width.\n");
-        fclose(fd);
-        return;
-    }
 
-    if (fread(&src_height, sizeof(uint32_t), 1, fd) != 1)
+    if (fread(&src_width, sizeof(uint32_t), 1, fd) != 1 ||
+        fread(&src_height, sizeof(uint32_t), 1, fd) != 1)
     {
-        simple_serial_puts("Failed to read height.\n");
+        simple_serial_puts("Failed to read width/height.\n");
         fclose(fd);
-        return;
+        return -2;
     }
 
     if (src_width == 0 || src_height == 0 || dest_width == 0 || dest_height == 0)
     {
         simple_serial_puts("Invalid image or destination dimensions.\n");
         fclose(fd);
-        return;
+        return -3;
     }
 
     int image_size = src_width * src_height * 3;
-
     if (image_size <= 0)
     {
         simple_serial_puts("Invalid image size.\n");
         fclose(fd);
-        return;
+        return -4;
     }
 
     uint8_t *rgb_data = kzalloc(image_size);
-
     if (!rgb_data)
     {
         simple_serial_puts("Memory allocation failed.\n");
         fclose(fd);
-        return;
+        return -5;
     }
 
     if (fread(rgb_data, image_size, 1, fd) != 1)
@@ -140,38 +164,32 @@ void draw_scaled_rgb_fill(const char *path, int start_x, int start_y, int dest_w
         simple_serial_puts("Failed to read image data.\n");
         kfree(rgb_data);
         fclose(fd);
-        return;
+        return -6;
     }
 
-    // Use floating-point scaling for better accuracy
-    float scale_x = (float)src_width / dest_width;
-    float scale_y = (float)src_height / dest_height;
-
-    for (int y = 0; y < dest_height; y++)
-    {
-        int src_y = (int)(y * scale_y);
-        if (src_y >= (int)src_height)
-            src_y = src_height - 1;
-        for (int x = 0; x < dest_width; x++)
-        {
-            int src_x = (int)(x * scale_x);
-            if (src_x >= (int)src_width)
-                src_x = src_width - 1;
-            int idx = (src_y * src_width + src_x) * 3;
-            if (idx < 0 || idx + 2 >= image_size)
-            {
-                // Should never happen, but safety check
-                continue;
-            }
-            int r = rgb_data[idx];
-            int g = rgb_data[idx + 1];
-            int b = rgb_data[idx + 2];
-            gpu_draw(start_x + x, start_y + y, r, g, b);
-        }
-    }
-
-    kfree(rgb_data);
     fclose(fd);
+
+    struct ScaledRGBDrawContext *ctx = kzalloc(sizeof(struct ScaledRGBDrawContext));
+    if (!ctx)
+    {
+        kfree(rgb_data);
+        return -7;
+    }
+
+    ctx->start_x = start_x;
+    ctx->start_y = start_y;
+    ctx->dest_width = dest_width;
+    ctx->dest_height = dest_height;
+    ctx->src_width = src_width;
+    ctx->src_height = src_height;
+    ctx->scale_x = (float)src_width / dest_width;
+    ctx->scale_y = (float)src_height / dest_height;
+    ctx->rgb_data = rgb_data;
+
+    *out_func = draw_scaled_rgb_fill;
+    *out_ctx = ctx;
+
+    return 0; // success
 }
 
 void DrawCharacterScaled(

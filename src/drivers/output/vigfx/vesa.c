@@ -68,6 +68,21 @@ static void vesa_clear(int r, int g, int b)
     }
 }
 
+static uint32_t vesa_get_pixel(int x, int y)
+{
+    VBEInfoBlock *VBE = (VBEInfoBlock *)VBEInfoAddress;
+    unsigned short *buffer = (unsigned short *)ScreenBufferAddress;
+    int index = y * VBE->x_resolution + x;
+    unsigned short pixel = buffer[index];
+    
+    // Convert from 5:6:5 format to 8-bit per channel and pack into 0xRRGGBB
+    uint8_t r = ((pixel >> 8) & 0xF8) | ((pixel >> 13) & 0x07);
+    uint8_t g = ((pixel >> 3) & 0xFC) | ((pixel >> 9) & 0x03);
+    uint8_t b = ((pixel << 3) & 0xF8) | ((pixel >> 2) & 0x07);
+
+    return (r << 16) | (g << 8) | b;
+}
+
 static void vesa_flush()
 {
     VBEInfoBlock *VBE = (VBEInfoBlock *)VBEInfoAddress;
@@ -86,6 +101,7 @@ static struct graphics_device vesa_device = {
     .draw_pixel = vesa_draw_pixel,
     .clear = vesa_clear,
     .flush = vesa_flush,
+    .get_pixel = vesa_get_pixel,
     .width = 0, // filled on init
     .height = 0};
 

@@ -17,6 +17,9 @@ void kernel_page(void);
 // Registers kernel registers or setups CPU state (assumed)
 void kernel_registers(void);
 
+// Enable interrupts
+void enable_interrupts(void);
+
 // Error handling macros
 #define ERROR(value) ((void *)(value))
 #define ERROR_I(value) ((int)(value))

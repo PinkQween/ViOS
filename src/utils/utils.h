@@ -23,7 +23,23 @@ void int_to_ascii(int num, char *str);
  */
 int almost_equal(double a, double b, double epsilon);
 
-void draw_scaled_rgb_fill(const char *path, int start_x, int start_y, int dest_width, int dest_height);
+typedef void (*DRAW_CALLBACK)(void *context);
+
+struct ScaledRGBDrawContext
+{
+    int start_x, start_y;
+    int dest_width, dest_height;
+    int src_width, src_height;
+    float scale_x, scale_y;
+    uint8_t *rgb_data;
+};
+
+void draw_scaled_rgb_fill(void *ctx_ptr);
+
+int getFuncToDrawScaledRGBFill(
+    const char *path, int start_x, int start_y,
+    int dest_width, int dest_height,
+    DRAW_CALLBACK *out_func, void **out_ctx);
 
 void print(char *str, int x, int y, int r, int g, int b, float scale_x, float scale_y);
 

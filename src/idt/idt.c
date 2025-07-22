@@ -32,11 +32,28 @@ void interrupt_handler(int interrupt, struct interrupt_frame *frame)
     kernel_page();
     if (interrupt_callbacks[interrupt] != 0)
     {
-        task_current_save_state(frame);
+        // Only save task state if there's a current task
+        if (task_current())
+        {
+            task_current_save_state(frame);
+        }
         interrupt_callbacks[interrupt](frame);
     }
 
-    task_page();
+    // Only restore task page if there's a current task
+    if (task_current())
+    {
+        task_page();
+    }
+    
+    // Send EOI (End of Interrupt) to the appropriate PIC(s)
+    // For interrupts 0x28-0x2F (IRQ 8-15), we need to send EOI to both PICs
+    if (interrupt >= 0x28 && interrupt <= 0x2F)
+    {
+        // Send EOI to slave PIC first
+        outb(0xA0, 0x20);
+    }
+    // Always send EOI to master PIC
     outb(0x20, 0x20);
 }
 
@@ -115,7 +132,8 @@ void isr80h_register_command(int command_id, ISR80H_COMMAND command)
 
     if (isr80h_commands[command_id])
     {
-        panic("Your attempting to overwrite an existing command\n");
+        // Command already registered, skip silently to avoid panic on reboot
+        return;
     }
 
     isr80h_commands[command_id] = command;

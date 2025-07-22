@@ -291,6 +291,12 @@ void *task_virtual_address_to_physical(struct task *task, void *virtual_address)
 
 void task_scheduler_tick()
 {
+    // If no tasks exist yet, just return
+    if (!task_head)
+    {
+        return;
+    }
+    
     // Wake up any sleeping tasks whose wakeup_tick has passed
     struct task *t = task_head;
     unsigned long now = timer_get_ticks();
@@ -302,6 +308,7 @@ void task_scheduler_tick()
         }
         t = t->next;
     } while (t && t != task_head);
+    
     // Only switch if there is a runnable task
     struct task *next = task_get_next();
     if (next && next != current_task)
