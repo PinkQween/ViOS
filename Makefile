@@ -71,11 +71,12 @@ prepare_dirs:
 
 all: build install
 
-build: prepare_dirs fonts ./bin/boot_with_size.bin ./bin/kernel.bin user_programs ./bin/os.bin
+build: prepare_dirs data ./bin/boot_with_size.bin ./bin/kernel.bin user_programs ./bin/os.bin
 	@echo "Build complete! User programs built but not installed to disk image."
 	@echo "To install user programs to disk image, run: make install"
 
-fonts:
+data:
+	./utilities/generateLogo.sh
 	./utilities/generateFonts.sh
 
 install: ./bin/os.bin

@@ -162,7 +162,7 @@ void kernel_init_devices(void)
 
 struct mouse *kernel_init_graphics(void)
 {
-    // Mouse initialization with dynamic screen size calculation
+    graphics_init();
     simple_serial_puts("DEBUG: About to initialize PS/2 mouse\n");
     struct mouse *mouse = ps2_mouse_init();
     if (!mouse)
@@ -172,16 +172,9 @@ struct mouse *kernel_init_graphics(void)
     }
     simple_serial_puts("DEBUG: PS/2 mouse initialized\n");
 
-    // Get screen dimensions and set mouse position to center
-    uint32_t screen_width = 800;  // Default width
-    uint32_t screen_height = 600; // Default height
-
-    // TODO: Get actual screen dimensions from GPU/framebuffer
-    // For now, use default VGA-compatible resolution
-
-    mouse->x = screen_width / 2;
-    mouse->y = screen_height / 2;
-
+    mouse->x = gpu_screen_width() / 2;
+    mouse->y = gpu_screen_height() / 2;
+    
     simple_serial_puts("DEBUG: Mouse position set to center: ");
     print_hex32(mouse->x);
     simple_serial_puts(", ");
@@ -194,15 +187,13 @@ struct mouse *kernel_init_graphics(void)
 void kernel_display_boot_message(void)
 {
     simple_serial_puts("DEBUG: Displaying boot message\n");
-    graphics_init();
-    simple_serial_puts("ViOS ViGFX System Initialized\n");
-    for (int i = 0; i < gpu_screen_height(); i++)
-    {
-        for (int j = 0; j < gpu_screen_width(); j++)
-        {
-            gpu_draw(j, i, 255, 255, 255); // Clear screen to black
-        }
-    }
+
+    draw_scaled_rgb_fill("0:/sys/assets/logo.rgb", 0, 0, gpu_screen_width(), gpu_screen_height());
+
+    const int scale = 4.5;
+    char* bootMessage = "Booting...";
+
+    print(bootMessage, (gpu_screen_width() / 2) - (FONT_ATARIST8X16.width * scale * sizeof(bootMessage)), (gpu_screen_height() / 12 * 10) - (FONT_ATARIST8X16.height * scale), 255, 255, 255, scale, scale);
 
     gpu_flush_screen();
 

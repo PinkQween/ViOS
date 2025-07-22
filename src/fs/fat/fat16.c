@@ -7,7 +7,6 @@
 #include "status.h"
 #include "kernel.h"
 #include <stdint.h>
-#include "debug/simple_serial.h"
 
 #define VIOS_FAT16_SIGNATURE 0x29
 #define VIOS_FAT16_FAT_ENTRY_SIZE 0x02
@@ -208,7 +207,6 @@ out:
 
 int fat16_get_root_directory(struct disk *disk, struct fat_private *fat_private, struct fat_directory *directory)
 {
-    simple_serial_puts("DEBUG: fat16_get_root_directory called\n");
     int res = 0;
     struct fat_directory_item *dir = 0x00;
     struct fat_header *primary_header = &fat_private->header.primary_header;
@@ -222,26 +220,7 @@ int fat16_get_root_directory(struct disk *disk, struct fat_private *fat_private,
         total_sectors += 1;
     }
 
-    simple_serial_puts("DEBUG: FAT16 header values:\n");
-    char msg[64];
-    snprintf(msg, sizeof(msg), "  fat_copies: %d\n", primary_header->fat_copies);
-    simple_serial_puts(msg);
-    snprintf(msg, sizeof(msg), "  sectors_per_fat: %d\n", primary_header->sectors_per_fat);
-    simple_serial_puts(msg);
-    snprintf(msg, sizeof(msg), "  reserved_sectors: %d\n", primary_header->reserved_sectors);
-    simple_serial_puts(msg);
-    snprintf(msg, sizeof(msg), "  root_dir_entries: %d\n", root_dir_entries);
-    simple_serial_puts(msg);
-    snprintf(msg, sizeof(msg), "  root_dir_sector_pos: %d\n", root_dir_sector_pos);
-    simple_serial_puts(msg);
-    snprintf(msg, sizeof(msg), "  root_dir_size: %d\n", root_dir_size);
-    simple_serial_puts(msg);
-    snprintf(msg, sizeof(msg), "  total_sectors: %d\n", total_sectors);
-    simple_serial_puts(msg);
-
     int total_items = fat16_get_total_items_for_directory(disk, root_dir_sector_pos);
-    snprintf(msg, sizeof(msg), "DEBUG: total_items found: %d\n", total_items);
-    simple_serial_puts(msg);
 
     dir = kzalloc(root_dir_size);
     if (!dir)
@@ -280,7 +259,6 @@ err_out:
 
 int fat16_resolve(struct disk *disk)
 {
-    simple_serial_puts("DEBUG: Entering fat16_resolve\n");
     int res = 0;
     struct fat_private *fat_private = kzalloc(sizeof(struct fat_private));
     fat16_init_private(disk, fat_private);
@@ -324,7 +302,6 @@ out:
         kfree(fat_private);
         disk->fs_private = 0;
     }
-    simple_serial_puts("DEBUG: fat16_resolve returning\n");
     return res;
 }
 
@@ -608,42 +585,19 @@ struct fat_item *fat16_new_fat_item_for_directory_item(struct disk *disk, struct
 
 struct fat_item *fat16_find_item_in_directory(struct disk *disk, struct fat_directory *directory, const char *name)
 {
-    simple_serial_puts("DEBUG: fat16_find_item_in_directory called with name: ");
-    simple_serial_puts(name);
-    simple_serial_puts("\n");
-
     struct fat_item *f_item = 0;
     char tmp_filename[VIOS_MAX_PATH];
-
-    simple_serial_puts("DEBUG: Searching through ");
-    char msg[32];
-    snprintf(msg, sizeof(msg), "%d", directory->total);
-    simple_serial_puts(msg);
-    simple_serial_puts(" directory entries\n");
-
+    
     for (int i = 0; i < directory->total; i++)
     {
         fat16_get_full_relative_filename(&directory->item[i], tmp_filename, sizeof(tmp_filename));
 
-        simple_serial_puts("DEBUG: Comparing with directory entry ");
-        snprintf(msg, sizeof(msg), "%d", i);
-        simple_serial_puts(msg);
-        simple_serial_puts(": '");
-        simple_serial_puts(tmp_filename);
-        simple_serial_puts("'\n");
-
         if (istrncmp(tmp_filename, name, sizeof(tmp_filename)) == 0)
         {
-            simple_serial_puts("DEBUG: Found matching file!\n");
             // Found it let's create a new fat_item
             f_item = fat16_new_fat_item_for_directory_item(disk, &directory->item[i]);
             break;
         }
-    }
-
-    if (!f_item)
-    {
-        simple_serial_puts("DEBUG: No matching file found\n");
     }
 
     return f_item;
