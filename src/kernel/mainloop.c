@@ -16,32 +16,30 @@ void kernel_run_main_loop()
     simple_serial_puts("DEBUG: ===== ENTERING MAIN LOOP =====\n");
     simple_serial_puts("DEBUG: Entering main loop\n");
 
-    // struct process *process = 0;
-    // int res = process_load_switch("0:/sbin/idle", &process);
-    // if (res != VIOS_ALL_OK)
-    // {
-    //     simple_serial_puts("DEBUG: Failed to load idle process, continuing without it\n");
-    // }
-    // else
-    // {
-    //     simple_serial_puts("DEBUG: Successfully loaded idle process\n");
-    // }
+    struct process *process = 0;
+    int res = process_load_switch("0:/sbin/idle", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        simple_serial_puts("DEBUG: Failed to load idle process, continuing without it\n");
+    }
+    else
+    {
+        simple_serial_puts("DEBUG: Successfully loaded idle process\n");
+    }
 
-    // res = process_load_switch("0:/bin/beep", &process); // TODO: update to ("0:/sbin/reloivd", &process);
-    // if (res != VIOS_ALL_OK)
-    // {
-    //     simple_serial_puts("DEBUG: Failed to load beep process, continuing without it\n");
-    // }
-    // else
-    // {
-    //     simple_serial_puts("DEBUG: Successfully loaded beep process\n");
-    // }
+    res = process_load_switch("0:/sbin/reloivd", &process); // TODO: update to ("0:/sbin/reloivd", &process);
+    if (res != VIOS_ALL_OK)
+    {
+        simple_serial_puts("DEBUG: Failed to load beep process, continuing without it\n");
+    }
+    else
+    {
+        simple_serial_puts("DEBUG: Successfully loaded beep process\n");
+    }
 
-    // task_run_first_ever_task();
+    task_run_first_ever_task();
 
-    // Load background image once at startup
-
-    global_mouse->set_speed(2);
+    global_mouse->set_speed(1.5);
 
     DRAW_CALLBACK bg_draw_func = NULL;
     void *bg_draw_ctx = NULL;
@@ -53,13 +51,16 @@ void kernel_run_main_loop()
         simple_serial_puts("Failed to load background.\n");
     }
 
-    // Draw background once initially
+    // Draw background and button once initially
     bg_draw_func(bg_draw_ctx);
-
+    buttonBySize(power_restart, "Restart",
+                 gpu_screen_width() / 2, gpu_screen_height() / 3 * 2,
+                 0, 0, 0, 3, 3, 255, 255, 255, 215, 180, 90);
+    
     // Track previous mouse position to detect movement
     int prev_mouse_x = -1;
     int prev_mouse_y = -1;
-
+    
     // Buffer to store background pixels under cursor (11x11 max area)
     struct
     {
@@ -69,10 +70,6 @@ void kernel_run_main_loop()
 
     while (1)
     {
-        buttonBySize(power_restart, "Restart",
-                     gpu_screen_width() / 2, gpu_screen_height() / 3 * 2,
-                     0, 0, 0, 3, 3, 255, 255, 255, 180, 90);
-
         // Check if mouse position has changed
         if (global_mouse)
         {
@@ -114,7 +111,7 @@ void kernel_run_main_loop()
             {
                 for (int x = 0; x <= 11 - y && global_mouse->x + x < gpu_screen_width(); x++)
                 {
-                    gpu_draw(global_mouse->x + x, global_mouse->y + y, 255, 255, 255); // black
+                    gpu_draw(global_mouse->x + x, global_mouse->y + y, 255, 255, 255);
                 }
             }
 
@@ -123,7 +120,7 @@ void kernel_run_main_loop()
             {
                 for (int x = 1; x <= 10 - y && global_mouse->x + x < gpu_screen_width(); x++)
                 {
-                    gpu_draw(global_mouse->x + x, global_mouse->y + y, 0, 0, 0); // white
+                    gpu_draw(global_mouse->x + x, global_mouse->y + y, 0, 0, 0);
                 }
             }
         }

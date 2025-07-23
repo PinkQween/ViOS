@@ -5,7 +5,7 @@
 #include "task/task.h"
 
 struct interrupt_frame;
-void *isr80h_command4_putchar_serial(struct interrupt_frame *frame);
-void *isr80h_command5_print_serial(struct interrupt_frame *frame);
+void *isr80h_command_putchar_serial(struct interrupt_frame *frame);
+void *isr80h_command_print_serial(struct interrupt_frame *frame);
 
 #endif

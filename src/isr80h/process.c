@@ -1,7 +1,7 @@
 #include "process.h"
 #include "debug/simple_serial.h"
 
-void *isr80h_command1_process_load_start(struct interrupt_frame *frame)
+void *isr80h_command_process_load_start(struct interrupt_frame *frame)
 {
     void *filename_user_ptr = task_get_stack_item(task_current(), 0);
     char filename[VIOS_MAX_PATH];
@@ -29,7 +29,7 @@ out:
     return 0;
 }
 
-void *isr80h_command2_invoke_system_command(struct interrupt_frame *frame)
+void *isr80h_command_invoke_system_command(struct interrupt_frame *frame)
 {
     struct command_argument *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
     if (!arguments)
@@ -64,7 +64,7 @@ void *isr80h_command2_invoke_system_command(struct interrupt_frame *frame)
     return 0;
 }
 
-void *isr80h_command11_get_program_arguments(struct interrupt_frame *frame)
+void *isr80h_command_get_program_arguments(struct interrupt_frame *frame)
 {
     struct process *process = task_current()->process;
     struct process_arguments *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
@@ -73,7 +73,7 @@ void *isr80h_command11_get_program_arguments(struct interrupt_frame *frame)
     return 0;
 }
 
-void *isr80h_command0_exit(struct interrupt_frame *frame)
+void *isr80h_command_exit(struct interrupt_frame *frame)
 {
     struct process *process = task_current()->process;
 

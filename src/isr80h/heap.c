@@ -3,7 +3,7 @@
 #include "task/process.h"
 #include <stddef.h>
 
-void *isr80h_command7_malloc(struct interrupt_frame *frame)
+void *isr80h_command_malloc(struct interrupt_frame *frame)
 {
     size_t size = (int)task_get_stack_item(task_current(), 0);
 
@@ -17,7 +17,7 @@ void *isr80h_command7_malloc(struct interrupt_frame *frame)
     return process_malloc(task_current()->process, size);
 }
 
-void *isr80h_command8_free(struct interrupt_frame *frame)
+void *isr80h_command_free(struct interrupt_frame *frame)
 {
     void *ptr_to_free = task_get_stack_item(task_current(), 0);
 

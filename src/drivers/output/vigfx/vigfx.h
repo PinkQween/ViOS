@@ -24,5 +24,6 @@ uint32_t gpu_get_pixel(int x, int y);
 // Access to current screen size
 int gpu_screen_width(void);
 int gpu_screen_height(void);
+void gpu_draw_alpha(int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
 #endif

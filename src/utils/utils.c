@@ -301,7 +301,7 @@ void button(void (*CallbackFunction)(void), char *str,
             int x, int y,
             int fgr, int fgg, int fgb,            // Text color
             float scale_x, float scale_y,   // Text scaling
-            int bgr, int bgg, int bgb,      // Background color
+            int bgr, int bgg, int bgb, int bga,      // Background color
             int pt, int pb, int pl, int pr) // Padding: top, bottom, left, right
 {
     // Compute text dimensions
@@ -321,7 +321,7 @@ void button(void (*CallbackFunction)(void), char *str,
     {
         for (int dx = 0; dx < button_width; dx++)
         {
-            gpu_draw(x + dx, y + dy, bgr, bgg, bgb);
+            gpu_draw_alpha(x + dx, y + dy, bgr, bgg, bgb, bga);
         }
     }
 
@@ -351,7 +351,7 @@ void buttonBySize(void (*CallbackFunction)(void), char *str,
                   int x, int y,
                   int fgr, int fgg, int fgb,
                   float scale_x, float scale_y,
-                  int bgr, int bgg, int bgb,
+                  int bgr, int bgg, int bgb, int bga,
                   int width, int height)
 {
     int left = x - width / 2;
@@ -362,7 +362,7 @@ void buttonBySize(void (*CallbackFunction)(void), char *str,
     {
         for (int dx = 0; dx < width; dx++)
         {
-            gpu_draw(left + dx, top + dy, bgr, bgg, bgb);
+            gpu_draw_alpha(left + dx, top + dy, bgr, bgg, bgb, bga);
         }
     }
 

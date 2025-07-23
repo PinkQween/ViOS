@@ -65,16 +65,16 @@ void print_ex(const struct font_descriptor *font, char *str, int x, int y, int r
 
 void button(void (*CallbackFunction)(void), char *str,
             int x, int y,
-            int fgr, int fgg, int fgb,            // Text color
-            float scale_x, float scale_y,   // Text scaling
-            int bgr, int bgg, int bgb,      // Background color
-            int pt, int pb, int pl, int pr); // Padding: top, bottom, left, right
+            int fgr, int fgg, int fgb,          // Text color
+            float scale_x, float scale_y,       // Text scaling
+            int bgr, int bgg, int bgb, int bga, // Background color
+            int pt, int pb, int pl, int pr);    // Padding: top, bottom, left, right
 
 void buttonBySize(void (*CallbackFunction)(void), char *str,
                   int x, int y,
                   int fgr, int fgg, int fgb,
                   float scale_x, float scale_y,
-                  int bgr, int bgg, int bgb,
+                  int bgr, int bgg, int bgb, int bga,
                   int width, int height);
 
 #endif

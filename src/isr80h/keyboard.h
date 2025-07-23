@@ -4,6 +4,6 @@
 #include "drivers/input/keyboard/keyboard.h"
 
 struct interrupt_frame;
-void *isr80h_command3_getkey(struct interrupt_frame *frame);
+void *isr80h_command_getkey(struct interrupt_frame *frame);
 
 #endif

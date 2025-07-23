@@ -21,6 +21,7 @@
 #include "debug/simple_serial.h"
 #include "utils/utils.h"
 #include "drivers/output/vigfx/vigfx.h"
+#include "graphics/window_manager.h"
 
 // External declarations
 extern struct tss tss;
@@ -121,6 +122,9 @@ void kernel_init_paging(void)
 void kernel_init_graphics(void)
 {
     graphics_init();
+    
+    // Initialize window manager after graphics
+    window_manager_init();
     
     global_mouse->x = gpu_screen_width() / 2;
     global_mouse->y = gpu_screen_height() / 2;   

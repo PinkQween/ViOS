@@ -7,8 +7,8 @@
 #include "kernel.h"
 
 struct interrupt_frame;
-void *isr80h_command10_sleep(struct interrupt_frame *frame);
-void *isr80h_command12_usleep(struct interrupt_frame *frame);
-void *isr80h_command13_nanosleep(struct interrupt_frame *frame);
+void *isr80h_command_sleep(struct interrupt_frame *frame);
+void *isr80h_command_usleep(struct interrupt_frame *frame);
+void *isr80h_command_nanosleep(struct interrupt_frame *frame);
 
 #endif

@@ -10,6 +10,7 @@
 #include "serial.h"
 #include "timers.h"
 #include "audio.h"
+#include "graphics.h"
 
 struct interrupt_frame;
 
@@ -65,9 +66,9 @@ enum SystemCommands
     SYSTEM_COMMAND_NETWORK_RESERVED8,
     SYSTEM_COMMAND_NETWORK_RESERVED9,
 
-    // Reserved: Graphics (40-49)
-    SYSTEM_COMMAND_GRAPHICS_RESERVED0 = 40,
-    SYSTEM_COMMAND_GRAPHICS_RESERVED1,
+    // Graphics Commands (40-49)
+    SYSTEM_COMMAND_FLUSH_SCREEN = 40,
+    SYSTEM_COMMAND_DRAW_PIXEL,
     SYSTEM_COMMAND_GRAPHICS_RESERVED2,
     SYSTEM_COMMAND_GRAPHICS_RESERVED3,
     SYSTEM_COMMAND_GRAPHICS_RESERVED4,
@@ -84,28 +85,32 @@ enum SystemCommands
 void isr80h_register_commands();
 
 // Process Management
-void *isr80h_command0_exit(struct interrupt_frame *frame);
-void *isr80h_command1_process_load_start(struct interrupt_frame *frame);
-void *isr80h_command2_invoke_system_command(struct interrupt_frame *frame);
+void *isr80h_command_exit(struct interrupt_frame *frame);
+void *isr80h_command_process_load_start(struct interrupt_frame *frame);
+void *isr80h_command_invoke_system_command(struct interrupt_frame *frame);
 
 // I/O Operations
-void *isr80h_command3_getkey(struct interrupt_frame *frame);
-void *isr80h_command4_putchar_serial(struct interrupt_frame *frame);
-void *isr80h_command5_print_serial(struct interrupt_frame *frame);
+void *isr80h_command_getkey(struct interrupt_frame *frame);
+void *isr80h_command_putchar_serial(struct interrupt_frame *frame);
+void *isr80h_command_print_serial(struct interrupt_frame *frame);
 
 // Memory Management
-void *isr80h_command7_malloc(struct interrupt_frame *frame);
-void *isr80h_command8_free(struct interrupt_frame *frame);
+void *isr80h_command_malloc(struct interrupt_frame *frame);
+void *isr80h_command_free(struct interrupt_frame *frame);
 
 // File Operations
-void *isr80h_command9_read(struct interrupt_frame *frame);
+void *isr80h_command_read(struct interrupt_frame *frame);
 
 // System Utilities
-void *isr80h_command10_sleep(struct interrupt_frame *frame);
-void *isr80h_command11_get_program_arguments(struct interrupt_frame *frame);
+void *isr80h_command_sleep(struct interrupt_frame *frame);
+void *isr80h_command_get_program_arguments(struct interrupt_frame *frame);
 // Time/Delay Functions
-void *isr80h_command12_usleep(struct interrupt_frame *frame);
-void *isr80h_command13_nanosleep(struct interrupt_frame *frame);
+void *isr80h_command_usleep(struct interrupt_frame *frame);
+void *isr80h_command_nanosleep(struct interrupt_frame *frame);
+
+// Graphics Commands
+void *isr80h_command_flush(struct interrupt_frame *frame);
+void *isr80h_command_draw_pixel(struct interrupt_frame *frame);
 
 // Audio
 void *isr80h_command_audio(struct interrupt_frame *frame);

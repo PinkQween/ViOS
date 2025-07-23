@@ -44,6 +44,8 @@ FILES = \
   ./build/isr80h/process.o \
   ./build/isr80h/serial.o \
   ./build/isr80h/timers.o \
+  ./build/isr80h/graphics.o \
+  ./build/graphics/window_manager.o \
   ./build/panic/panic.o \
   ./build/debug/simple_serial.o \
   ./build/string/string.o \
