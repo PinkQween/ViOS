@@ -5,6 +5,9 @@
 #include "memory/heap/kheap.h"
 #include "fs/file.h"
 #include "kernel.h"
+#include "drivers/input/mouse/mouse.h"
+#include "string/string.h"
+#include "math/fpu_math.h"
 
 // Font descriptor definitions
 const struct font_descriptor FONT_ATARIST8X16 = {
@@ -292,4 +295,98 @@ void print_ex(const struct font_descriptor *font, char *str, int x, int y, int r
 void print(char *str, int x, int y, int r, int g, int b, float scale_x, float scale_y)
 {
     print_ex(&FONT_ATARIST8X16, str, x, y, r, g, b, scale_x, scale_y);
+}
+
+void button(void (*CallbackFunction)(void), char *str,
+            int x, int y,
+            int fgr, int fgg, int fgb,            // Text color
+            float scale_x, float scale_y,   // Text scaling
+            int bgr, int bgg, int bgb,      // Background color
+            int pt, int pb, int pl, int pr) // Padding: top, bottom, left, right
+{
+    // Compute text dimensions
+    int text_width = 0;
+    for (int i = 0; str[i] != '\0'; i++)
+    {
+        text_width += FONT_ATARIST8X16.get_advance(str[i]) * scale_x;
+    }
+    int text_height = FONT_ATARIST8X16.height * scale_y;
+
+    // Compute button width and height
+    int button_width = pl + text_width + pr;
+    int button_height = pt + text_height + pb;
+
+    // Draw background
+    for (int dy = 0; dy < button_height; dy++)
+    {
+        for (int dx = 0; dx < button_width; dx++)
+        {
+            gpu_draw(x + dx, y + dy, bgr, bgg, bgb);
+        }
+    }
+
+    // Draw text in center with padding offset
+    int text_x = x + pl;
+    int text_y = y + pt;
+    print(str, text_x, text_y, fgr, fgg, fgb, scale_x, scale_y);
+
+    if (global_mouse->left && global_mouse->x >= x && global_mouse->x < x + button_width &&
+        global_mouse->y >= y && global_mouse->y < y + button_height)
+    {
+        // Call the callback function if mouse is clicked within button area
+        if (CallbackFunction)
+        {
+            CallbackFunction();
+        }
+    }
+
+    if (global_mouse->x >= x && global_mouse->x < x + button_width &&
+        global_mouse->y >= y && global_mouse->y < y + button_height)
+    {
+        // hover code
+    }
+}
+
+void buttonBySize(void (*CallbackFunction)(void), char *str,
+                  int x, int y,
+                  int fgr, int fgg, int fgb,
+                  float scale_x, float scale_y,
+                  int bgr, int bgg, int bgb,
+                  int width, int height)
+{
+    int left = x - width / 2;
+    int top = y - height / 2;
+
+    // Draw button background
+    for (int dy = 0; dy < height; dy++)
+    {
+        for (int dx = 0; dx < width; dx++)
+        {
+            gpu_draw(left + dx, top + dy, bgr, bgg, bgb);
+        }
+    }
+
+    // Centered text position
+    int text_x = x - (int)(fpu_mul(fpu_mul(FONT_ATARIST8X16.width, scale_x), strlen(str)) / 2.0);
+    int text_y = y - (int)fpu_mul(FONT_ATARIST8X16.height, scale_y) / 2.0;
+
+    print(str, text_x, text_y, fgr, fgg, fgb, scale_x, scale_y);
+
+    // Check for click within the new button bounds
+    if (global_mouse->left &&
+        global_mouse->x >= left && global_mouse->x < left + width &&
+        global_mouse->y >= top && global_mouse->y < top + height)
+    {
+        if (CallbackFunction)
+        {
+            CallbackFunction();
+        }
+    }
+
+    // Optional: hover code
+    if (global_mouse->x >= left && global_mouse->x < left + width &&
+        global_mouse->y >= top && global_mouse->y < top + height)
+    {
+        // Hover logic here
+    }
 }

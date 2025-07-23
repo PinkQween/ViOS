@@ -102,21 +102,6 @@ void ps2_mouse_handle_interrupt(struct interrupt_frame *frame)
     mouse_right = packet[0] & 0x02;
     mouse_middle = packet[0] & 0x04;
 
-    simple_serial_puts("DEBUG: Mouse position updated: x=");
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%d", mouse_x);
-    simple_serial_puts(buf);
-    simple_serial_puts(" y=");
-    snprintf(buf, sizeof(buf), "%d", mouse_y);
-    simple_serial_puts(buf);
-    simple_serial_puts(" dx=");
-    snprintf(buf, sizeof(buf), "%d", dx);
-    simple_serial_puts(buf);
-    simple_serial_puts(" dy=");
-    snprintf(buf, sizeof(buf), "%d", dy);
-    simple_serial_puts(buf);
-    simple_serial_puts("\n");
-    
     // Call handle_packet to update the struct
     ps2_mouse_handle_packet(&ps2_mouse);
     

@@ -9,6 +9,7 @@
 #include "drivers/output/vigfx/vigfx.h"
 #include "utils/utils.h"
 #include "memory/heap/kheap.h"
+#include "drivers/io/power/power.h"
 
 void kernel_run_main_loop()
 {
@@ -54,76 +55,79 @@ void kernel_run_main_loop()
 
     // Draw background once initially
     bg_draw_func(bg_draw_ctx);
-    
+
     // Track previous mouse position to detect movement
     int prev_mouse_x = -1;
     int prev_mouse_y = -1;
-    
+
     // Buffer to store background pixels under cursor (11x11 max area)
-    struct {
+    struct
+    {
         uint8_t r, g, b;
     } cursor_bg_buffer[11][11];
     int buffer_valid = 0;
-    
+
     while (1)
     {
-        int needs_redraw = 0;
-        
+        buttonBySize(power_restart, "Restart",
+                     gpu_screen_width() / 2, gpu_screen_height() / 3 * 2,
+                     0, 0, 0, 3, 3, 255, 255, 255, 180, 90);
+
         // Check if mouse position has changed
         if (global_mouse)
         {
-            if (prev_mouse_x != global_mouse->x || prev_mouse_y != global_mouse->y)
+            // Restore old cursor area using saved background pixels
+            if (prev_mouse_x >= 0 && prev_mouse_y >= 0 && buffer_valid)
             {
-                needs_redraw = 1;
-                
-                // Restore old cursor area using saved background pixels
-                if (prev_mouse_x >= 0 && prev_mouse_y >= 0 && buffer_valid)
+                for (int y = 0; y <= 11 && prev_mouse_y + y < gpu_screen_height(); y++)
                 {
-                    for (int y = 0; y <= 10 && prev_mouse_y + y < gpu_screen_height(); y++)
+                    for (int x = 0; x <= 11 - y && prev_mouse_x + x < gpu_screen_width(); x++)
                     {
-                        for (int x = 0; x <= 10 - y && prev_mouse_x + x < gpu_screen_width(); x++)
-                        {
-                            gpu_draw(prev_mouse_x + x, prev_mouse_y + y, 
-                                    cursor_bg_buffer[y][x].r,
-                                    cursor_bg_buffer[y][x].g,
-                                    cursor_bg_buffer[y][x].b);
-                        }
-                    }
-                }
-                
-                // Save background pixels under new cursor position
-                for (int y = 0; y <= 10 && global_mouse->y + y < gpu_screen_height(); y++)
-                {
-                    for (int x = 0; x <= 10 - y && global_mouse->x + x < gpu_screen_width(); x++)
-                    {
-                        // Get the current pixel color at this position
-                        uint32_t pixel = gpu_get_pixel(global_mouse->x + x, global_mouse->y + y);
-                        cursor_bg_buffer[y][x].r = (pixel >> 16) & 0xFF;
-                        cursor_bg_buffer[y][x].g = (pixel >> 8) & 0xFF;
-                        cursor_bg_buffer[y][x].b = pixel & 0xFF;
-                    }
-                }
-                buffer_valid = 1;
-                
-                // Update mouse position tracking
-                prev_mouse_x = global_mouse->x;
-                prev_mouse_y = global_mouse->y;
-                
-                // Draw new mouse cursor
-                for (int y = 0; y <= 10 && global_mouse->y + y < gpu_screen_height(); y++)
-                {
-                    for (int x = 0; x <= 10 - y && global_mouse->x + x < gpu_screen_width(); x++)
-                    {
-                        gpu_draw(global_mouse->x + x, global_mouse->y + y, 255, 255, 255);
+                        gpu_draw(prev_mouse_x + x, prev_mouse_y + y,
+                                 cursor_bg_buffer[y][x].r,
+                                 cursor_bg_buffer[y][x].g,
+                                 cursor_bg_buffer[y][x].b);
                     }
                 }
             }
+
+            // Save background pixels under new cursor position
+            for (int y = 0; y <= 11 && global_mouse->y + y < gpu_screen_height(); y++)
+            {
+                for (int x = 0; x <= 11 - y && global_mouse->x + x < gpu_screen_width(); x++)
+                {
+                    // Get the current pixel color at this position
+                    uint32_t pixel = gpu_get_pixel(global_mouse->x + x, global_mouse->y + y);
+                    cursor_bg_buffer[y][x].r = (pixel >> 16) & 0xFF;
+                    cursor_bg_buffer[y][x].g = (pixel >> 8) & 0xFF;
+                    cursor_bg_buffer[y][x].b = pixel & 0xFF;
+                }
+            }
+            buffer_valid = 1;
+
+            // Update mouse position tracking
+            prev_mouse_x = global_mouse->x;
+            prev_mouse_y = global_mouse->y;
+
+            // Draw black outer triangle (bigger triangle)
+            for (int y = 0; y <= 11 && global_mouse->y + y < gpu_screen_height(); y++)
+            {
+                for (int x = 0; x <= 11 - y && global_mouse->x + x < gpu_screen_width(); x++)
+                {
+                    gpu_draw(global_mouse->x + x, global_mouse->y + y, 255, 255, 255); // black
+                }
+            }
+
+            // Draw white inner triangle (smaller triangle)
+            for (int y = 1; y <= 10 && global_mouse->y + y < gpu_screen_height(); y++)
+            {
+                for (int x = 1; x <= 10 - y && global_mouse->x + x < gpu_screen_width(); x++)
+                {
+                    gpu_draw(global_mouse->x + x, global_mouse->y + y, 0, 0, 0); // white
+                }
+            }
         }
-        
-        // Only flush if something changed
-        if (needs_redraw)
-        {
-            gpu_flush_screen();
-        }
+
+        gpu_flush_screen();
     }
 }

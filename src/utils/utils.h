@@ -63,4 +63,18 @@ extern const struct font_descriptor FONT_BRIGHTLY;
 // Print with font selection
 void print_ex(const struct font_descriptor *font, char *str, int x, int y, int r, int g, int b, float scale_x, float scale_y);
 
+void button(void (*CallbackFunction)(void), char *str,
+            int x, int y,
+            int fgr, int fgg, int fgb,            // Text color
+            float scale_x, float scale_y,   // Text scaling
+            int bgr, int bgg, int bgb,      // Background color
+            int pt, int pb, int pl, int pr); // Padding: top, bottom, left, right
+
+void buttonBySize(void (*CallbackFunction)(void), char *str,
+                  int x, int y,
+                  int fgr, int fgg, int fgb,
+                  float scale_x, float scale_y,
+                  int bgr, int bgg, int bgb,
+                  int width, int height);
+
 #endif
