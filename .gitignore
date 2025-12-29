@@ -1,0 +1,60 @@
+# =========================
+# OS / Editor junk
+# =========================
+.DS_Store
+*.swp
+*.swo
+*.tmp
+*.bak
+*.orig
+
+# =========================
+# Git internal (never track)
+# =========================
+.git/
+
+# =========================
+# Build outputs (binaries)
+# =========================
+*.o
+*.obj
+*.bin
+*.elf
+*.efi
+*.img
+*.iso
+*.map
+
+# =========================
+# Build directories
+# =========================
+build/
+**/build/
+bin/
+**/bin/
+
+# =========================
+# Disk / mount artifacts
+# =========================
+mnt/
+*.disk
+*.fs
+
+# =========================
+# Tooling / IDE metadata
+# =========================
+.clangd
+compile_commands.json
+.vscode/
+.idea/
+
+# =========================
+# Logs / temp runtime files
+# =========================
+*.log
+*.trace
+
+# =========================
+# Keep placeholders explicitly
+# =========================
+!.keep
