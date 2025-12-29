@@ -1,0 +1,12 @@
+FILES=./build/blank.o
+INCLUDES= -I../stdlib/src
+FLAGS= -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
+all: ${FILES}
+	x86_64-elf-gcc -g -T ./linker.ld -o ./blank.elf -ffreestanding -O0 -nostdlib -fpic -g -z max-page-size=0x200000 ${FILES} ../stdlib/stdlib.elf
+
+./build/blank.o: ./blank.c
+	x86_64-elf-gcc ${INCLUDES} -I./ $(FLAGS) -std=gnu99 -c ./blank.c -o ./build/blank.o
+
+clean:
+	rm -rf build
+	mkdir build

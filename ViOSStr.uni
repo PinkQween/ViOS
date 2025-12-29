@@ -1,0 +1,13 @@
+#langdef en-US "English"
+
+#string STR_HELLO_WORLD_HELP_INFORMATION
+#language en-US
+"Prints 'UEFI Hello World' to the console"
+
+#string STR_HELLO_WORLD_INFORMATION
+#language en-US
+".TH ViOS 0 \"Displays a \\\"UEFI ViOS!\\\" string.\"\r\n.SH NAME\r\n\"ViOS application.\"\r\n"
+
+#string STR_PROPERTIES_MODULE_NAME
+#language en-US
+"ViOS Application"

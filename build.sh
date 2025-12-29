@@ -1,409 +1,296 @@
 #!/bin/bash
-set -euo pipefail
+CURRENT_DIR=$(pwd)
 
-# === Config ===
-# Use system toolchain instead of custom one
-# export PREFIX="$HOME/opt/cross"
-# export TARGET=i686-elf
-# export PATH="$PREFIX/bin:$PATH"
-# Set platform-appropriate virtual environment directory
-export VENV_DIR="$HOME/ViOS-venv"
+cd ../../../
+set -e
 
-echo "=================================="
-echo "  Using ViOS i386-ViOS-elf toolchain"
-echo "=================================="
+export EDK_TOOLS_PATH=$HOME/edk2/BaseTools
+export GCC5_X64_PREFIX=x86_64-elf-
+. edksetup.sh BaseTools
+build -a X64 -t GCC5 -p MdeModulePkg/MdeModulePkg.dsc -m MdeModulePkg/Application/ViOS64BitDev/ViOS.inf
 
-install_deps() {
-    echo "[*] Installing required system packages..."
-    sudo apt update
-    sudo apt install -y unzip build-essential bison flex libgmp-dev libmpc-dev libmpfr-dev texinfo \
-        wget curl git gawk xz-utils nasm python3 python3-venv libfreetype6-dev mtools
-}
+cd "$CURRENT_DIR"
 
-# Remove the custom GCC installation function since we're using system toolchain
-# install_gcc() {
-#     # ... removed ...
-# }
+mkdir -p ./bin ./mnt
 
-check_and_install_vios_binutils() {
-    echo "[*] Checking for ViOS binutils..."
+# Build the kernel FIRST (before disk operations)
+echo "Building kernel..."
+cd ./ViOS64Bit
+make clean || true
+make build
+cd ..
 
-    # Check if i386-vios-elf-ld is installed (binutils doesn't include GCC)
-    if command -v "i386-vios-elf-ld" &>/dev/null; then
-        echo "[✓] ViOS binutils found at: $(which i386-vios-elf-ld)"
-        return 0
-    fi
+# Create the final disk image with GPT structure
+dd if=/dev/zero bs=1048576 count=700 of=./bin/os.img
 
-    echo "[!] ViOS binutils not found. Attempting to install..."
+# Create GPT structure
+python3 - <<'PYEOF'
+import struct
+import os
+import binascii
+import uuid
 
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        # macOS - ensure Homebrew is installed
-        if ! command -v brew &>/dev/null; then
-            echo "[!] Homebrew not found. Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
-                echo "[!] Homebrew installation failed. Please install manually:"
-                echo "[*] https://brew.sh/"
-                exit 1
-            }
+def crc32(data):
+    return binascii.crc32(data) & 0xffffffff
 
-            # Add Homebrew to PATH for current session
-            if [[ -d "/opt/homebrew/bin" ]]; then
-                export PATH="/opt/homebrew/bin:$PATH"
-            elif [[ -d "/usr/local/bin" ]]; then
-                export PATH="/usr/local/bin:$PATH"
-            fi
+img_path = './bin/os.img'
+sector_size = 512
+img_size = os.path.getsize(img_path)
+total_sectors = img_size // sector_size
 
-            echo "[✓] Homebrew installed successfully."
-        fi
+# Open the image file
+with open(img_path, 'r+b') as f:
+    # Write protective MBR (sector 0)
+    mbr = bytearray(512)
+    mbr[446:446+16] = struct.pack('<B3sB3sLL',
+        0x00,           # Status
+        b'\x00\x02\x00', # CHS first
+        0xEE,           # Type (GPT protective)
+        b'\xFF\xFF\xFF', # CHS last
+        1,              # LBA first sector
+        total_sectors - 1  # LBA number of sectors
+    )
+    mbr[510:512] = b'\x55\xAA'
+    f.write(mbr)
 
-        echo "[*] Installing ViOS binutils via Homebrew..."
-        brew install --HEAD "../ViOS binutils/Formula/vios-binutils.rb" || {
-            echo "[!] Failed to install via Homebrew. Trying alternative path..."
-            brew install ../vios-binutils || {
-                echo "[!] Failed to install via Homebrew. Please install manually from:"
-                echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
-                exit 1
-            }
-        }
+    # Create partition entries first (to calculate CRC)
+    partition_entries = bytearray(128 * 128)  # 128 entries of 128 bytes each
 
-    else
-        # Linux - try to download and install from releases
-        echo "[*] Downloading ViOS binutils from GitHub releases..."
-        
-        # Create temporary directory
-        TEMP_DIR=$(mktemp -d)
-        cd "$TEMP_DIR"
-        
-        # Try to download latest release - first try .tar.gz, then .deb as fallback
-        echo "[*] Attempting to download tar.gz archive..."
-        if curl -L -f -o vios-binutils.tar.gz "https://github.com/PinkQween/ViOS-binutils/releases/latest/download/vios-binutils-binaries-0.0.1.tar.gz"; then
-            INSTALL_TYPE="tar"
+    # Partition 1: EFI System Partition
+    partition_entries[0:16] = bytes.fromhex('28732ac11ff8d211ba4b00a0c93ec93b')
+    partition_entries[16:32] = uuid.uuid4().bytes
+    partition_entries[32:40] = struct.pack('<Q', 2048)  # First LBA
+    partition_entries[40:48] = struct.pack('<Q', 2048 + 716800 - 1)  # Last LBA
+    partition_entries[48:56] = struct.pack('<Q', 0)  # Attributes
+    partition_entries[56:56+72] = 'ABC'.encode('utf-16le').ljust(72, b'\x00')
+
+    # Partition 2: Another EFI partition
+    offset = 128
+    part2_first_lba = 718848
+    part2_last_lba = total_sectors - 34  # Last usable LBA
+    partition_entries[offset:offset+16] = bytes.fromhex('28732ac11ff8d211ba4b00a0c93ec93b')
+    partition_entries[offset+16:offset+32] = uuid.uuid4().bytes
+    partition_entries[offset+32:offset+40] = struct.pack('<Q', part2_first_lba)  # First LBA
+    partition_entries[offset+40:offset+48] = struct.pack('<Q', part2_last_lba)  # Last LBA
+    partition_entries[offset+48:offset+56] = struct.pack('<Q', 0)  # Attributes
+    partition_entries[offset+56:offset+56+72] = 'ViOS'.encode('utf-16le').ljust(72, b'\x00')
+
+    # Calculate partition array CRC
+    partition_array_crc = crc32(partition_entries)
+
+    # Write GPT header (sector 1)
+    f.seek(512)
+    gpt_header = bytearray(512)
+    gpt_header[0:8] = b'EFI PART'
+    gpt_header[8:12] = struct.pack('<I', 0x00010000)  # Revision 1.0
+    gpt_header[12:16] = struct.pack('<I', 92)  # Header size
+    gpt_header[20:24] = struct.pack('<I', 0)  # Reserved
+    gpt_header[24:32] = struct.pack('<Q', 1)  # Current LBA
+    gpt_header[32:40] = struct.pack('<Q', total_sectors - 1)  # Backup LBA
+    gpt_header[40:48] = struct.pack('<Q', 34)  # First usable LBA
+    gpt_header[48:56] = struct.pack('<Q', total_sectors - 34)  # Last usable LBA
+    gpt_header[56:72] = uuid.uuid4().bytes  # Disk GUID
+    gpt_header[72:80] = struct.pack('<Q', 2)  # Partition entries starting LBA
+    gpt_header[80:84] = struct.pack('<I', 128)  # Number of partition entries
+    gpt_header[84:88] = struct.pack('<I', 128)  # Size of partition entry
+    gpt_header[88:92] = struct.pack('<I', partition_array_crc)  # Partition array CRC
+
+    # Calculate header CRC
+    header_crc = crc32(gpt_header[0:92])
+    gpt_header[16:20] = struct.pack('<I', header_crc)
+
+    f.write(gpt_header)
+
+    # Write partition entries (starting at sector 2)
+    f.seek(1024)
+    f.write(partition_entries)
+
+    # Write backup GPT partition entries (at end - 33 sectors)
+    backup_entries_lba = total_sectors - 33
+    f.seek(backup_entries_lba * 512)
+    f.write(partition_entries)
+
+    # Write backup GPT header (at end - 1 sector)
+    backup_header = bytearray(512)
+    backup_header[0:8] = b'EFI PART'
+    backup_header[8:12] = struct.pack('<I', 0x00010000)
+    backup_header[12:16] = struct.pack('<I', 92)
+    backup_header[20:24] = struct.pack('<I', 0)
+    backup_header[24:32] = struct.pack('<Q', total_sectors - 1)  # Current LBA (backup location)
+    backup_header[32:40] = struct.pack('<Q', 1)  # Backup LBA (primary location)
+    backup_header[40:48] = struct.pack('<Q', 34)
+    backup_header[48:56] = struct.pack('<Q', total_sectors - 34)
+    backup_header[56:72] = gpt_header[56:72]  # Same disk GUID
+    backup_header[72:80] = struct.pack('<Q', backup_entries_lba)  # Backup partition entries LBA
+    backup_header[80:84] = struct.pack('<I', 128)
+    backup_header[84:88] = struct.pack('<I', 128)
+    backup_header[88:92] = struct.pack('<I', partition_array_crc)
+
+    backup_header_crc = crc32(backup_header[0:92])
+    backup_header[16:20] = struct.pack('<I', backup_header_crc)
+
+    f.seek((total_sectors - 1) * 512)
+    f.write(backup_header)
+
+print("GPT structure created")
+PYEOF
+
+# Attach the disk image to format partitions
+echo "Attaching disk image to format partitions..."
+ATTACH_OUTPUT=$(hdiutil attach -nomount ./bin/os.img)
+echo "$ATTACH_OUTPUT"
+
+# Get the base disk device and partition 2
+BASE_DISK=$(echo "$ATTACH_OUTPUT" | grep "GUID_partition_scheme" | awk '{print $1}')
+PART1_DEV="${BASE_DISK}s1"
+PART2_DEV="${BASE_DISK}s2"
+
+echo "Base disk: $BASE_DISK"
+echo "Partition 1: $PART1_DEV"
+echo "Partition 2: $PART2_DEV"
+
+# Wait for partitions to be recognized and force rescan
+sleep 1
+
+# Force macOS to re-read the partition table
+echo "Forcing partition table rescan..."
+diskutil unmountDisk "$BASE_DISK" 2>/dev/null || true
+sleep 1
+
+# Show what diskutil sees
+diskutil list "$BASE_DISK"
+
+# Use gpt to verify
+echo "Verifying with gpt:"
+sudo gpt -r show "$BASE_DISK" | grep "GPT part"
+
+# Check what partitions are visible
+echo "Checking available partitions..."
+ls -l "${BASE_DISK}"*
+
+# Format the partitions
+echo "Formatting partition 1..."
+newfs_msdos -F 16 -v ABC "$PART1_DEV"
+
+echo "Formatting partition 2..."
+if [ -e "$PART2_DEV" ]; then
+    newfs_msdos -F 16 -v ViOS "$PART2_DEV"
+else
+    echo "Warning: $PART2_DEV does not exist, retrying..."
+    sleep 2
+    newfs_msdos -F 16 -v ViOS "$PART2_DEV"
+fi
+
+# Mount partition 1 immediately after formatting (while disk is still attached)
+echo "Mounting partition 1..."
+mkdir -p ./mnt
+sudo mount -t msdos "$PART1_DEV" ./mnt
+MOUNT_POINT="./mnt"
+
+echo "Partition 1 mounted at: $MOUNT_POINT"
+
+# Copy the UEFI bootloader
+cp ../../../Build/MdeModule/DEBUG_GCC5/X64/ViOS.efi ./bin/ViOS.efi
+
+# Copy the kernel binary
+cp ./ViOS64Bit/bin/kernel.bin ./bin/kernel.bin
+
+# Copy the EFI file and kernel into the filesystem of partition one
+sudo mkdir -p "$MOUNT_POINT/EFI/BOOT"
+sudo cp ./bin/ViOS.efi "$MOUNT_POINT/EFI/Boot/BOOTX64.efi"
+sudo cp ./bin/kernel.bin "$MOUNT_POINT/kernel.bin"
+
+echo "Copied bootloader to $MOUNT_POINT/EFI/Boot/BOOTX64.efi"
+
+# Unmount partition 1
+sudo umount ./mnt
+
+# Now mount partition 2 and copy kernel data there
+echo "Mounting partition 2 for kernel filesystem..."
+if sudo mount -t msdos "$PART2_DEV" ./mnt; then
+    echo "✓ Partition 2 mounted successfully at ./mnt"
+    echo "Contents before copy:"
+    ls -la ./mnt/
+
+    # Copy background image and other kernel files to partition 2
+    if [ -f ./ViOS64Bit/data/images/bkground.bmp ]; then
+        echo "Found source file: ./ViOS64Bit/data/images/bkground.bmp"
+        ls -lh ./ViOS64Bit/data/images/bkground.bmp
+        if sudo cp -v ./ViOS64Bit/data/images/bkground.bmp ./mnt/; then
+            echo "✓ BMP copied successfully"
+            echo "Contents after copy:"
+            ls -lh ./mnt/bkground.bmp
         else
-            echo "[*] tar.gz download failed, trying .deb package..."
-            if curl -L -f -o vios-binutils.deb "https://github.com/PinkQween/ViOS-binutils/releases/latest/download/vios-binutils_0.0.1-1_amd64.deb"; then
-                INSTALL_TYPE="deb"
-            else
-                echo "[!] Both tar.gz and deb downloads failed. Trying to get latest release info..."
-                # Try to get the actual latest release tag and construct URLs
-                LATEST_TAG=$(curl -s https://api.github.com/repos/PinkQween/ViOS-binutils/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-                if [[ -n "$LATEST_TAG" ]]; then
-                    echo "[*] Found latest tag: $LATEST_TAG, trying versioned URLs..."
-                    # Remove 'v' prefix if present to match asset naming
-                    VERSION_NUM=${LATEST_TAG#v}
-                    echo "[*] Using version number: $VERSION_NUM"
-                    if curl -L -f -o vios-binutils.tar.gz "https://github.com/PinkQween/ViOS-binutils/releases/download/$LATEST_TAG/vios-binutils-binaries-$VERSION_NUM.tar.gz"; then
-                        INSTALL_TYPE="tar"
-                    elif curl -L -f -o vios-binutils.deb "https://github.com/PinkQween/ViOS-binutils/releases/download/$LATEST_TAG/vios-binutils_$VERSION_NUM-1_amd64.deb"; then
-                        INSTALL_TYPE="deb"
-                    else
-                        echo "[!] Failed to download ViOS binutils. Please install manually from:"
-                        echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
-                        rm -rf "$TEMP_DIR"
-                        exit 1
-                    fi
-                else
-                    echo "[!] Failed to get latest release info. Please install manually from:"
-                    echo "[*] https://github.com/PinkQween/ViOS-binutils/releases"
-                    rm -rf "$TEMP_DIR"
-                    exit 1
-                fi
-            fi
-        fi
-        
-        # Extract and install based on file type
-        if [[ "$INSTALL_TYPE" == "tar" ]]; then
-            echo "[*] Extracting and installing ViOS binutils from tar.gz..."
-            tar -xzf vios-binutils.tar.gz
-            
-            # Check for different possible archive structures
-            echo "[*] Checking archive structure..."
-            ls -la .
-            
-            # Install to /usr/local (requires sudo)
-            if [[ -d "opt/vios-binutils" ]]; then
-                echo "[*] Found opt/vios-binutils structure"
-                sudo cp -r opt/vios-binutils/* /usr/local/
-                
-                # Create uppercase symbolic links for compatibility
-                echo "[*] Creating uppercase symbolic links for compatibility..."
-                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
-                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
-                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
-                    fi
-                done
-                
-                echo "[✓] ViOS binutils installed to /usr/local"
-            elif [[ -d "bin" ]]; then
-                echo "[*] Found bin/ structure"
-                sudo cp -r bin/* /usr/local/bin/
-                
-                # Create uppercase symbolic links for compatibility
-                echo "[*] Creating uppercase symbolic links for compatibility..."
-                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
-                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
-                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
-                    fi
-                done
-                
-                echo "[✓] ViOS binutils installed to /usr/local/bin"
-            elif [[ -d "usr/local" ]]; then
-                echo "[*] Found usr/local structure"
-                sudo cp -r usr/local/* /usr/local/
-                
-                # Create uppercase symbolic links for compatibility
-                echo "[*] Creating uppercase symbolic links for compatibility..."
-                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
-                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
-                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
-                    fi
-                done
-                
-                echo "[✓] ViOS binutils installed to /usr/local"
-            elif [[ -f "i386-vios-elf-ld" ]]; then
-                echo "[*] Found binaries in root directory"
-                sudo cp i386-vios-elf-* /usr/local/bin/
-                if [[ -d "ldscripts" ]]; then
-                    sudo mkdir -p /usr/local/lib/ldscripts
-                    sudo cp -r ldscripts/* /usr/local/lib/ldscripts/
-                fi
-                
-                # Create uppercase symbolic links for compatibility
-                echo "[*] Creating uppercase symbolic links for compatibility..."
-                for tool in ar as g++ gcc ld nm objcopy objdump readelf size strings strip; do
-                    if [[ -f "/usr/local/bin/i386-vios-elf-$tool" ]]; then
-                        sudo ln -sf "i386-vios-elf-$tool" "/usr/local/bin/i386-ViOS-elf-$tool"
-                    fi
-                done
-                
-                echo "[✓] ViOS binutils installed to /usr/local/bin"
-            else
-                echo "[!] Unexpected archive structure. Contents:"
-                find . -type f -name "*ViOS*" -o -name "*elf*" | head -10
-                echo "[*] Please install manually from: https://github.com/PinkQween/ViOS-binutils/releases"
-                rm -rf "$TEMP_DIR"
-                exit 1
-            fi
-        elif [[ "$INSTALL_TYPE" == "deb" ]]; then
-            echo "[*] Installing ViOS binutils from .deb package..."
-            if command -v dpkg >/dev/null 2>&1; then
-                sudo dpkg -i vios-binutils.deb
-                echo "[✓] ViOS binutils installed via dpkg"
-            else
-                echo "[!] dpkg not found. Cannot install .deb package."
-                echo "[*] Please install manually from: https://github.com/PinkQween/ViOS-binutils/releases"
-                rm -rf "$TEMP_DIR"
-                exit 1
-            fi
-        fi
-        
-        # Clean up
-        cd /
-        rm -rf "$TEMP_DIR"
-        
-        # Update PATH if needed
-        if ! echo "$PATH" | grep -q "/usr/local/bin"; then
-            echo "[*] Adding /usr/local/bin to PATH"
-            export PATH="/usr/local/bin:$PATH"
-        fi
-    fi
-    
-    # Verify installation
-    if command -v "i386-vios-elf-ld" &>/dev/null; then
-        echo "[✓] ViOS binutils successfully installed!"
-    else
-        echo "[!] ViOS binutils installation failed. Please install manually."
-        exit 1
-    fi
-}
-
-check_and_install_vios_libc() {
-    echo "[*] Checking for ViOS standard library..."
-    
-    # Store the original directory
-    ORIGINAL_DIR="$(pwd)"
-    
-    # Set the ViOS library path to be in external/ViOS-libc
-    VIOS_LIB_PATH="$ORIGINAL_DIR/external/ViOS-libc"
-    
-    # Check if the library directory exists and contains the expected files
-    if [[ -d "$VIOS_LIB_PATH" ]] && [[ -f "$VIOS_LIB_PATH/lib/libViOSlibc.a" ]] && [[ -d "$VIOS_LIB_PATH/include" ]]; then
-        echo "[✓] ViOS standard library found at $VIOS_LIB_PATH"
-        return 0
-    else
-        echo "[!] ViOS standard library not found at $VIOS_LIB_PATH"
-        echo "[*] Installing ViOS standard library locally..."
-        
-        # Create temporary directory for cloning
-        TEMP_DIR=$(mktemp -d)
-        cd "$TEMP_DIR"
-        
-        # Clone the repository
-        echo "[*] Cloning ViOS-Libc repository..."
-        if ! git clone https://github.com/PinkQween/ViOS-Libc.git; then
-            echo "[!] Failed to clone ViOS-Libc repository"
-            rm -rf "$TEMP_DIR"
-            exit 1
-        fi
-        
-        cd ViOS-Libc
-        
-        # Build the library
-        echo "[*] Building ViOS standard library..."
-        if ! make all; then
-            echo "[!] Failed to build ViOS standard library"
-            rm -rf "$TEMP_DIR"
-            exit 1
-        fi
-        
-        # Create the external libc directory structure
-        echo "[*] Installing ViOS standard library locally..."
-        mkdir -p "$VIOS_LIB_PATH/lib"
-        mkdir -p "$VIOS_LIB_PATH/include"
-        
-        # Copy the built library and headers to the external directory
-        if [[ -f "build/libViOSlibc.a" ]]; then
-            cp build/libViOSlibc.a "$VIOS_LIB_PATH/lib/"
-        else
-            echo "[!] Built library file not found"
-            rm -rf "$TEMP_DIR"
-            exit 1
-        fi
-        
-        # Copy headers if they exist
-        if [[ -d "include" ]]; then
-            cp -r include/* "$VIOS_LIB_PATH/include/"
-        elif [[ -d "src" ]]; then
-            # Look for header files in src directory
-            find src -name "*.h" -exec cp --parents {} "$VIOS_LIB_PATH/include/" \;
-        fi
-        
-        # Clean up
-        cd "$ORIGINAL_DIR"
-        rm -rf "$TEMP_DIR"
-        
-        echo "[✓] ViOS standard library installed successfully at $VIOS_LIB_PATH"
-    fi
-}
-
-check_and_install() {
-    # Check if target binutils are installed
-    if ! command -v "i386-vios-elf-ld" &>/dev/null; then
-        echo "[!] i386-vios-elf-ld not found. Please install ViOS binutils:"
-        echo "[*] On macOS: brew install ViOS-binutils"
-        echo "[*] On Linux: Follow your distribution's instructions"
-        exit 1
-    else
-        echo "[✓] i386-vios-elf-ld found at: $(which i386-vios-elf-ld)"
-    fi
-
-    # Check required tools
-    missing_tools=()
-    for tool in nasm make gcc g++; do
-        if ! command -v "$tool" &>/dev/null; then
-            missing_tools+=("$tool")
-        fi
-    done
-
-    if [ ${#missing_tools[@]} -gt 0 ]; then
-        echo "[!] Missing tools: ${missing_tools[*]}"
-        if [[ "$(uname -s)" == "Linux" ]]; then
-            install_deps
-        else
-            echo "[!] Please install missing tools manually for your system."
-            echo "[*] On macOS, you can use: brew install nasm make gcc python3"
+            echo "✗ Failed to copy BMP (error code: $?)"
+            sudo umount ./mnt
+            hdiutil detach "$BASE_DISK"
             exit 1
         fi
     else
-        echo "[✓] All required tools are installed."
+        echo "✗ Source BMP file not found at ./ViOS64Bit/data/images/bkground.bmp"
     fi
 
-    # Check mtools/mformat presence on Linux
-    if [[ "$(uname -s)" == "Linux" ]]; then
-        if ! command -v mformat &>/dev/null; then
-            echo "[*] mformat (mtools) missing, installing..."
-            if command -v apt &>/dev/null; then
-                sudo apt update && sudo apt install -y mtools
-            elif command -v dnf &>/dev/null; then
-                sudo dnf install -y mtools
-            elif command -v pacman &>/dev/null; then
-                sudo pacman -Sy --noconfirm mtools
-            else
-                echo "[!] Could not detect package manager for mtools. Please install manually."
-                exit 1
-            fi
+    # Copy sysfont.bmp to partition 2
+    if [ -f ./ViOS64Bit/data/images/fonts/sysfont.bmp ]; then
+        echo "Found source file: ./ViOS64Bit/data/images/fonts/sysfont.bmp"
+        ls -lh ./ViOS64Bit/data/images/fonts/sysfont.bmp
+        if sudo cp -v ./ViOS64Bit/data/images/fonts/sysfont.bmp ./mnt/; then
+            echo "✓ sysfont.bmp copied successfully"
+            echo "Contents after copy:"
+            ls -lh ./mnt/sysfont.bmp
         else
-            echo "[✓] mformat is installed."
+            echo "✗ Failed to copy sysfont.bmp (error code: $?)"
         fi
     else
-        echo "[*] Not running Linux, skipping mtools check."
+        echo "✗ Source sysfont.bmp file not found at ./ViOS64Bit/data/images/fonts/sysfont.bmp"
     fi
-}
 
-run_make() {
-    echo "[*] Running your project Makefile..."
-
-    make clean || echo "[*] make clean failed, continuing anyway..."
-    
-    # Debug: Check ViOS libc status before building
-    echo "[*] Debug: Checking ViOS libc status..."
-    if [[ -f "external/ViOS-libc/lib/libViOSlibc.a" ]]; then
-        echo "[✓] ViOS libc found at external/ViOS-libc/lib/libViOSlibc.a"
-        ls -la external/ViOS-libc/include/
+    # Copy shell.elf if it exists
+    if [ -f ./ViOS64Bit/assets/shell/shell.elf ]; then
+        echo "Found source file: ./ViOS64Bit/assets/shell/shell.elf"
+        if sudo cp -v ./ViOS64Bit/assets/shell/shell.elf ./mnt/; then
+            echo "✓ shell.elf copied successfully"
+        else
+            echo "✗ Failed to copy shell.elf (error code: $?)"
+        fi
     else
-        echo "[!] ViOS libc not found at external/ViOS-libc/lib/libViOSlibc.a"
+        echo "Note: shell.elf not found (optional)"
     fi
-    
-    make clean
-    make all
-}
 
-clean_vios_libc() {
-    echo "[*] Cleaning ViOS libc installation..."
-    if [[ -d "external/ViOS-libc" ]]; then
-        rm -rf external/ViOS-libc
-        echo "[✓] ViOS libc cleaned"
+    if [ -f ./ViOS64Bit/assets/blank/blank.elf ]; then
+        echo "Found source file: ./ViOS64Bit/assets/blank/blank.elf"
+        if sudo cp -v ./ViOS64Bit/assets/blank/blank.elf ./mnt/; then
+            echo "✓ blank.elf copied successfully"
+        else
+            echo "✗ Failed to copy blank.elf (error code: $?)"
+        fi
     else
-        echo "[*] No ViOS libc installation found to clean"
+        echo "Note: blank.elf not found (optional)"
     fi
-}
 
-show_help() {
-    echo "Usage: $0 [OPTION]"
-    echo ""
-    echo "Options:"
-    echo "  build     Build the project (default)"
-    echo "  clean     Clean the project and ViOS libc"
-    echo "  clean-libc Clean only ViOS libc installation"
-    echo "  help      Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  $0          # Build the project"
-    echo "  $0 clean    # Clean everything"
-    echo "  $0 clean-libc # Clean only libc"
-}
+    # Show final contents
+    echo "Final contents of partition 2:"
+    ls -lah ./mnt/
 
-# === Main ===
-case "${1:-build}" in
-    "build")
-        check_and_install_vios_binutils
-        check_and_install_vios_libc
-        check_and_install
-        run_make
-        ;;
-    "clean")
-        echo "[*] Cleaning project..."
-        make clean
-        clean_vios_libc
-        ;;
-    "clean-libc")
-        clean_vios_libc
-        ;;
-    "help"|"-h"|"--help")
-        show_help
-        ;;
-    *)
-        echo "[!] Unknown option: $1"
-        show_help
-        exit 1
-        ;;
-esac
+    # Force sync before unmounting
+    echo "Syncing filesystem..."
+    sync
+    sleep 1
+
+    # Cleanup
+    echo "Unmounting partition 2..."
+    if sudo umount ./mnt; then
+        echo "✓ Partition 2 unmounted successfully"
+    else
+        echo "✗ Failed to unmount partition 2 (error code: $?)"
+    fi
+else
+    echo "✗ Failed to mount partition 2 at $PART2_DEV"
+    hdiutil detach "$BASE_DISK"
+    exit 1
+fi
+
+echo "Detaching disk..."
+hdiutil detach "$BASE_DISK"
+
+echo "Build completed"

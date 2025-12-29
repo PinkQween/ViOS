@@ -1,0 +1,17 @@
+CompileFlags:
+  Add:
+    - "-I/Users/skairipa/edk2/MdeModulePkg/Application/ViOS64BitDev/ViOS64Bit/src"
+    - "-I/opt/homebrew/Cellar/x86_64-elf-gcc/15.1.0/lib/gcc/x86_64-elf/15.1.0/include"
+    - "-I/opt/homebrew/Cellar/x86_64-elf-gcc/15.1.0/lib/gcc/x86_64-elf/15.1.0/include-fixed"
+    - "-std=gnu99"
+    - "-ffreestanding"
+    - "-fno-builtin"
+    - "-nostdlib"
+    - "-target"
+    - "x86_64-elf"
+  Remove:
+    - "-m*"
+    - "-f*san"
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
