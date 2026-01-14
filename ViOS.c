@@ -20,15 +20,16 @@
 #include <Protocol/SimpleFileSystem.h>
 #include <Uefi.h>
 
-
-typedef struct __attribute__((packed)) E820Entry {
+typedef struct __attribute__((packed)) E820Entry
+{
   UINT64 base_addr;
   UINT64 length;
   UINT32 type;
   UINT32 extended_attr;
 } E820Entry;
 
-typedef struct __attribute__((packed)) E820Entries {
+typedef struct __attribute__((packed)) E820Entries
+{
   UINT64 count;
   E820Entry entries[];
 } E820Entries;
@@ -36,7 +37,8 @@ typedef struct __attribute__((packed)) E820Entries {
 EFI_HANDLE imageHandle = NULL;
 EFI_SYSTEM_TABLE *systemTable = NULL;
 
-EFI_STATUS SetupMemoryMaps() {
+EFI_STATUS SetupMemoryMaps()
+{
   EFI_STATUS status;
   UINTN memoryMapSize = 0;
   EFI_MEMORY_DESCRIPTOR *memoryMap = NULL;
@@ -47,7 +49,8 @@ EFI_STATUS SetupMemoryMaps() {
   status = gBS->GetMemoryMap(&memoryMapSize, NULL, &mapKey, &descriptorSize,
                              &descriptorVersion);
 
-  if (status != EFI_BUFFER_TOO_SMALL && EFI_ERROR(status)) {
+  if (status != EFI_BUFFER_TOO_SMALL && EFI_ERROR(status))
+  {
     Print(L"Error retreving initial memory map size: %r\n", status);
     return status;
   }
@@ -57,7 +60,8 @@ EFI_STATUS SetupMemoryMaps() {
 
   // Allocate a buffer for the memory map
   memoryMap = AllocatePool(memoryMapSize);
-  if (memoryMap == NULL) {
+  if (memoryMap == NULL)
+  {
     Print(L"Error allocating memory for memory map\n");
     return EFI_OUT_OF_RESOURCES;
   }
@@ -65,7 +69,8 @@ EFI_STATUS SetupMemoryMaps() {
   status = gBS->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey,
                              &descriptorSize, &descriptorVersion);
 
-  if (EFI_ERROR(status)) {
+  if (EFI_ERROR(status))
+  {
     Print(L"Error getting memory map: %r\n", status);
     FreePool(memoryMap);
     return status;
@@ -74,8 +79,10 @@ EFI_STATUS SetupMemoryMaps() {
   UINTN descriptorCount = memoryMapSize / descriptorSize;
   EFI_MEMORY_DESCRIPTOR *desc = memoryMap;
   UINTN totalConventionalDescriptors = 0;
-  for (UINTN i = 0; i < descriptorCount; ++i) {
-    if (desc->Type == EfiConventionalMemory) {
+  for (UINTN i = 0; i < descriptorCount; ++i)
+  {
+    if (desc->Type == EfiConventionalMemory)
+    {
       totalConventionalDescriptors++;
     }
     desc = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)desc + descriptorSize);
@@ -88,7 +95,8 @@ EFI_STATUS SetupMemoryMaps() {
   status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
                               EFI_SIZE_TO_PAGES(MemoryMapSizeE820),
                               &MemoryMapLocationE820);
-  if (EFI_ERROR(status)) {
+  if (EFI_ERROR(status))
+  {
     Print(L"Error allocating memory for the E820 Entries: %r\n", status);
     return status;
   }
@@ -96,8 +104,10 @@ EFI_STATUS SetupMemoryMaps() {
   E820Entries *e820Entries = (E820Entries *)MemoryMapLocationE820;
   UINTN ConventionalMemoryIndex = 0;
   desc = memoryMap;
-  for (UINTN i = 0; i < descriptorCount; ++i) {
-    if (desc->Type == EfiConventionalMemory) {
+  for (UINTN i = 0; i < descriptorCount; ++i)
+  {
+    if (desc->Type == EfiConventionalMemory)
+    {
       E820Entry *e820Entry = &e820Entries->entries[ConventionalMemoryIndex];
       e820Entry->base_addr = desc->PhysicalStart;
       e820Entry->length = desc->NumberOfPages * 4096;
@@ -116,7 +126,8 @@ EFI_STATUS SetupMemoryMaps() {
 }
 
 EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
-                                         UINTN *BufferSize_Out) {
+                                         UINTN *BufferSize_Out)
+{
   EFI_STATUS Status = 0;
   EFI_LOADED_IMAGE_PROTOCOL *LoadedImageProtocol = NULL;
   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *SimpleFileSystem = NULL;
@@ -131,7 +142,8 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
   Status = gBS->HandleProtocol(imageHandle, &gEfiLoadedImageProtocolGuid,
                                (VOID **)&LoadedImageProtocol);
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error accessing LoadedImageProtocol: %r\n", Status);
     return Status;
   }
@@ -140,13 +152,15 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
                                &gEfiSimpleFileSystemProtocolGuid,
                                (VOID **)&SimpleFileSystem);
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error accessing SimpleFIleSystem: %r\n", Status);
     return Status;
   }
 
   Status = SimpleFileSystem->OpenVolume(SimpleFileSystem, &Root);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error opening root directory: %r\n", Status);
     return Status;
   }
@@ -154,7 +168,8 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
   // Open the file in the root directory
   Status = Root->Open(Root, &File, FileName, EFI_FILE_MODE_READ, 0);
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error opening file %s: %r\n", FileName, Status);
     return Status;
   }
@@ -162,7 +177,8 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
   // Retrieve file information to determine file size
   FileInfoSize = OFFSET_OF(EFI_FILE_INFO, FileName) + 256 * sizeof(CHAR16);
   VOID *FileInfoBuffer = AllocatePool(FileInfoSize);
-  if (FileInfoBuffer == NULL) {
+  if (FileInfoBuffer == NULL)
+  {
     Print(L"Error allocating buffer for file info\n");
     File->Close(File);
     return EFI_OUT_OF_RESOURCES;
@@ -171,7 +187,8 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
   EFI_FILE_INFO *FileInfo = (EFI_FILE_INFO *)FileInfoBuffer;
   Status = File->GetInfo(File, &gEfiFileInfoGuid, &FileInfoSize, FileInfo);
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error getting file info for %s %r\n", FileName, Status);
     FreePool(FileInfoBuffer);
     File->Close(File);
@@ -184,14 +201,16 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
 
   // Allocate the memory for the file content
   VOID *Buffer = AllocatePool(BufferSize);
-  if (Buffer == NULL) {
+  if (Buffer == NULL)
+  {
     Print(L"Error allocating buffer for file %s\n", FileName);
     File->Close(File);
     return EFI_OUT_OF_RESOURCES;
   }
 
   Status = File->Read(File, &BufferSize, Buffer);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error reading file %s %r", FileName, Status);
     FreePool(Buffer);
     File->Close(File);
@@ -208,13 +227,15 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out,
   return EFI_SUCCESS;
 }
 
-EFI_STATUS GetFrameBufferInfo(EFI_GRAPHICS_OUTPUT_PROTOCOL **GraphicsOutput) {
+EFI_STATUS GetFrameBufferInfo(EFI_GRAPHICS_OUTPUT_PROTOCOL **GraphicsOutput)
+{
   EFI_STATUS Status;
   // Locate the graphics output protocol
   Status = gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL,
                                (VOID **)GraphicsOutput);
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error: unable to locate GOP: %r", Status);
     return Status;
   }
@@ -226,12 +247,13 @@ EFI_STATUS GetFrameBufferInfo(EFI_GRAPHICS_OUTPUT_PROTOCOL **GraphicsOutput) {
   Status = (*GraphicsOutput)
                ->QueryMode(*GraphicsOutput, (*GraphicsOutput)->Mode->Mode,
                            &SizeOfInfo, &Info);
-  if (EFI_ERROR(Status)) {
-    Print(L"Unable to query mode %r\n", Status);
+  if (EFI_ERROR(Status))
+  {
+    Print(L"Unable to query mode %%r\n", Status);
     return Status;
   }
 
-  Print(L"Framebuffer base address: %p",
+  Print(L"Framebuffer base address: %p\n",
         (*GraphicsOutput)->Mode->FrameBufferBase);
   Print(L"Framebuffer size: %lu bytes\n",
         (*GraphicsOutput)->Mode->FrameBufferSize);
@@ -254,11 +276,12 @@ EFI_STATUS GetFrameBufferInfo(EFI_GRAPHICS_OUTPUT_PROTOCOL **GraphicsOutput) {
 **/
 EFI_STATUS
 EFIAPI
-UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable) {
+UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable)
+{
   imageHandle = ImageHandle;
   systemTable = SystemTable;
   EFI_STATUS Status = 0;
-  
+
   Print(L"ViOS OS UEFI bootloader.");
 
   // Setup and load E820 Entries
@@ -268,7 +291,8 @@ UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable) {
   UINTN KernelBufferSize = 0;
   Status = ReadFileFromCurrentFilesystem(L"kernel.bin", &KernelBuffer,
                                          &KernelBufferSize);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error reading kernel: %r\n", Status);
     return Status;
   }
@@ -278,7 +302,8 @@ UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable) {
   EFI_PHYSICAL_ADDRESS KernelBase = VIOS_KERNEL_LOCATION;
   Status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
                               EFI_SIZE_TO_PAGES(KernelBufferSize), &KernelBase);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error allocating memory for kernel %r\n", Status);
     return Status;
   }
@@ -290,7 +315,8 @@ UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable) {
   EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput = NULL;
   // Lets get the frame buffers
   Status = GetFrameBufferInfo(&GraphicsOutput);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR(Status))
+  {
     Print(L"Error getting frame buffer info: %r\n", Status);
     return Status;
   }
@@ -303,8 +329,10 @@ UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable) {
   UINTN HoriziontalResolution =
       GraphicsOutput->Mode->Info->HorizontalResolution;
   UINTN VerticalResoltuion = GraphicsOutput->Mode->Info->VerticalResolution;
-  for (UINTN y = 0; y < VerticalResoltuion; y++) {
-    for (UINTN x = 0; x < HoriziontalResolution; x++) {
+  for (UINTN y = 0; y < VerticalResoltuion; y++)
+  {
+    for (UINTN x = 0; x < HoriziontalResolution; x++)
+    {
       FrameBuffer[y * PixelsPerScanLine + x].Red = 0x00;
       FrameBuffer[y * PixelsPerScanLine + x].Green = 0x00;
       FrameBuffer[y * PixelsPerScanLine + x].Blue = 0x00;
@@ -316,12 +344,12 @@ UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable) {
 
   __asm__ __volatile__(
       "movq %0, %%rdi\n\t" // Frame buffer base
-      "movq %1, %%rsi\n\t" // pixels per scan line
-      "movq %2, %%rdx\n\t" // horiziontal resolution
-      "movq %3, %%rcx\n\t" // vertical resolution
+      "movq %1, %%rdx\n\t" // horiziontal resolution
+      "movq %2, %%rcx\n\t" // vertical resolution
+      "movq %3, %%rsi\n\t" // pixels per scan line
       :
-      : "r"((UINT64)FrameBuffer), "r"((UINT64)PixelsPerScanLine),
-        "r"((UINT64)HoriziontalResolution), "r"((UINT64)VerticalResoltuion)
+      : "r"((UINT64)FrameBuffer), "r"((UINT64)HoriziontalResolution),
+        "r"((UINT64)VerticalResoltuion), "r"((UINT64)PixelsPerScanLine)
       : "rdi", "rsi", "rdx", "rcx");
 
   __asm__("jmp *%0" : : "r"(KernelBase));

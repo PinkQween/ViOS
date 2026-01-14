@@ -4,6 +4,8 @@
 #include "io.h"
 #include "heap.h"
 #include "process.h"
+#include "file.h"
+
 void isr80h_register_commands()
 {
     isr80h_register_command(SYSTEM_COMMAND0_SUM, isr80h_command0_sum);
@@ -16,4 +18,10 @@ void isr80h_register_commands()
     isr80h_register_command(SYSTEM_COMMAND7_INVOKE_SYSTEM_COMMAND, isr80h_command7_invoke_system_command);
     isr80h_register_command(SYSTEM_COMMAND8_GET_PROGRAM_ARGUMENTS, isr80h_command8_get_program_arguments);
     isr80h_register_command(SYSTEM_COMMAND9_EXIT, isr80h_command9_exit);
+    isr80h_register_command(SYSTEM_COMMAND10_FOPEN, isr80h_command10_fopen);
+    isr80h_register_command(SYSTEM_COMMAND11_FCLOSE, isr80h_command11_fclose);
+    isr80h_register_command(SYSTEM_COMMAND12_FREAD, isr80h_command12_fread);
+    isr80h_register_command(SYSTEM_COMMAND13_FSEEK, isr80h_command13_fseek);
+    isr80h_register_command(SYSTEM_COMMAND14_FSTAT, isr80h_command14_fstat);
+    isr80h_register_command(SYSTEM_COMMAND15_REALLOC, isr80h_command15_realloc);
 }

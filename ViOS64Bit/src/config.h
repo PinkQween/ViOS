@@ -15,13 +15,13 @@
 #define TSS_DESCRIPTOR_TYPE 0x89  // 0x9 = 64-bit, bit 7 present
 #define VIOS_TOTAL_INTERRUPTS 512
 
+
 // 16 Bit number defining the total number of loaded
-// entries.
+// entries. 
 #define VIOS_MEMORY_MAP_TOTAL_ENTRIES_LOCATION 0x210000
 
 // Where to find the E820 records
 #define VIOS_MEMORY_MAP_LOCATION 0x210008
-
 
 // 100MB heap size
 #define VIOS_HEAP_MINIMUM_SIZE_BYTES 104857600
@@ -60,5 +60,9 @@
 #define VIOS_MAX_ISR80H_COMMANDS 1024
 
 #define VIOS_KEYBOARD_BUFFER_SIZE 1024
+
+#define WINDOW_MAX_TITLE 128
+#define WINDOW_BORDER_PIXEL_SIZE 2
+#define WINDOW_TITLE_BAR_HEIGHT 32
 
 #endif

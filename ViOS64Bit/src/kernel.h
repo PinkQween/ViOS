@@ -1,3 +1,4 @@
+void print_early(const char *str);
 #ifndef KERNEL_H
 #define KERNEL_H
 

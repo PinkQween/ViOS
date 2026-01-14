@@ -230,6 +230,24 @@ if sudo mount -t msdos "$PART2_DEV" ./mnt; then
         echo "✗ Source BMP file not found at ./ViOS64Bit/data/images/bkground.bmp"
     fi
 
+    # Copy background image and other kernel files to partition 2
+    if [ -f ./ViOS64Bit/data/images/clsicon.bmp ]; then
+        echo "Found source file: ./ViOS64Bit/data/images/clsicon.bmp"
+        ls -lh ./ViOS64Bit/data/images/clsicon.bmp
+        if sudo cp -v ./ViOS64Bit/data/images/clsicon.bmp ./mnt/; then
+            echo "✓ BMP copied successfully"
+            echo "Contents after copy:"
+            ls -lh ./mnt/clsicon.bmp
+        else
+            echo "✗ Failed to copy BMP (error code: $?)"
+            sudo umount ./mnt
+            hdiutil detach "$BASE_DISK"
+            exit 1
+        fi
+    else
+        echo "✗ Source BMP file not found at ./ViOS64Bit/data/images/clsicon.bmp"
+    fi
+
     # Copy sysfont.bmp to partition 2
     if [ -f ./ViOS64Bit/data/images/fonts/sysfont.bmp ]; then
         echo "Found source file: ./ViOS64Bit/data/images/fonts/sysfont.bmp"

@@ -32,10 +32,25 @@ static void *vector_memory_at_index(struct vector *vec, size_t index)
 struct vector *vector_new(size_t element_size, size_t total_reserved_elements_per_resize, int flags)
 {
     struct vector *vec = kpzalloc(sizeof(struct vector));
+    extern void print_early(const char*);
+    char buf[128];
     if (!vec)
     {
-        // out of mem
+        print_early("[vector_new] kpzalloc failed!\n");
         return NULL;
+    }
+    else {
+        // Print pointer value
+        unsigned long val = (unsigned long)vec;
+        int n = (sizeof(unsigned long) * 2) - 1;
+        buf[0] = '['; buf[1] = 'v'; buf[2] = 'e'; buf[3] = 'c'; buf[4] = ':'; buf[5] = ' ';
+        int i = 6;
+        for (; n >= 0; n--) {
+            int v = (val >> (n * 4)) & 0xF;
+            buf[i++] = (v < 10) ? ('0' + v) : ('A' + v - 10);
+        }
+        buf[i++] = ']'; buf[i++] = '\n'; buf[i] = 0;
+        print_early(buf);
     }
     vec->e_size = element_size;
     vec->flags = flags;

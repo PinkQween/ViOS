@@ -9,6 +9,9 @@ FILES = \
   ./build/memory/paging/paging.o \
   ./build/memory/heap/multiheap.o \
   ./build/io/io.asm.o \
+  ./build/io/tsc.o \
+  ./build/io/tsc.asm.o \
+  ./build/io/cpuid.asm.o \
   ./build/idt/idt.o \
   ./build/idt/idt.asm.o \
   ./build/task/process.o \
@@ -29,6 +32,7 @@ FILES = \
   ./build/loader/formats/elf.o \
   ./build/loader/formats/elfloader.o \
   ./build/isr80h/isr80h.o \
+  ./build/isr80h/file.o \
   ./build/isr80h/misc.o \
   ./build/isr80h/process.o \
   ./build/idt/irq.o \
@@ -37,8 +41,11 @@ FILES = \
   ./build/graphics/graphics.o \
   ./build/graphics/image/image.o \
   ./build/graphics/image/bmp.o \
+  ./build/graphics/window.o \
   ./build/graphics/font.o \
-  ./build/graphics/terminal.o 
+  ./build/graphics/terminal.o \
+  ./build/mouse/mouse.o \
+  ./build/mouse/ps2mouse.o
 
 INCLUDES = -I./src
 CFLAGS  = -std=gnu99 -Wall -Werror -O0 -g
@@ -76,6 +83,7 @@ ifeq ($(UNAME_S),Linux)
 	find ./assets -name '*.elf' -exec sudo cp {} /mnt/d/ \; 2>/dev/null || true; \
 	echo "Copying data files..."; \
 	if [ -f "./data/images/bkground.bmp" ]; then sudo cp ./data/images/bkground.bmp /mnt/d/; fi; \
+	if [ -f "./data/images/clsicon.bmp" ]; then sudo cp ./data/images/clsicon.bmp /mnt/d/; fi; \
 	if [ -f "./data/images/fonts/sysfont.bmp" ]; then sudo cp ./data/images/fonts/sysfont.bmp /mnt/d/; fi; \
 	sudo umount /mnt/d; \
 	echo "User programs and assets installed to disk image!"
@@ -95,6 +103,7 @@ else ifeq ($(UNAME_S),Darwin)
 		find ./assets -name "*.elf" -exec sudo cp {} /Volumes/viosmnt/ \; 2>/dev/null || true; \
 		echo "Copying data files..."; \
 		if [ -f "./data/images/bkground.bmp" ]; then sudo cp ./data/images/bkground.bmp /Volumes/viosmnt/; fi; \
+		if [ -f "./data/images/clsicon.bmp" ]; then sudo cp ./data/images/clsicon.bmp /Volumes/viosmnt/; fi; \
 		if [ -f "./data/images/fonts/sysfont.bmp" ]; then sudo cp ./data/images/fonts/sysfont.bmp /Volumes/viosmnt/; fi; \
 		sync; \
 		echo "Files on partition:"; \

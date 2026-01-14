@@ -40,9 +40,8 @@ long_mode_entry:
     mov gs, ax
     mov ss, ax
     
-    ; Set up the stack pointer RSP
-    ; (HIGH 32 BITS ARE NEW | ESP (32 bits) )
-    mov rsp, 0x00200000
+    ; Set up the stack pointer RSP (512KB stack)
+    mov rsp, 0x00280000 ; 2.5MB
     mov rbp, rsp
 
     ; Purpose is to switch the code selector
@@ -206,7 +205,8 @@ PDPT_TABLE:
     dq PD_Table + 0x03      ; PDPT entry 0: 0-1GB pointing to PD(Present, RW)
     dq PD_Table_1GB + 0x03  ; PDPT entry 1: 1-2GB (Present, RW)
     dq PD_Table_2GB + 0x03  ; PDPT entry 2: 2-3GB for framebuffer at 0x80000000 (Present, RW)
-    times 509 dq 0          ; Remaining entries to be set to zero
+    dq PD_Table_3GB + 0x03  ; PDPT entry 3: 3-4GB for framebuffer at 0xC0000000 (Present, RW)
+    times 508 dq 0          ; Remaining entries to be set to zero
 
 align 4096
 PD_Table:
@@ -231,6 +231,14 @@ PD_Table_2GB:
     dq addr + 0x83   ; 2-MB Pages Present, RW (maps 2-3GB, includes framebuffer at 0x80000000)
     %assign addr addr + 0x200000
     %endrep 
+
+align 4096
+PD_Table_3GB:
+    %assign addr 0xC0000000  ; Start at 3GB
+    %rep 512
+    dq addr + 0x83   ; 2-MB Pages Present, RW (maps 3-4GB, includes framebuffer at 0xC0000000)
+    %assign addr addr + 0x200000
+    %endrep
 
 
 align 8

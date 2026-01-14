@@ -16,8 +16,8 @@ if [ "$DEBUG" = true ]; then
     qemu-system-x86_64 \
       -machine pc \
       -drive file=./bin/os.img,format=raw,if=ide \
-      -m 512M \
-      -cpu qemu64 \
+      -m 4G \
+      -cpu Skylake-Server,tsc-frequency=3000000000 \
       -bios /opt/homebrew/share/qemu/RELEASEX64_OVMF.fd \
       -serial stdio \
       -s -S
@@ -25,8 +25,9 @@ else
     qemu-system-x86_64 \
       -machine pc \
       -drive file=./bin/os.img,format=raw,if=ide \
-      -m 512M \
-      -cpu qemu64 \
+      -m 4G \
+      -cpu Skylake-Server,tsc-frequency=3000000000 \
       -bios /opt/homebrew/share/qemu/RELEASEX64_OVMF.fd \
-      -serial stdio
+      -serial stdio \
+      -vga std
 fi

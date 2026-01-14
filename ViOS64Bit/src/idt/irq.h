@@ -1,5 +1,6 @@
 #ifndef KERNEL_IRQ
 #define KERNEL_IRQ
+
 enum
 {
     IRQ_TIMER,
@@ -13,6 +14,7 @@ enum
     IRQ_CMOS,
     IRQ_LEGACY_SCSI,
     IRQ_SCSI,
+    IRQ_SCI2,
     IRQ_PS2_MOUSE,
     IRQ_FPU_COPROCESSOR,
     IRQ_PRIMARY_ATA_HDD,
@@ -28,4 +30,5 @@ enum
 typedef int IRQ;
 void IRQ_disable(IRQ irq);
 void IRQ_enable(IRQ irq);
+
 #endif
