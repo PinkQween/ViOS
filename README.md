@@ -289,27 +289,16 @@ ___________
 🚧 Build Requirements
 ---------------------
 
-Install the following:
-
-*   `nasm` – Assembler
-    
-*   `x86_64-elf-gcc` – Cross-compiler
-    
-*   `qemu` – Emulator (optional)
-    
-*   `grub-mkrescue` – ISO generation (optional)
-    
-
-### macOS (Homebrew)
-
+### Linux (Ubuntu/Debian)
 ```bash
-brew install nasm qemu x86_64-elf-gcc
+sudo apt install cmake build-essential nasm python3
+sudo apt install gcc-x86-64-linux-gnu binutils-x86-64-linux-gnu
 ```
 
-### Ubuntu/Debian
-
+### macOS (Homebrew)
 ```bash
-sudo apt install build-essential nasm qemu gcc-multilib grub-pc-bin xorriso
+brew install cmake nasm python3
+brew install x86_64-elf-gcc x86_64-elf-binutils
 ```
 
 ___________
@@ -317,25 +306,39 @@ ___________
 🚀 Building ViOS
 ----------------
 
-To build the OS:
+### Quick Build
 
 ```bash
-./build.sh
+make
 ```
 
-This will:
-
-1. Assemble the bootloader and kernel  
-2. Compile all components  
-3. Link the final kernel binary to `./bin/os.bin`  
-4. (If `grub-mkrescue` is installed) Generate a bootable ISO image as `./bin/os_disk.img`
-    
-
-To emulate with QEMU:
+### Manual CMake
 
 ```bash
-qemu-system-x86_64 -kernel bin/os.bin
+mkdir build && cd build
+cmake ..
+make
 ```
+
+Output: `build/bin/os.img`
+
+### Options
+
+```bash
+# Custom cross-compiler
+make CROSS_COMPILE=x86_64-linux-gnu-
+
+# Clean build
+make clean
+```
+
+### Running
+
+```bash
+./run.sh
+```
+
+See [BUILD_GUIDE.md](BUILD_GUIDE.md) for detailed instructions.
 
 ___________
 <a id="why-vios"></a>

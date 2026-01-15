@@ -1,4 +1,4 @@
-#include "classic.h"
+#include "ps2keyboard.h"
 #include "keyboard.h"
 #include "io/io.h"
 #include "kernel.h"

@@ -1,60 +1,30 @@
-# =========================
-# OS / Editor junk
-# =========================
+# Build directories
+build/
+bin/
+mnt/
+
+# Kernel build artifacts
+ViOS64Bit/build/
+ViOS64Bit/bin/
+ViOS64Bit/src/linker.ld.elf
+ViOS64Bit/src/linker.ld.tmp
+
+# EDK2 build artifacts
+Build/
+
+# Binary files
+*.img
+*.bin
+*.efi
+*.o
+*.elf
+*.a
+
+# System files
 .DS_Store
 *.swp
-*.swo
-*.tmp
-*.bak
-*.orig
+*~
 
-# =========================
-# Git internal (never track)
-# =========================
-.git/
-
-# =========================
-# Build outputs (binaries)
-# =========================
-*.o
-*.obj
-*.bin
-*.elf
-*.efi
-*.img
-*.iso
-*.map
-
-# =========================
-# Build directories
-# =========================
-build/
-**/build/
-bin/
-**/bin/
-
-# =========================
-# Disk / mount artifacts
-# =========================
-mnt/
-*.disk
-*.fs
-
-# =========================
-# Tooling / IDE metadata
-# =========================
-.clangd
-compile_commands.json
-.vscode/
-.idea/
-
-# =========================
-# Logs / temp runtime files
-# =========================
-*.log
-*.trace
-
-# =========================
-# Keep placeholders explicitly
-# =========================
-!.keep
+# Python
+__pycache__/
+*.pyc

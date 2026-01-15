@@ -27,7 +27,7 @@ FILES = \
   ./build/gdt/gdt.asm.o \
   ./build/gdt/gdt.o \
   ./build/keyboard/keyboard.o \
-  ./build/keyboard/classic.o \
+  ./build/keyboard/ps2keyboard.o \
   ./build/isr80h/heap.o \
   ./build/isr80h/io.o \
   ./build/loader/formats/elf.o \
@@ -56,6 +56,9 @@ EXTRAS  = -falign-jumps -falign-functions -falign-labels -falign-loops \
           -Wno-unused-function -Wno-unused-label -Wno-cpp -Wno-unused-parameter
 FLAGS   = $(CFLAGS) $(KFLAGS) $(EXTRAS) $(INCLUDES)
 UNAME_S := $(shell uname -s)
+CROSS_COMPILE ?= x86_64-elf-
+CC      = $(CROSS_COMPILE)gcc
+AS      = nasm
 
 # Create bin and build directories first
 .PHONY: prepare_dirs
@@ -136,17 +139,17 @@ endif
 # Build kernel as raw binary (using linker script with OUTPUT_FORMAT(binary))
 ./bin/kernel.bin: prepare_dirs $(FILES)
 	@echo "Building kernel binary..."
-	x86_64-elf-gcc -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib $(FILES)
+	$(CC) -T ./src/linker.ld -o ./bin/kernel.bin -ffreestanding -O0 -nostdlib $(FILES)
 
 # Build kernel as ELF (create temporary linker script without OUTPUT_FORMAT(binary))
 ./bin/kernel.elf: prepare_dirs $(FILES)
 	@echo "Building kernel ELF..."
 	@sed 's/OUTPUT_FORMAT(binary)/OUTPUT_FORMAT(elf64-x86-64)/' ./src/linker.ld > ./src/linker.ld.elf
-	x86_64-elf-gcc -T ./src/linker.ld.elf -o ./bin/kernel.elf -ffreestanding -O0 -nostdlib -g $(FILES)
+	$(CC) -T ./src/linker.ld.elf -o ./bin/kernel.elf -ffreestanding -O0 -nostdlib -g $(FILES)
 	@rm ./src/linker.ld.elf
 
 ./bin/boot.bin: prepare_dirs ./src/boot/boot.asm
-	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin
+	$(AS) -f bin ./src/boot/boot.asm -o ./bin/boot.bin
 
 # Calculate kernel size and update boot sector
 ./bin/boot_with_size.bin: ./bin/boot.bin ./bin/kernel.bin
@@ -163,11 +166,11 @@ endif
 # Generic C and ASM file rules
 ./build/%.o: ./src/%.c
 	mkdir -p $(dir $@)
-	x86_64-elf-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c $< -o $@
+	$(CC) $(INCLUDES) $(FLAGS) -std=gnu99 -c $< -o $@
 
 ./build/%.asm.o: ./src/%.asm
 	mkdir -p $(dir $@)
-	nasm -f elf64 -g $< -o $@
+	$(AS) -f elf64 -g $< -o $@
 
 user_programs:
 	@if [ -d "./assets" ]; then \
@@ -219,5 +222,5 @@ endif
 	@# Create a temporary linker script without OUTPUT_FORMAT(binary) for ELF output
 	@cp ./src/linker.ld ./src/linker.ld.tmp
 	@sed 's/OUTPUT_FORMAT(binary)/\/\* OUTPUT_FORMAT(binary) \*\//' ./src/linker.ld > ./src/linker.ld.elf
-	x86_64-elf-gcc $(FLAGS) -T ./src/linker.ld.elf -o ./bin/kernel.elf.debug -ffreestanding -O0 -nostdlib -g $(FILES)
+	$(CC) $(FLAGS) -T ./src/linker.ld.elf -o ./bin/kernel.elf.debug -ffreestanding -O0 -nostdlib -g $(FILES)
 	@rm ./src/linker.ld.elf
