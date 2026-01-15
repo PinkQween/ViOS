@@ -180,13 +180,13 @@ void kernel_main()
     enable_interrupts();
     kernel_debug_log("[kernel_main] interrupts enabled\n");
 
+    // Initialize window system stage two BEFORE graphics to ensure window move handler runs first
+    window_system_initialize_stage2();
+    kernel_debug_log("[kernel_main] after window_system_initialize_stage2\n");
+
     // initialize stage two graphics setup - register mouse handlers
     graphics_setup_stage_two(&default_graphics_info);
     kernel_debug_log("[kernel_main] after graphics_setup_stage_two\n");
-
-    // Initialize window system stage two
-    window_system_initialize_stage2();
-    kernel_debug_log("[kernel_main] after window_system_initialize_stage2\n");
 
     struct font *font = font_get_system_font();
     kernel_debug_log("[kernel_main] after font_get_system_font\n");

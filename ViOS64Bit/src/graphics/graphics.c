@@ -820,6 +820,9 @@ void graphics_setup(struct graphics_info *main_graphics_info)
 }
 bool graphics_has_ancestor(struct graphics_info* graphics_child, struct graphics_info* graphics_ancestor)
 {
+    if (!graphics_child || !graphics_ancestor)
+        return false;
+        
     struct graphics_info* parent = graphics_child->parent;
     while(parent)
     {

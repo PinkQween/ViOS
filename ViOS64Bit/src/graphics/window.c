@@ -62,28 +62,39 @@ void window_screen_mouse_move_handler(struct mouse *mouse, int moved_to_x, int m
 {
     if (window_moving)
     {
+        window_debug_log("[window_screen_mouse_move_handler] moving window\n");
         if (window_moving->title_bar_graphics)
         {
             size_t abs_x = moved_to_x - (window_moving->title_bar_graphics->width / 2);
             size_t abs_y = moved_to_y - (window_moving->title_bar_graphics->height / 2);
+            window_debug_log("[window_screen_mouse_move_handler] calling window_position_set\n");
             window_position_set(window_moving, abs_x, abs_y);
+            window_debug_log("[window_screen_mouse_move_handler] window_position_set done\n");
         }
 
-        size_t rel_x = moved_to_x - window_moving->root_graphics->starting_x;
-        size_t rel_y = moved_to_y - window_moving->root_graphics->starting_y;
-
-        struct window_event event = {0};
-        event.type = WINDOW_EVENT_TYPE_MOUSE_MOVE;
-        event.data.move.x = rel_x;
-        event.data.move.y = rel_y;
-        window_event_push(window_moving, &event);
+        // Skip sending move events - causes crashes in interrupt context
+        window_debug_log("[window_screen_mouse_move_handler] skipping event push (interrupt safety)\n");
     }
 }
 
 struct window *window_get_from_graphics(struct graphics_info *graphics)
 {
+    window_debug_log("[window_get_from_graphics] called\n");
+    if (!graphics)
+    {
+        window_debug_log("[window_get_from_graphics] graphics is NULL\n");
+        return NULL;
+    }
+    
+    if (!windows_vector)
+    {
+        window_debug_log("[window_get_from_graphics] windows_vector is NULL\n");
+        return NULL;
+    }
+    
     struct window *window = NULL;
     size_t total_windows = vector_count(windows_vector);
+    window_debug_log("[window_get_from_graphics] iterating windows\n");
     for (size_t i = 0; i < total_windows; i++)
     {
         struct window *win = NULL;
@@ -94,6 +105,7 @@ struct window *window_get_from_graphics(struct graphics_info *graphics)
             break;
         }
     }
+    window_debug_log("[window_get_from_graphics] done\n");
 
     return window;
 }
@@ -124,20 +136,42 @@ struct window *window_get_at_position(size_t abs_x, size_t abs_y, struct window 
 }
 void window_click_handler(struct mouse *mouse, int abs_x, int abs_y, MOUSE_CLICK_TYPE type)
 {
+    window_debug_log("[window_click_handler] called\n");
     struct window *win = window_get_at_position(abs_x, abs_y, mouse->graphic.window);
     if (win)
     {
+        window_debug_log("[window_click_handler] found window at position\n");
+        
+        if (!win->root_graphics)
+        {
+            window_debug_log("[window_click_handler] ERROR: win->root_graphics is NULL\n");
+            return;
+        }
+        
+        window_debug_log("[window_click_handler] calculating relative position\n");
         int rel_x = abs_x - win->root_graphics->starting_x;
         int rel_y = abs_y - win->root_graphics->starting_y;
+        
+        window_debug_log("[window_click_handler] calling window_click\n");
         window_click(win, rel_x, rel_y, type);
+        window_debug_log("[window_click_handler] window_click done\n");
+        window_debug_log("[window_click_handler] calling window_focus\n");
         window_focus(win);
+        window_debug_log("[window_click_handler] window_focus done\n");
+    }
+    else
+    {
+        window_debug_log("[window_click_handler] no window at position\n");
     }
 }
 
 int window_system_initialize_stage2()
 {
+    window_debug_log("[window_system_initialize_stage2] registering move handler\n");
     mouse_register_move_handler(NULL, window_screen_mouse_move_handler);
+    window_debug_log("[window_system_initialize_stage2] registering click handler\n");
     mouse_register_click_handler(NULL, window_click_handler);
+    window_debug_log("[window_system_initialize_stage2] done\n");
     // TODO: Implement keyboard functionality
     return 0;
 }
@@ -244,6 +278,7 @@ void window_focus(struct window *window)
         window_debug_log("[window_focus] already focused\n");
         return;
     }
+    window_debug_log("[window_focus] setting focused_window\n");
     struct window *old_focused_window = focused_window;
     focused_window = window;
     struct framebuffer_pixel red = {0};
@@ -252,15 +287,18 @@ void window_focus(struct window *window)
     red.blue = 0x00;
     if (old_focused_window && old_focused_window->title_bar_graphics)
     {
+        window_debug_log("[window_focus] unfocusing old window\n");
         window_unfocus(old_focused_window);
     } else if (old_focused_window) {
         window_debug_log("[window_focus] old_focused_window->title_bar_graphics is NULL\n");
     }
     // Bring the new window to the top
+    window_debug_log("[window_focus] bringing to top\n");
     window_bring_to_top(window);
     // Update the new windows title bar to red
     if (window->title_bar_graphics)
     {
+        window_debug_log("[window_focus] drawing title bar\n");
         window_draw_title_bar(window, red);
         window_debug_log("[window_focus] window->title_bar_graphics is valid in focus\n");
     } else {
@@ -303,25 +341,49 @@ void window_drop_event_handlers(struct window *window)
 }
 void window_free(struct window *window)
 {
+    window_debug_log("[window_free] called\n");
+    if (!window)
+    {
+        window_debug_log("[window_free] window is NULL\n");
+        return;
+    }
+    
+    window_debug_log("[window_free] drop event handlers\n");
     // drop the event handlers
     window_drop_event_handlers(window);
+    
+    window_debug_log("[window_free] free event handlers vector\n");
     // free the event handlers vector
     vector_free(window->event_handlers.handlers);
 
+    window_debug_log("[window_free] pop from windows_vector\n");
     // Pop the window pointer from the vector
     vector_pop_element(windows_vector, &window, sizeof(window));
+    
+    window_debug_log("[window_free] free terminal\n");
     terminal_free(window->terminal);
 
+    window_debug_log("[window_free] free title_bar_terminal\n");
     // free the title terminal
     terminal_free(window->title_bar_terminal);
 
+    window_debug_log("[window_free] free root_graphics\n");
     // Free the root graphics which will free aall children
     graphics_info_free(window->root_graphics);
+    
+    window_debug_log("[window_free] kfree window\n");
     kfree(window);
+    window_debug_log("[window_free] done\n");
 }
 
 void window_event_push(struct window *window, struct window_event *event)
 {
+    if (!window || !event)
+        return;
+        
+    if (!window->event_handlers.handlers)
+        return;
+    
     event->window = window;
     event->win_id = window->id;
 
@@ -340,21 +402,54 @@ void window_event_push(struct window *window, struct window_event *event)
 
 void window_click(struct window *window, int rel_x, int rel_y, MOUSE_CLICK_TYPE type)
 {
-    struct window_event event = {0};
-    event.type = WINDOW_EVENT_TYPE_MOUSE_CLICK;
-    event.data.click.x = rel_x;
-    event.data.click.y = rel_y;
-    window_event_push(window, &event);
+    window_debug_log("[window_click] called\n");
+    
+    if (!window)
+    {
+        window_debug_log("[window_click] ERROR: window is NULL\n");
+        return;
+    }
+    
+    window_debug_log("[window_click] window ptr valid\n");
+    
+    // Don't send click events to window - causes crashes in interrupt context
+    // The graphics click handler will handle individual graphics element clicks
+    window_debug_log("[window_click] skipping event push (interrupt safety)\n");
+    window_debug_log("[window_click] done\n");
 }
 
 void window_close(struct window *window)
 {
-    struct window_event event = {0};
-    event.type = WINDOW_EVENT_TYPE_WINDOW_CLOSE;
-    window_event_push(window, &event);
+    window_debug_log("[window_close] called\n");
+    if (!window)
+    {
+        window_debug_log("[window_close] window is NULL\n");
+        return;
+    }
+    
+    // Don't send close event to handlers - window is being destroyed
+    // Handlers might try to access the window which is dangerous
+    window_debug_log("[window_close] skipping event notification\n");
 
+    if (focused_window == window)
+    {
+        window_debug_log("[window_close] clearing focused_window\n");
+        focused_window = NULL;
+    }
+
+    if (window_moving == window)
+    {
+        window_debug_log("[window_close] clearing window_moving\n");
+        window_moving = NULL;
+    }
+
+    window_debug_log("[window_close] calling window_free\n");
     window_free(window);
+    window_debug_log("[window_close] window_free done\n");
+    
+    window_debug_log("[window_close] calling graphics_redraw_all\n");
     graphics_redraw_all();
+    window_debug_log("[window_close] graphics_redraw_all done\n");
 }
 
 int window_event_handler(struct window *window, struct window_event *win_event)
@@ -367,17 +462,13 @@ int window_position_set(struct window *window, size_t new_x, size_t new_y)
 {
     int res = 0;
 
-    int x_redraw_x = 0;
-    int x_redraw_y = 0;
-    int x_redraw_width = 0;
-    int x_redraw_height = 0;
-
-    int y_redraw_x = 0;
-    int y_redraw_y = 0;
-    int y_redraw_width = 0;
-    int y_redraw_height = 0;
+    if (!window || !window->root_graphics)
+        return -EINVARG;
 
     struct graphics_info *screen = graphics_screen_info();
+    if (!screen)
+        return -EINVARG;
+        
     size_t ending_x = new_x + window->width;
     size_t ending_y = new_y + window->height;
     if (ending_x > screen->width)
@@ -390,9 +481,11 @@ int window_position_set(struct window *window, size_t new_x, size_t new_y)
         new_y = screen->height - window->height - 1;
     }
 
-    int old_screen_x = window->root_graphics->starting_x;
-    int old_screen_y = window->root_graphics->starting_y;
+    // Save old position
+    size_t old_x = window->x;
+    size_t old_y = window->y;
 
+    // Update position
     window->root_graphics->relative_x = new_x;
     window->root_graphics->relative_y = new_y;
     window->root_graphics->starting_x = new_x;
@@ -401,52 +494,23 @@ int window_position_set(struct window *window, size_t new_x, size_t new_y)
     window->x = new_x;
     window->y = new_y;
 
-    window_bring_to_top(window);
-
+    // Recalculate child positions
     graphics_info_recalculate(window->root_graphics);
-
-    int x_gap = old_screen_x - (int)window->root_graphics->starting_x;
-    int y_gap = old_screen_y - (int)window->root_graphics->starting_y;
-    bool moved_left = x_gap >= 0;
-    bool moved_up = y_gap >= 0;
-    x_redraw_x = window->root_graphics->starting_x + window->root_graphics->width;
-    x_redraw_width = x_gap;
-    x_redraw_y = old_screen_y;
-    x_redraw_height = window->root_graphics->height;
-
-    if (!moved_left)
+    
+    // For mouse cursor (borderless, small), use optimized redraw
+    if (window->flags & WINDOW_FLAG_BORDERLESS)
     {
-        x_redraw_x = window->root_graphics->starting_x + x_gap;
-        // negate the x_gap
-        x_redraw_width = -x_gap;
-    }
-
-    y_redraw_x = old_screen_x;
-    y_redraw_y = window->root_graphics->starting_y + window->root_graphics->height;
-
-    y_redraw_width = window->root_graphics->width;
-    y_redraw_height = y_gap;
-    if (!moved_up)
-    {
-        y_redraw_y = window->root_graphics->starting_y + y_gap;
-        y_redraw_height = -y_gap;
-    }
-
-    if ((x_redraw_width > window->root_graphics->width) ||
-        (x_redraw_height > window->root_graphics->height) ||
-        (y_redraw_width > window->root_graphics->width) ||
-        (y_redraw_height > window->root_graphics->height))
-    {
-        graphics_redraw_region(graphics_screen_info(), old_screen_x, old_screen_y, window->root_graphics->width, window->root_graphics->height);
+        // Redraw old region to screen (clears old cursor)
+        graphics_redraw_graphics_to_screen(screen, old_x, old_y, window->width, window->height);
+        // Redraw at new position
+        graphics_redraw(window->root_graphics);
     }
     else
     {
-        graphics_redraw_region(graphics_screen_info(), x_redraw_x, x_redraw_y, x_redraw_width, x_redraw_height);
-        graphics_redraw_region(graphics_screen_info(), y_redraw_x, y_redraw_y, y_redraw_width, y_redraw_height);
+        // For regular windows being dragged, do full redraw
+        graphics_redraw_all();
     }
-
-    window_redraw(window);
-out:
+    
     return res;
 }
 
@@ -518,6 +582,9 @@ struct window *window_focused()
 
 bool window_owns_graphics(struct window *win, struct graphics_info *graphics)
 {
+    if (!win || !graphics)
+        return false;
+        
     if (graphics == win->root_graphics)
         return true;
 
@@ -531,9 +598,20 @@ void window_title_bar_mouse_moved(struct graphics_info *title_graphics, size_t r
 
 void window_title_bar_clicked(struct graphics_info *title_graphics, size_t rel_x, size_t rel_y, MOUSE_CLICK_TYPE type)
 {
+    window_debug_log("[window_title_bar_clicked] called\n");
+    if (!title_graphics)
+    {
+        window_debug_log("[window_title_bar_clicked] title_graphics is NULL\n");
+        return;
+    }
+    
+    window_debug_log("[window_title_bar_clicked] calling window_get_from_graphics\n");
     struct window *win = window_get_from_graphics(title_graphics);
+    window_debug_log("[window_title_bar_clicked] window_get_from_graphics returned\n");
+    
     if (win)
     {
+        window_debug_log("[window_title_bar_clicked] got window\n");
         size_t close_btn_x = win->title_bar_components.close_btn.x;
         size_t close_btn_y = win->title_bar_components.close_btn.y;
         size_t close_btn_width = win->title_bar_components.close_btn.width;
@@ -545,11 +623,13 @@ void window_title_bar_clicked(struct graphics_info *title_graphics, size_t rel_x
             rel_y >= close_btn_y &&
             rel_y < close_btn_ending_y)
         {
+            window_debug_log("[window_title_bar_clicked] close button clicked\n");
             window_close(win);
             win = NULL;
         }
         else
         {
+            window_debug_log("[window_title_bar_clicked] title bar clicked (not close)\n");
             // If they click the window they are already moving
             // toggle it as no longer moving.
             if (window_moving == win)
@@ -564,6 +644,11 @@ void window_title_bar_clicked(struct graphics_info *title_graphics, size_t rel_x
             }
         }
     }
+    else
+    {
+        window_debug_log("[window_title_bar_clicked] win is NULL\n");
+    }
+    window_debug_log("[window_title_bar_clicked] done\n");
 }
 struct window *window_create(struct graphics_info *graphics_info, struct font *font, const char *title, size_t x, size_t y, size_t width, size_t height, uint64_t flags, uint64_t id)
 {

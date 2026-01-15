@@ -5,6 +5,7 @@
 #include "idt/idt.h"
 #include "idt/irq.h"
 #include "task/task.h"
+#include "task/process.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -70,7 +71,6 @@ uint8_t classic_keyboard_scancode_to_char(uint8_t scancode)
 
 void classic_keyboard_handle_interrupt()
 {
-    kernel_page();
     uint8_t scancode = 0;
     scancode = insb(KEYBOARD_INPUT_PORT);
     insb(KEYBOARD_INPUT_PORT);
@@ -89,10 +89,13 @@ void classic_keyboard_handle_interrupt()
     uint8_t c = classic_keyboard_scancode_to_char(scancode);
     if (c != 0)
     {
-        keyboard_push(c);
+        // Only push if we have a valid process - prevents crashes from interrupt conflicts
+        struct process* current_proc = process_current();
+        if (current_proc)
+        {
+            keyboard_push(c);
+        }
     }
-
-    task_page();
 
 }
 

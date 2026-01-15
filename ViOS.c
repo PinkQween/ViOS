@@ -340,7 +340,35 @@ UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable)
     }
   }
   // End the UEFI services and jump to the kernel
-  gBS->ExitBootServices(ImageHandle, 0);
+  UINTN memoryMapSize = 0;
+  EFI_MEMORY_DESCRIPTOR *memoryMap = NULL;
+  UINTN mapKey;
+  UINTN descriptorSize;
+  UINT32 descriptorVersion;
+
+  Status = gBS->GetMemoryMap(&memoryMapSize, NULL, &mapKey, &descriptorSize,
+                             &descriptorVersion);
+  memoryMapSize += descriptorSize * 10;
+  memoryMap = AllocatePool(memoryMapSize);
+  if (memoryMap == NULL)
+  {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = gBS->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey,
+                             &descriptorSize, &descriptorVersion);
+  if (EFI_ERROR(Status))
+  {
+    FreePool(memoryMap);
+    return Status;
+  }
+
+  Status = gBS->ExitBootServices(ImageHandle, mapKey);
+  if (EFI_ERROR(Status))
+  {
+    FreePool(memoryMap);
+    return Status;
+  }
 
   __asm__ __volatile__(
       "movq %0, %%rdi\n\t" // Frame buffer base

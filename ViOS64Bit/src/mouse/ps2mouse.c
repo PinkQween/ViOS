@@ -3,9 +3,13 @@
 #include "idt/idt.h"
 #include "io/io.h"
 #include "io/tsc.h"
+#include "io/serial.h"
 #include "kernel.h"
 #include "status.h"
 #include "graphics/graphics.h"
+#include "graphics/window.h"
+#include "task/task.h"
+#include "task/process.h"
 int ps2_mouse_init(struct mouse *mouse);
 
 struct mouse ps2_mouse = {
@@ -50,6 +54,14 @@ void ps2_mouse_handle_interrupt(struct interrupt_frame *frame)
     static uint8_t packet[4];
     static int packet_byte_count = 0;
     size_t ps2_mouse_packet_size = ps2_mouse_private.mouse_packet_size;
+    
+    // Check if there's actually data available
+    if (!(insb(PS2_STATUS_PORT) & 0x20))
+    {
+        // No data from mouse, ignore spurious interrupt
+        return;
+    }
+    
     uint8_t data = insb(PS2_COMMUNICATION_PORT);
 
     if (packet_byte_count == 0 && !(data & 0x08))
@@ -125,7 +137,18 @@ void ps2_mouse_handle_interrupt(struct interrupt_frame *frame)
 
     }
 
-    mouse_moved(&ps2_mouse);
+    // Always call mouse_moved when mouse position changes
+    if (dx != 0 || dy != 0)
+    {
+        // Safety check before calling handlers
+        if (ps2_mouse.event_handlers.move_handlers && 
+            ps2_mouse.graphic.window && 
+            ps2_mouse.graphic.window->root_graphics)
+        {
+            mouse_moved(&ps2_mouse);
+        }
+    }
+    
     return;
 }
 

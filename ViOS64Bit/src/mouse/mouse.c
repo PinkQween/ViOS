@@ -127,6 +127,9 @@ void mouse_position_set(struct mouse* mouse, size_t x, size_t y)
 
 void mouse_click(struct mouse* mouse, MOUSE_CLICK_TYPE type)
 {
+    if (!mouse || !mouse->event_handlers.click_handlers)
+        return;
+        
     // Loop through every click handler and invoke it
     size_t total_click_handlers = vector_count(mouse->event_handlers.click_handlers);
     for(size_t i = 0; i < total_click_handlers; i++)
@@ -142,6 +145,9 @@ void mouse_click(struct mouse* mouse, MOUSE_CLICK_TYPE type)
 
 void mouse_moved(struct mouse* mouse)
 {
+    if (!mouse || !mouse->event_handlers.move_handlers)
+        return;
+        
     size_t total_move_handlers = vector_count(mouse->event_handlers.move_handlers);
     for(size_t i = 0; i < total_move_handlers; i++)
     {

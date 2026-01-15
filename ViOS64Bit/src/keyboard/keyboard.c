@@ -63,13 +63,13 @@ KEYBOARD_CAPS_LOCK_STATE keyboard_get_capslock(struct keyboard* keyboard)
 
 void keyboard_push(char c)
 {
-    struct process* process = process_current();
-    if (!process)
+    if(c == 0)
     {
         return;
     }
-
-    if(c == 0)
+    
+    struct process* process = process_current();
+    if (!process)
     {
         return;
     }
