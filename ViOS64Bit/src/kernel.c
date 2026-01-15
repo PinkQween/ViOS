@@ -1,36 +1,4 @@
-// Early boot print to serial port (0x3F8)
-#define SERIAL_PORT 0x3F8
-static inline void outb(unsigned short port, unsigned char val) {
-    __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
-}
-
-static int serial_initialized = 0;
-static void serial_init() {
-    outb(SERIAL_PORT + 1, 0x00);    // Disable all interrupts
-    outb(SERIAL_PORT + 3, 0x80);    // Enable DLAB (set baud rate divisor)
-    outb(SERIAL_PORT + 0, 0x03);    // Set divisor to 3 (lo byte) 38400 baud
-    outb(SERIAL_PORT + 1, 0x00);    //                  (hi byte)
-    outb(SERIAL_PORT + 3, 0x03);    // 8 bits, no parity, one stop bit
-    outb(SERIAL_PORT + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
-    outb(SERIAL_PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
-    serial_initialized = 1;
-}
-
-static int serial_is_transmit_empty() {
-    unsigned char res;
-    __asm__ volatile ("inb %1, %0" : "=a"(res) : "Nd"(SERIAL_PORT + 5));
-    return res & 0x20;
-}
-
-void print_early(const char *str)
-{
-    if (!serial_initialized) serial_init();
-    while (*str) {
-        while (!serial_is_transmit_empty());
-        outb(SERIAL_PORT, *str++);
-    }
-}
-
+#include "io/serial.h"
 #include "kernel.h"
 #include "config.h"
 #include "disk/disk.h"
@@ -58,6 +26,11 @@ void print_early(const char *str)
 #include "task/tss.h"
 #include "mouse/mouse.h"
 #include "io/tsc.h"
+
+// Global debug log for kernel and subsystems
+void kernel_debug_log(const char* msg) {
+    serial_write_string(SERIAL_COM1_BASE, msg);
+}
 
 struct terminal *system_terminal = NULL;
 
@@ -88,31 +61,6 @@ void panic(const char *msg)
     }
 }
 
-// static struct paging_4gb_chunk* kernel_chunk = 0;
-
-// void kernel_page()
-// {
-//     kernel_registers();
-//     paging_switch(kernel_chunk);
-// }
-
-// struct tss tss;
-// struct gdt gdt_real[VIOS_TOTAL_GDT_SEGMENTS];
-// struct gdt_structured gdt_structured[VIOS_TOTAL_GDT_SEGMENTS] = {
-//     {.base = 0x00, .limit = 0x00, .type = 0x00},                // NULL
-//     Segment
-//     {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},           // Kernel
-//     code segment
-//     {.base = 0x00, .limit = 0xffffffff, .type = 0x92},            // Kernel
-//     data segment
-//     {.base = 0x00, .limit = 0xffffffff, .type = 0xf8},              // User
-//     code segment
-//     {.base = 0x00, .limit = 0xffffffff, .type = 0xf2},             // User
-//     data segment
-//     {.base = (uint32_t)&tss, .limit=sizeof(tss), .type = 0xE9}      // TSS
-//     Segment
-// };
-
 struct tss tss;
 
 extern struct gdt_entry gdt[];
@@ -132,29 +80,29 @@ struct paging_desc *kernel_desc() { return kernel_paging_desc; }
 extern struct graphics_info default_graphics_info;
 void kernel_main()
 {
-    print_early("[kernel_main] entered\n");
+    kernel_debug_log("[kernel_main] entered\n");
 
     struct graphics_info *screen_info = NULL;
-    print_early("[kernel_main] before kheap_init\n");
+    kernel_debug_log("[kernel_main] before kheap_init\n");
     kheap_init();
-    print_early("[kernel_main] after kheap_init\n");
+    kernel_debug_log("[kernel_main] after kheap_init\n");
 
-    print_early("[kernel_main] before paging_desc_new\n");
+    kernel_debug_log("[kernel_main] before paging_desc_new\n");
     kernel_paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
-    print_early("[kernel_main] after paging_desc_new\n");
+    kernel_debug_log("[kernel_main] after paging_desc_new\n");
 
     if (!kernel_paging_desc)
     {
         panic("Failed to create kernel paging descriptor\n");
     }
 
-    print_early("[kernel_main] before paging_map_e820_memory_regions\n");
+    kernel_debug_log("[kernel_main] before paging_map_e820_memory_regions\n");
     paging_map_e820_memory_regions(kernel_paging_desc);
-    print_early("[kernel_main] after paging_map_e820_memory_regions\n");
+    kernel_debug_log("[kernel_main] after paging_map_e820_memory_regions\n");
 
-    print_early("[kernel_main] before paging_switch\n");
+    kernel_debug_log("[kernel_main] before paging_switch\n");
     paging_switch(kernel_paging_desc);
-    print_early("[kernel_main] after paging_switch\n");
+    kernel_debug_log("[kernel_main] after paging_switch\n");
 
     // The multi-heap is ready
     kheap_post_paging();
@@ -187,11 +135,10 @@ void kernel_main()
 
     // Heap allocation/free test before window_create
     {
-        extern void print_early(const char*);
         char buf[128];
         void* test_ptr = kzalloc(64);
         if (!test_ptr) {
-            print_early("[kernel_main] heap test alloc failed!\n");
+            kernel_debug_log("[kernel_main] heap test alloc failed!\n");
         } else {
             unsigned long val = (unsigned long)test_ptr;
             int n = (sizeof(unsigned long) * 2) - 1;
@@ -202,17 +149,17 @@ void kernel_main()
                 buf[i++] = (v < 10) ? ('0' + v) : ('A' + v - 10);
             }
             buf[i++] = ']'; buf[i++] = '\n'; buf[i] = 0;
-            print_early(buf);
+            kernel_debug_log(buf);
             kfree(test_ptr);
-            print_early("[kernel_main] heap test free done\n");
+            kernel_debug_log("[kernel_main] heap test free done\n");
         }
     }
     // Initialize window system
     int win_init_res = window_system_initialize();
     if (win_init_res == 0) {
-        print_early("[kernel_main] window_system_initialize succeeded\n");
+        kernel_debug_log("[kernel_main] window_system_initialize succeeded\n");
     } else {
-        print_early("[kernel_main] window_system_initialize failed\n");
+        kernel_debug_log("[kernel_main] window_system_initialize failed\n");
     }
 
     // Initialize mouse system
@@ -220,29 +167,29 @@ void kernel_main()
     if (mouse_init_res != 0) {
         panic("Failed to initialize mouse system\n");
     }
-    print_early("[kernel_main] after mouse_system_init\n");
+    kernel_debug_log("[kernel_main] after mouse_system_init\n");
 
     // Load the static mouse drivers.
     int mouse_drivers_res = mouse_system_load_static_drivers();
     if (mouse_drivers_res != 0) {
         panic("Failed to load static mouse drivers\n");
     }
-    print_early("[kernel_main] after mouse_system_load_static_drivers\n");
+    kernel_debug_log("[kernel_main] after mouse_system_load_static_drivers\n");
 
     // Enable interrupts so mouse can work
     enable_interrupts();
-    print_early("[kernel_main] interrupts enabled\n");
+    kernel_debug_log("[kernel_main] interrupts enabled\n");
 
     // initialize stage two graphics setup - register mouse handlers
     graphics_setup_stage_two(&default_graphics_info);
-    print_early("[kernel_main] after graphics_setup_stage_two\n");
+    kernel_debug_log("[kernel_main] after graphics_setup_stage_two\n");
 
     // Initialize window system stage two
     window_system_initialize_stage2();
-    print_early("[kernel_main] after window_system_initialize_stage2\n");
+    kernel_debug_log("[kernel_main] after window_system_initialize_stage2\n");
 
     struct font *font = font_get_system_font();
-    print_early("[kernel_main] after font_get_system_font\n");
+    kernel_debug_log("[kernel_main] after font_get_system_font\n");
     if (!font)
     {
         panic("Failed to load system font\n");
@@ -252,11 +199,11 @@ void kernel_main()
     font_color.red = 0xff;
     font_color.blue = 0xff;
 
-    print_early("[kernel_main] before terminal_create\n");
+    kernel_debug_log("[kernel_main] before terminal_create\n");
     system_terminal = terminal_create(screen_info, 0, 0, screen_info->width,
                                       screen_info->height, font, font_color,
                                       TERMINAL_FLAG_BACKSPACE_ALLOWED);
-    print_early("[kernel_main] after terminal_create\n");
+    kernel_debug_log("[kernel_main] after terminal_create\n");
     if (!system_terminal)
     {
         panic("Failed to create system terminal\n");
@@ -275,7 +222,7 @@ void kernel_main()
         unsigned long val;
         int n;
         // Print base
-        print_early("[kernel stack] base: 0x");
+        kernel_debug_log("[kernel stack] base: 0x");
         val = (unsigned long)kernel_stack_base;
         n = (sizeof(unsigned long) * 2) - 1;
         for (; n >= 0; n--) {
@@ -283,10 +230,10 @@ void kernel_main()
             buf[(sizeof(unsigned long) * 2) - 1 - n] = (v < 10) ? ('0' + v) : ('A' + v - 10);
         }
         buf[sizeof(unsigned long) * 2] = 0;
-        print_early(buf);
-        print_early("\n");
+        kernel_debug_log(buf);
+        kernel_debug_log("\n");
         // Print top
-        print_early("[kernel stack] top:  0x");
+        kernel_debug_log("[kernel stack] top:  0x");
         val = (unsigned long)kernel_stack_top;
         n = (sizeof(unsigned long) * 2) - 1;
         for (; n >= 0; n--) {
@@ -294,8 +241,8 @@ void kernel_main()
             buf[(sizeof(unsigned long) * 2) - 1 - n] = (v < 10) ? ('0' + v) : ('A' + v - 10);
         }
         buf[sizeof(unsigned long) * 2] = 0;
-        print_early(buf);
-        print_early("\n");
+        kernel_debug_log(buf);
+        kernel_debug_log("\n");
     }
     // Map the kernel stack region as present and writable
     paging_map_to(kernel_desc(), kernel_stack_base, kernel_stack_base, kernel_stack_top, PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
@@ -323,23 +270,23 @@ void kernel_main()
     // Initialize the keyboard
     // keyboard_init();
 
-    print_early("REACHED MAIN WINDOW CODE\n");
-    print_early("[kernel_main] creating main window\n");
+    kernel_debug_log("REACHED MAIN WINDOW CODE\n");
+    kernel_debug_log("[kernel_main] creating main window\n");
     
     // Create a test window with title bar
     struct window *win = window_create(graphics_screen_info(), NULL, "Test Window", (size_t)100, (size_t)100, (size_t)200, (size_t)200, (uint64_t)0, (uint64_t)(-1));
     if (!win)
     {
-        print_early("[kernel_main] main window creation failed\n");
+        kernel_debug_log("[kernel_main] main window creation failed\n");
         print("Window creation problem\n");
     }
     else
     {
-        print_early("[kernel_main] main window created\n");
+        kernel_debug_log("[kernel_main] main window created\n");
         terminal_print(window_terminal(win), "Hello, world!\n");
-        print_early("[kernel_main] terminal_print done\n");
+        kernel_debug_log("[kernel_main] terminal_print done\n");
         window_redraw(win);
-        print_early("[kernel_main] window_redraw done\n");
+        kernel_debug_log("[kernel_main] window_redraw done\n");
     }
    
    while(1) {}

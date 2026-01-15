@@ -104,12 +104,12 @@ int mouse_register(struct mouse* mouse)
 
     if (!mouse->graphic.window)
     {
-        extern void print_early(const char*);
-        print_early("[mouse_register] before window_create\n");
+        #include "kernel.h"
+        kernel_debug_log("[mouse_register] before window_create\n");
         mouse->graphic.window = window_create(screen_graphics, NULL, "", mouse->coords.x, mouse->coords.y, mouse->graphic.width, mouse->graphic.height, WINDOW_FLAG_BACKGROUND_TRANSPARENT | WINDOW_FLAG_BORDERLESS | WINDOW_FLAG_CLICK_THROUGH, -1);
-        print_early("[mouse_register] after window_create\n");
+        kernel_debug_log("[mouse_register] after window_create\n");
         window_set_z_index(mouse->graphic.window, MOUSE_GRAPHIC_ZINDEX);
-        print_early("[mouse_register] after window_set_z_index\n");
+        kernel_debug_log("[mouse_register] after window_set_z_index\n");
     }
 
     mouse->draw(mouse);

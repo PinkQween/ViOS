@@ -11,6 +11,11 @@
 // include tsc.h
 #include "status.h"
 #include "kernel.h"
+#include "io/serial.h"
+
+#include "kernel.h"
+// Use the global kernel_debug_log for window debug output
+#define window_debug_log(msg) kernel_debug_log(msg)
 
 // vector of struct window*
 struct vector *windows_vector;
@@ -188,9 +193,9 @@ void window_set_z_index(struct window *window, int zindex)
 
 void window_unfocus(struct window *old_focused_window)
 {
-    print_early("[window_unfocus] called\n");
+    window_debug_log("[window_unfocus] called\n");
     if (!old_focused_window) {
-        print_early("[window_unfocus] old_focused_window is NULL\n");
+        window_debug_log("[window_unfocus] old_focused_window is NULL\n");
         return;
     }
     struct framebuffer_pixel black = {0};
@@ -201,7 +206,7 @@ void window_unfocus(struct window *old_focused_window)
         window_draw_title_bar(old_focused_window, black);
         graphics_redraw_region(graphics_screen_info(), old_focused_window->root_graphics->starting_x, old_focused_window->root_graphics->starting_y, old_focused_window->root_graphics->width, old_focused_window->root_graphics->height);
     } else {
-        print_early("[window_unfocus] old_focused_window->title_bar_graphics is NULL\n");
+        window_debug_log("[window_unfocus] old_focused_window->title_bar_graphics is NULL\n");
     }
     struct window_event event = {0};
     event.type = WINDOW_EVENT_TYPE_LOST_FOCUS;
@@ -229,14 +234,14 @@ void window_bring_to_top(struct window *window)
 
 void window_focus(struct window *window)
 {
-    print_early("[window_focus] called\n");
+    window_debug_log("[window_focus] called\n");
     if (!window) {
-        print_early("[window_focus] window is NULL\n");
+        window_debug_log("[window_focus] window is NULL\n");
         return;
     }
     if (focused_window == window)
     {
-        print_early("[window_focus] already focused\n");
+        window_debug_log("[window_focus] already focused\n");
         return;
     }
     struct window *old_focused_window = focused_window;
@@ -249,7 +254,7 @@ void window_focus(struct window *window)
     {
         window_unfocus(old_focused_window);
     } else if (old_focused_window) {
-        print_early("[window_focus] old_focused_window->title_bar_graphics is NULL\n");
+        window_debug_log("[window_focus] old_focused_window->title_bar_graphics is NULL\n");
     }
     // Bring the new window to the top
     window_bring_to_top(window);
@@ -257,21 +262,21 @@ void window_focus(struct window *window)
     if (window->title_bar_graphics)
     {
         window_draw_title_bar(window, red);
-        print_early("[window_focus] window->title_bar_graphics is valid in focus\n");
+        window_debug_log("[window_focus] window->title_bar_graphics is valid in focus\n");
     } else {
-        print_early("[window_focus] window->title_bar_graphics is NULL\n");
+        window_debug_log("[window_focus] window->title_bar_graphics is NULL\n");
     }
     
     // SKIP: This causes infinite recursion! window_create already calls graphics_redraw_all()
     // graphics_redraw_graphics_to_screen(window->root_graphics, 0, 0, window->root_graphics->width, window->root_graphics->height);
-    print_early("[window_focus] skipped graphics_redraw_graphics_to_screen\n");
+    window_debug_log("[window_focus] skipped graphics_redraw_graphics_to_screen\n");
     
     // TEMPORARILY SKIP EVENT SYSTEM - may be causing hang
     // struct window_event event = {0};
     // event.type = WINDOW_EVENT_TYPE_FOCUS;
     // window_event_push(window, &event);
     
-    print_early("[window_focus] done\n");
+    window_debug_log("[window_focus] done\n");
 }
 
 void window_event_handler_unregister(struct window *window, WINDOW_EVENT_HANDLER handler)
@@ -562,7 +567,7 @@ void window_title_bar_clicked(struct graphics_info *title_graphics, size_t rel_x
 }
 struct window *window_create(struct graphics_info *graphics_info, struct font *font, const char *title, size_t x, size_t y, size_t width, size_t height, uint64_t flags, uint64_t id)
 {
-    print_early("[window_create] called\n");
+    window_debug_log("[window_create] called\n");
     {
         char buf[256];
         buf[0] = '['; buf[1] = 'p'; buf[2] = 'a'; buf[3] = 'r'; buf[4] = 'a'; buf[5] = 'm'; buf[6] = 's'; buf[7] = ':';
@@ -586,29 +591,29 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
             buf[n++] = (v < 10) ? ('0' + v) : ('A' + v - 10);
         }
         buf[n++] = ']'; buf[n++] = '\n'; buf[n] = 0;
-        print_early(buf);
+        window_debug_log(buf);
     }
     int res = 0;
     if (!windows_vector)
     {
-        print_early("[window_create] windows_vector not initialized\n");
+        window_debug_log("[window_create] windows_vector not initialized\n");
         panic("Window system was not initialized\n");
     }
     if (width < 1 || height < 1)
     {
-        print_early("[window_create] invalid width/height\n");
+        window_debug_log("[window_create] invalid width/height\n");
         res = -EINVARG;
         goto out;
     }
     if (!font)
     {
-        print_early("[window_create] no font, using system font\n");
+        window_debug_log("[window_create] no font, using system font\n");
         font = font_get_system_font();
     }
     struct window *window = kzalloc(sizeof(struct window));
     if (!window)
     {
-        print_early("[window_create] window alloc failed\n");
+        window_debug_log("[window_create] window alloc failed\n");
         res = -ENOMEM;
         goto out;
     }
@@ -633,17 +638,17 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
             buf[n++] = (v < 10) ? ('0' + v) : ('A' + v - 10);
         }
         buf[n++] = ']'; buf[n++] = '\n'; buf[n] = 0;
-        print_early(buf);
+        window_debug_log(buf);
     }
     window->id = id;
-    print_early("[window_create] after struct init\n");
+    window_debug_log("[window_create] after struct init\n");
     window->event_handlers.handlers = vector_new(sizeof(WINDOW_EVENT_HANDLER), 4, 0);
     if (!window->event_handlers.handlers) {
-        print_early("[window_create] event_handlers alloc failed\n");
+        window_debug_log("[window_create] event_handlers alloc failed\n");
         res = -ENOMEM;
         goto out;
     }
-    print_early("[window_create] event_handlers vector created\n");
+    window_debug_log("[window_create] event_handlers vector created\n");
 
     size_t total_window_width_bounds = width;
     size_t total_window_height_bounds = height;
@@ -669,7 +674,8 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
         res = -ENOMEM;
         goto out;
     }
-    print_early("[window_create] root_graphics_info created\n");
+    
+    window_debug_log("[window_create] root_graphics_info creation succeeded\n");
 
     if (flags & WINDOW_FLAG_BACKGROUND_TRANSPARENT)
     {
@@ -692,20 +698,20 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
             buf[n++] = (v < 10) ? ('0' + v) : ('A' + v - 10);
         }
         buf[n++] = ']'; buf[n++] = '\n'; buf[n] = 0;
-        print_early(buf);
+        window_debug_log(buf);
     }
     if (!(flags & WINDOW_FLAG_BORDERLESS))
     {
-        print_early("[window_create] NOT borderless - creating title_bar_graphics_info...\n");
+        window_debug_log("[window_create] NOT borderless - creating title_bar_graphics_info...\n");
         title_bar_graphics_info =
             graphics_info_create_relative(root_graphics_info, WINDOW_BORDER_PIXEL_SIZE, 0, width, WINDOW_TITLE_BAR_HEIGHT, 0);
         if (!title_bar_graphics_info)
         {
-            print_early("[window_create] ERROR: title_bar_graphics_info creation failed!\n");
+            window_debug_log("[window_create] ERROR: title_bar_graphics_info creation failed!\n");
             res = -ENOMEM;
             goto out;
         }
-        print_early("[window_create] title_bar_graphics_info created\n");
+        window_debug_log("[window_create] title_bar_graphics_info created\n");
 
         // click handler
         graphics_click_handler_set(title_bar_graphics_info, window_title_bar_clicked);
@@ -714,9 +720,9 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
 
         window->title_bar_graphics = title_bar_graphics_info;
         if (window->title_bar_graphics) {
-            print_early("[window_create] window->title_bar_graphics assigned\n");
+            window_debug_log("[window_create] window->title_bar_graphics assigned\n");
         } else {
-            print_early("[window_create] window->title_bar_graphics is NULL after assignment!\n");
+            window_debug_log("[window_create] window->title_bar_graphics is NULL after assignment!\n");
         }
 
         border_left_graphics_info =
@@ -726,7 +732,7 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
             res = -ENOMEM;
             goto out;
         }
-        print_early("[window_create] border_left_graphics_info created\n");
+        window_debug_log("[window_create] border_left_graphics_info created\n");
 
         struct graphics_info *border_right_graphics_info =
             graphics_info_create_relative(root_graphics_info, total_window_width_bounds - WINDOW_BORDER_PIXEL_SIZE, WINDOW_TITLE_BAR_HEIGHT, WINDOW_BORDER_PIXEL_SIZE, height, 0);
@@ -735,7 +741,7 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
             res = -ENOMEM;
             goto out;
         }
-        print_early("[window_create] border_right_graphics_info created\n");
+        window_debug_log("[window_create] border_right_graphics_info created\n");
 
         struct graphics_info *border_bottom_graphics_info =
             graphics_info_create_relative(root_graphics_info, 0, total_window_height_bounds - WINDOW_BORDER_PIXEL_SIZE, width, WINDOW_BORDER_PIXEL_SIZE, 0);
@@ -744,7 +750,7 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
             res = -ENOMEM;
             goto out;
         }
-        print_early("[window_create] border_bottom_graphics_info created\n");
+        window_debug_log("[window_create] border_bottom_graphics_info created\n");
     }
 
     struct graphics_info *window_graphics_info = graphics_info_create_relative(root_graphics_info, window_body_width_offset, window_body_height_offset, width, height, 0);
@@ -753,7 +759,7 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
         res = -ENOMEM;
         goto out;
     }
-    print_early("[window_create] window_graphics_info created\n");
+    window_debug_log("[window_create] window_graphics_info created\n");
 
     window->graphics = window_graphics_info;
 
@@ -770,7 +776,7 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
             res = -ENOMEM;
             goto out;
         }
-        print_early("[window_create] title_bar_terminal created\n");
+        window_debug_log("[window_create] title_bar_terminal created\n");
     }
 
     struct framebuffer_pixel pixel_color = {0};
@@ -781,7 +787,7 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
         res = -ENOMEM;
         goto out;
     }
-    print_early("[window_create] terminal created\n");
+    window_debug_log("[window_create] terminal created\n");
 
     struct framebuffer_pixel bg_color = {0};
     bg_color.red = 0xff;
@@ -791,11 +797,11 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
 
     // Save the background of the terminal incase of backspaces
     terminal_background_save(window->terminal);
-    print_early("[window_create] terminal_background_save done\n");
+    window_debug_log("[window_create] terminal_background_save done\n");
     if (flags & WINDOW_FLAG_BACKGROUND_TRANSPARENT)
     {
         terminal_transparency_key_set(window->terminal, bg_color);
-        print_early("[window_create] terminal_transparency_key_set done\n");
+        window_debug_log("[window_create] terminal_transparency_key_set done\n");
     }
     if (!(flags & WINDOW_FLAG_BORDERLESS))
     {
@@ -813,24 +819,24 @@ struct window *window_create(struct graphics_info *graphics_info, struct font *f
         title_bar_bg_color.green = 0x00;
 
         window_draw_title_bar(window, title_bar_bg_color);
-        print_early("[window_create] window_draw_title_bar done\n");
+        window_debug_log("[window_create] window_draw_title_bar done\n");
         struct framebuffer_pixel border_color = {0};
         graphics_draw_rect(border_left_graphics_info, 0, 0, border_left_graphics_info->width, border_left_graphics_info->height, border_color);
         graphics_draw_rect(border_right_graphics_info, 0, 0, border_right_graphics_info->width, border_right_graphics_info->height, border_color);
         graphics_draw_rect(border_bottom_graphics_info, 0, 0, border_bottom_graphics_info->width, border_bottom_graphics_info->height, border_color);
-        print_early("[window_create] border draw done\n");
+        window_debug_log("[window_create] border draw done\n");
     }
     vector_push(windows_vector, &window);
-    print_early("[window_create] vector_push done\n");
+    window_debug_log("[window_create] vector_push done\n");
     size_t child_count = vector_count(window->root_graphics->children);
     window_set_z_index(window, child_count + 1);
-    print_early("[window_create] window_set_z_index done\n");
+    window_debug_log("[window_create] window_set_z_index done\n");
     window_event_handler_register(window, window_event_handler);
-    print_early("[window_create] window_event_handler_register done\n");
+    window_debug_log("[window_create] window_event_handler_register done\n");
     window_focus(window);
-    print_early("[window_create] window_focus done\n");
+    window_debug_log("[window_create] window_focus done\n");
     graphics_redraw_all();
-    print_early("[window_create] graphics_redraw_all done\n");
+    window_debug_log("[window_create] graphics_redraw_all done\n");
 
 out:
     if (res < 0)

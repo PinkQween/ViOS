@@ -1,4 +1,5 @@
-void print_early(const char *str);
+// Global debug log for the kernel and all subsystems
+void kernel_debug_log(const char* msg);
 #ifndef KERNEL_H
 #define KERNEL_H
 
@@ -10,7 +11,6 @@ void print_early(const char *str);
 void kernel_main();
 void print(const char *str);
 void terminal_writechar(char c, char colour);
-
 void panic(const char *msg);
 void kernel_page();
 void kernel_registers();

@@ -9,6 +9,7 @@ FILES = \
   ./build/memory/paging/paging.o \
   ./build/memory/heap/multiheap.o \
   ./build/io/io.asm.o \
+  ./build/io/serial.o \
   ./build/io/tsc.o \
   ./build/io/tsc.asm.o \
   ./build/io/cpuid.asm.o \

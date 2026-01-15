@@ -7,6 +7,21 @@
 #include "memory/heap/kheap.h"
 #include "io/io.h"
 #include "status.h"
+#include "io/serial.h"
+
+// Official serial support for debugging and system messages
+static void idt_serial_init(void) {
+    serial_init(SERIAL_COM1_BASE);
+    serial_write_string(SERIAL_COM1_BASE, "[IDT] Serial initialized.\n");
+}
+
+static void idt_serial_log(const char* msg) {
+    serial_write_string(SERIAL_COM1_BASE, msg);
+}
+
+// To use:
+// 1. Call idt_serial_init() early in your kernel or IDT setup.
+// 2. Use idt_serial_log("message\n"); for debug output.
 struct idt_desc idt_descriptors[VIOS_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
 
@@ -73,11 +88,30 @@ void idt_set(int interrupt_no, void* address)
    desc->offset_3 = (_address >> 32) & 0x00000000ffffffff;
 }
 
-void idt_handle_exception()
+void idt_exception_0(struct interrupt_frame* frame)  { panic("Exception 0x00: Divide by Zero\n"); }
+void idt_exception_1(struct interrupt_frame* frame)  { panic("Exception 0x01: Debug\n"); }
+void idt_exception_2(struct interrupt_frame* frame)  { panic("Exception 0x02: NMI\n"); }
+void idt_exception_3(struct interrupt_frame* frame)  { panic("Exception 0x03: Breakpoint\n"); }
+void idt_exception_4(struct interrupt_frame* frame)  { panic("Exception 0x04: Overflow\n"); }
+void idt_exception_5(struct interrupt_frame* frame)  { panic("Exception 0x05: Bound Range\n"); }
+void idt_exception_6(struct interrupt_frame* frame)  { panic("Exception 0x06: Invalid Opcode\n"); }
+void idt_exception_7(struct interrupt_frame* frame)  { panic("Exception 0x07: Device Not Available\n"); }
+void idt_exception_8(struct interrupt_frame* frame)  { panic("Exception 0x08: Double Fault\n"); }
+void idt_exception_9(struct interrupt_frame* frame)  { panic("Exception 0x09: Coprocessor Segment Overrun\n"); }
+void idt_exception_A(struct interrupt_frame* frame)  { panic("Exception 0x0A: Invalid TSS\n"); }
+void idt_exception_B(struct interrupt_frame* frame)  { panic("Exception 0x0B: Segment Not Present\n"); }
+void idt_exception_C(struct interrupt_frame* frame)  { panic("Exception 0x0C: Stack Fault\n"); }
+void idt_exception_D(struct interrupt_frame* frame)  { panic("Exception 0x0D: General Protection Fault\n"); }
+void idt_exception_E(struct interrupt_frame* frame)  { panic("Exception 0x0E: Page Fault\n"); }
+void idt_exception_F(struct interrupt_frame* frame)  { panic("Exception 0x0F: Reserved\n"); }
+void idt_exception_10(struct interrupt_frame* frame) { panic("Exception 0x10: x87 FPU Error\n"); }
+void idt_exception_11(struct interrupt_frame* frame) { panic("Exception 0x11: Alignment Check\n"); }
+void idt_exception_12(struct interrupt_frame* frame) { panic("Exception 0x12: Machine Check\n"); }
+void idt_exception_13(struct interrupt_frame* frame) { panic("Exception 0x13: SIMD FP Exception\n"); }
+
+void idt_handle_exception(struct interrupt_frame* frame)
 {
-    panic("Panic Exception\n");
-    // process_terminate(task_current()->process);
-    // task_next();
+    panic("Generic Exception\n");
 }
 
 void idt_clock()
@@ -107,14 +141,37 @@ void idt_init()
     idt_set(0, idt_zero);
     idt_set(0x80, isr80h_wrapper);
 
-
-    for (int i = 0; i < 0x20; i++)
+    // Register specific exception handlers
+    idt_register_interrupt_callback(0x00, idt_exception_0);
+    idt_register_interrupt_callback(0x01, idt_exception_1);
+    idt_register_interrupt_callback(0x02, idt_exception_2);
+    idt_register_interrupt_callback(0x03, idt_exception_3);
+    idt_register_interrupt_callback(0x04, idt_exception_4);
+    idt_register_interrupt_callback(0x05, idt_exception_5);
+    idt_register_interrupt_callback(0x06, idt_exception_6);
+    idt_register_interrupt_callback(0x07, idt_exception_7);
+    idt_register_interrupt_callback(0x08, idt_exception_8);
+    idt_register_interrupt_callback(0x09, idt_exception_9);
+    idt_register_interrupt_callback(0x0A, idt_exception_A);
+    idt_register_interrupt_callback(0x0B, idt_exception_B);
+    idt_register_interrupt_callback(0x0C, idt_exception_C);
+    idt_register_interrupt_callback(0x0D, idt_exception_D);
+    idt_register_interrupt_callback(0x0E, idt_exception_E);
+    idt_register_interrupt_callback(0x0F, idt_exception_F);
+    idt_register_interrupt_callback(0x10, idt_exception_10);
+    idt_register_interrupt_callback(0x11, idt_exception_11);
+    idt_register_interrupt_callback(0x12, idt_exception_12);
+    idt_register_interrupt_callback(0x13, idt_exception_13);
+    
+    // Generic handler for remaining exceptions
+    for (int i = 0x14; i < 0x20; i++)
     {
         idt_register_interrupt_callback(i, idt_handle_exception);
     }
     
 
-    idt_register_interrupt_callback(0x20, idt_clock);
+    // DISABLED: Timer interrupt causes crashes due to broken task_next()
+    // idt_register_interrupt_callback(0x20, idt_clock);
 
     // Load the interrupt descriptor table
     idt_load(&idtr_descriptor);

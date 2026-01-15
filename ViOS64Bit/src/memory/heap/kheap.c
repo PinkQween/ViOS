@@ -163,13 +163,15 @@ void* kpalloc(size_t size)
     return ptr;
 }
 
+#include "io/serial.h"
+static void kheap_debug_log(const char* msg) { serial_init(SERIAL_COM1_BASE); serial_write_string(SERIAL_COM1_BASE, msg); }
+
 void* kpzalloc(size_t size)
 {
     void* ptr = kpalloc(size);
-    extern void print_early(const char*);
     char buf[128];
     if (!ptr) {
-        print_early("[kpzalloc] kpalloc failed!\n");
+        kheap_debug_log("[kpzalloc] kpalloc failed!\n");
         return 0;
     }
     memset(ptr, 0x00, size);
@@ -183,7 +185,7 @@ void* kpzalloc(size_t size)
         buf[i++] = (v < 10) ? ('0' + v) : ('A' + v - 10);
     }
     buf[i++] = ']'; buf[i++] = '\n'; buf[i] = 0;
-    print_early(buf);
+    kheap_debug_log(buf);
     return ptr;
 }
 
