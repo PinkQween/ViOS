@@ -135,5 +135,6 @@ int process_fclose(struct process* process, int fd);
 int process_fread(struct process* process, void* virt_ptr, uint64_t size, uint64_t nmemb, int fd);
 int process_fseek(struct process* process, int fd, int offset, FILE_SEEK_MODE whence);
 int process_fstat(struct process* process, int fd, struct file_stat* virt_filestat_addr);
+int process_fwrite(struct process* process, const void* virt_ptr, uint32_t size, uint32_t nmemb, int fd);
 
 #endif

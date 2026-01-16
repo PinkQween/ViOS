@@ -10,6 +10,35 @@ char tolower(char s1)
     return s1;
 }
 
+char toupper(char s1)
+{
+    if (s1 >= 97 && s1 <= 122)
+    {
+        s1 -= 32;
+    }
+
+    return s1;
+}
+
+char* strchr(const char* str, int c)
+{
+    while (*str != '\0')
+    {
+        if (*str == (char)c)
+        {
+            return (char*)str;
+        }
+        str++;
+    }
+    
+    if (c == '\0')
+    {
+        return (char*)str;
+    }
+    
+    return 0;
+}
+
 int strlen(const char* ptr)
 {
     int i = 0;
@@ -124,7 +153,7 @@ char* itoa(int i)
 char* strncpy(char* dest, const char* src, int count)
 {
     int i = 0;
-    for (i = 0; i < count-1; i++)
+    for (i = 0; i < count; i++)
     {
         if (src[i] == 0x00)
             break;

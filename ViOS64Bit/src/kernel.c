@@ -51,6 +51,11 @@ void print(const char *str)
     {
         terminal_writechar(str[i], 15);
     }
+    // Force redraw to make output visible
+    if (system_terminal && system_terminal->graphics_info)
+    {
+        graphics_redraw(system_terminal->graphics_info);
+    }
 }
 
 void panic(const char *msg)
@@ -119,10 +124,23 @@ void kernel_main()
     fs_init();
 
     // Enable the disks
+    kernel_debug_log("[kernel_main] before disk_search_and_init\n");
+    print("Initializing disks...\n");
     disk_search_and_init();
+    print("Disks initialized\n");
+    kernel_debug_log("[kernel_main] after disk_search_and_init\n");
 
     // Initialize GPT(gloabl partition table) drives
+    kernel_debug_log("[kernel_main] before gpt_init\n");
+    print("Initializing GPT...\n");
     gpt_init();
+    print("GPT initialized\n");
+    kernel_debug_log("[kernel_main] after gpt_init\n");
+
+    // Initialize the process system
+    print("Initializing process system...\n");
+    process_system_init();
+    print("Process system initialized\n");
 
     // Initialize the font system
     font_system_init();
@@ -287,21 +305,43 @@ void kernel_main()
         kernel_debug_log("[kernel_main] terminal_print done\n");
         window_redraw(win);
         kernel_debug_log("[kernel_main] window_redraw done\n");
+        print("Window created and drawn\n");
     }
    
-   while(1) {}
+    kernel_debug_log("[kernel_main] before Loading program print\n");
     print("Loading program...\n");
+    kernel_debug_log("[kernel_main] after Loading program print\n");
     struct process* process = 0;
+    kernel_debug_log("[kernel_main] calling process_load_switch\n");
     int res = process_load_switch("@:/blank.elf", &process);
+    
+    kernel_debug_log("[kernel_main] process_load_switch returned: ");
+    kernel_debug_log(itoa(res));
+    kernel_debug_log("\n");
     if (res != VIOS_ALL_OK)
     {
-        panic("Failed to load user program\n");
+        print("Failed to load user program, error: ");
+        print(itoa(res));
+        print("\n");
+        panic("Cannot load shell\n");
     }
 
-    // Drop to user land
-    task_run_first_ever_task();
+    kernel_debug_log("[kernel_main] about to print success message\n");
+    print("Program loaded successfully!\n");
+    kernel_debug_log("[kernel_main] success message printed\n");
 
-   
+    kernel_debug_log("[kernel_main] about to run first task\n");
+    kernel_debug_log("[kernel_main] task IP: 0x");
+    kernel_debug_log(itoa((int)process->task->registers.ip));
+    kernel_debug_log("\n");
+    kernel_debug_log("[kernel_main] task CS: 0x");
+    kernel_debug_log(itoa((int)process->task->registers.cs));
+    kernel_debug_log("\n");
+
+    // Drop to user land
+    kernel_debug_log("[kernel_main] calling task_run_first_ever_task\n");
+    task_run_first_ever_task();
+    kernel_debug_log("[kernel_main] returned from task_run_first_ever_task\n");
 
     while (1)
     {

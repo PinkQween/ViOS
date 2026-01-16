@@ -545,12 +545,19 @@ static int process_load_elf(const char *filename, struct process *process)
 {
     int res = 0;
     struct elf_file *elf_file = 0;
+    kernel_debug_log("[process_load_elf] calling elf_load for: ");
+    kernel_debug_log(filename);
+    kernel_debug_log("\n");
     res = elf_load(filename, &elf_file);
     if (ISERR(res))
     {
+        kernel_debug_log("[process_load_elf] elf_load failed: ");
+        kernel_debug_log(itoa(res));
+        kernel_debug_log("\n");
         goto out;
     }
 
+    kernel_debug_log("[process_load_elf] elf_load succeeded\n");
     process->filetype = PROCESS_FILETYPE_ELF;
     process->elf_file = elf_file;
 out:
@@ -716,15 +723,21 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
     }
 
     process_init(_process);
+    kernel_debug_log("[process_load_for_slot] calling process_load_data\n");
     res = process_load_data(filename, _process);
     if (res < 0)
     {
+        kernel_debug_log("[process_load_for_slot] process_load_data failed: ");
+        kernel_debug_log(itoa(res));
+        kernel_debug_log("\n");
         goto out;
     }
 
+    kernel_debug_log("[process_load_for_slot] allocating stack\n");
     _process->stack = kzalloc(VIOS_USER_PROGRAM_STACK_SIZE);
     if (!_process->stack)
     {
+        kernel_debug_log("[process_load_for_slot] stack allocation failed\n");
         res = -ENOMEM;
         goto out;
     }
@@ -732,30 +745,41 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
     strncpy(_process->filename, filename, sizeof(_process->filename));
     _process->id = process_slot;
 
+    kernel_debug_log("[process_load_for_slot] creating paging_desc\n");
     _process->paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
     if (!_process->paging_desc)
     {
+        kernel_debug_log("[process_load_for_slot] paging_desc_new failed\n");
         res = -EIO;
         goto out;
     }
 
+    kernel_debug_log("[process_load_for_slot] mapping memory\n");
     res = process_map_memory(_process);
     if (res < 0)
     {
+        kernel_debug_log("[process_load_for_slot] process_map_memory failed: ");
+        kernel_debug_log(itoa(res));
+        kernel_debug_log("\n");
         goto out;
     }
 
     // Create a task
+    kernel_debug_log("[process_load_for_slot] creating task\n");
     _process->task = task_new(_process);
     if (ERROR_I(_process->task) == 0)
     {
         res = ERROR_I(_process->task);
+        kernel_debug_log("[process_load_for_slot] task_new failed: ");
+        kernel_debug_log(itoa(res));
+        kernel_debug_log("\n");
 
         // Task is NULL due to error code being returned in task_new.
         _process->task = NULL;
         goto out;
     }
 
+    kernel_debug_log("[process_load_for_slot] success\n");
     *process = _process;
 
     // Overwrite the free process pointer thats in the vector
@@ -838,21 +862,27 @@ int process_get_allocation_by_addr(struct process *process, void *addr, struct p
 int process_validate_memory_or_terminate(struct process *process, void *virt_addr, size_t space_needed)
 {
     int res = 0;
+    kernel_debug_log("[process_validate_memory_or_terminate] start\n");
     struct process_allocation_request allocation_request;
     res = process_get_allocation_by_addr(process, virt_addr, &allocation_request);
     if (res < 0)
     {
+        kernel_debug_log("[process_validate_memory_or_terminate] get_allocation failed\n");
         goto out;
     }
 
+    kernel_debug_log("[process_validate_memory_or_terminate] checking space\n");
     if (allocation_request.peek.total_bytes_left < space_needed)
     {
+        kernel_debug_log("[process_validate_memory_or_terminate] not enough space\n");
         res = -EINVARG;
         goto out;
     }
+    kernel_debug_log("[process_validate_memory_or_terminate] validation passed\n");
 out:
     if (res < 0)
     {
+        kernel_debug_log("[process_validate_memory_or_terminate] TERMINATING PROCESS\n");
         process_terminate(process);
     }
     return res;
@@ -947,28 +977,36 @@ int process_fclose(struct process *process, int fd)
 int process_fopen(struct process *process, const char *path, const char *mode)
 {
     int res = 0;
+    kernel_debug_log("[process_fopen] calling fopen\n");
     int fd = fopen(path, mode);
+    kernel_debug_log("[process_fopen] fopen returned\n");
     if (fd <= 0)
     {
+        kernel_debug_log("[process_fopen] fopen failed\n");
         res = -EIO;
         goto out;
     }
 
     res = fd;
+    kernel_debug_log("[process_fopen] allocating handle\n");
     // Allocate memory for the file handle
     struct process_file_handle *handle = kzalloc(sizeof(struct process_file_handler *));
     if (!handle)
     {
+        kernel_debug_log("[process_fopen] handle alloc failed\n");
         res = -ENOMEM;
         goto out;
     }
 
+    kernel_debug_log("[process_fopen] setting handle fields\n");
     handle->fd = fd;
     strncpy(handle->file_path, path, sizeof(handle->file_path));
     strncpy(handle->mode, mode, sizeof(handle->mode));
 
+    kernel_debug_log("[process_fopen] pushing to vector\n");
     // Push to the file handles vector so we have a record
     vector_push(process->file_handles, &handle);
+    kernel_debug_log("[process_fopen] success\n");
 out:
     if (res < 0)
     {
@@ -1010,5 +1048,62 @@ int process_close_file_handles(struct process *process)
 
     vector_free(process->file_handles);
     process->file_handles = NULL;
+    return res;
+}
+
+int process_write_memory(struct process* process, void* virt_ptr, const void* src_ptr, size_t size)
+{
+    int res = 0;
+    res = process_validate_memory_or_terminate(process, virt_ptr, size);
+    if (res < 0)
+    {
+        goto out;
+    }
+
+    void* phys_ptr = task_virtual_address_to_physical(process->task, virt_ptr);
+    if (!phys_ptr)
+    {
+        res = -EIO;
+        goto out;
+    }
+
+    memcpy(phys_ptr, src_ptr, size);
+
+out:
+    return res;
+}
+
+int process_fwrite(struct process* process, const void* virt_ptr, uint32_t size, uint32_t nmemb, int fd)
+{
+    int res = 0;
+
+    kernel_debug_log("[process_fwrite] start\n");
+    struct process_file_handle *handle = process_file_handle_get(process, fd);
+    if (!handle)
+    {
+        kernel_debug_log("[process_fwrite] no handle\n");
+        res = -EIO;
+        goto out;
+    }
+
+    kernel_debug_log("[process_fwrite] translating address\n");
+    void *phys_ptr = task_virtual_address_to_physical(process->task, (void*)virt_ptr);
+    if (!phys_ptr)
+    {
+        kernel_debug_log("[process_fwrite] translation failed\n");
+        res = -EIO;
+        goto out;
+    }
+
+    kernel_debug_log("[process_fwrite] calling fwrite\n");
+    res = fwrite(phys_ptr, size, nmemb, handle->fd);
+    kernel_debug_log("[process_fwrite] fwrite returned\n");
+    if (res < 0)
+    {
+        goto out;
+    }
+
+out:
+    kernel_debug_log("[process_fwrite] done\n");
     return res;
 }

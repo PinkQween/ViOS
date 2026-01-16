@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "vios.h"
 #include <stdarg.h>
+
 int putchar(int c) {
   vios_putchar((char)c);
   return 0;
@@ -23,12 +24,12 @@ int printf(const char *fmt, ...) {
     switch (*++p) {
     case 'i':
       ival = va_arg(ap, int);
-      print(itoa(ival));
+      vios_print(itoa(ival));
       break;
 
     case 's':
       sval = va_arg(ap, char *);
-      print(sval);
+      vios_print(sval);
       break;
 
     default:

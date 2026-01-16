@@ -13,7 +13,7 @@ task_return:
     or rax, 0x200       ; Set IF Bit
     push rax
 
-    push qword 0x2B     ; User data segment
+    push qword [rdi+64] ; CS (Code Segment)
     push qword [rdi+56] ; RIP
     call restore_general_purpose_registers
 

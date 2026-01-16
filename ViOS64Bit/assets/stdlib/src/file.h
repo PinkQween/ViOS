@@ -14,6 +14,7 @@ struct file_stat
 int fopen(const char* filename, const char* mode);
 void fclose(int fd);
 int fread(void* buffer, size_t size, size_t count, long fd);
+int fwrite(const void* ptr, uint32_t size, uint32_t nmemb, int fd);
 int fseek(int fd, int offset, int whence);
 int fstat(int fd, struct file_stat* file_stat_out);
 

@@ -25,3 +25,8 @@ int fstat(int fd, struct file_stat* file_stat_out)
 {
     return (int) vios_fstat(fd, file_stat_out);
 }
+
+int fwrite(const void* ptr, uint32_t size, uint32_t nmemb, int fd)
+{
+    return (int)vios_fwrite(ptr, size, nmemb, fd);
+}

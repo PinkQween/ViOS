@@ -8,6 +8,7 @@
 #include "io/io.h"
 #include "status.h"
 #include "io/serial.h"
+#include "string/string.h"
 
 // Official serial support for debugging and system messages
 static void idt_serial_init(void) {
@@ -102,7 +103,18 @@ void idt_exception_A(struct interrupt_frame* frame)  { panic("Exception 0x0A: In
 void idt_exception_B(struct interrupt_frame* frame)  { panic("Exception 0x0B: Segment Not Present\n"); }
 void idt_exception_C(struct interrupt_frame* frame)  { panic("Exception 0x0C: Stack Fault\n"); }
 void idt_exception_D(struct interrupt_frame* frame)  { panic("Exception 0x0D: General Protection Fault\n"); }
-void idt_exception_E(struct interrupt_frame* frame)  { panic("Exception 0x0E: Page Fault\n"); }
+void idt_exception_E(struct interrupt_frame* frame)  { 
+    uint64_t cr2;
+    __asm__ volatile("mov %%cr2, %0" : "=r"(cr2));
+    print("Exception 0x0E: Page Fault\n");
+    print("Faulting address: 0x");
+    print(itoa((int)cr2));
+    print("\n");
+    print("RIP: 0x");
+    print(itoa((int)frame->ip));
+    print("\n");
+    panic("Page Fault");
+}
 void idt_exception_F(struct interrupt_frame* frame)  { panic("Exception 0x0F: Reserved\n"); }
 void idt_exception_10(struct interrupt_frame* frame) { panic("Exception 0x10: x87 FPU Error\n"); }
 void idt_exception_11(struct interrupt_frame* frame) { panic("Exception 0x11: Alignment Check\n"); }
@@ -226,9 +238,13 @@ void* isr80h_handle_command(int command, struct interrupt_frame* frame)
 void* isr80h_handler(int command, struct interrupt_frame* frame)
 {
     void* res = 0;
+    kernel_debug_log("[isr80h] syscall ");
+    kernel_debug_log(itoa(command));
+    kernel_debug_log("\n");
     kernel_page();
     task_current_save_state(frame);
     res = isr80h_handle_command(command, frame);
     task_page();
+    kernel_debug_log("[isr80h] syscall done\n");
     return res;
 }

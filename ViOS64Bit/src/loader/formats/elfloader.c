@@ -168,7 +168,13 @@ struct elf_file *elf_file_new() {
 int elf_load(const char *filename, struct elf_file **file_out) {
   struct elf_file *elf_file = elf_file_new();
   int fd = 0;
+  kernel_debug_log("[elf_load] attempting to open: ");
+  kernel_debug_log(filename);
+  kernel_debug_log("\n");
   int res = fopen(filename, "r");
+  kernel_debug_log("[elf_load] fopen returned: ");
+  kernel_debug_log(itoa(res));
+  kernel_debug_log("\n");
   if (res <= 0) {
     res = -EIO;
     goto out;
@@ -178,20 +184,30 @@ int elf_load(const char *filename, struct elf_file **file_out) {
   struct file_stat stat;
   res = fstat(fd, &stat);
   if (res < 0) {
+    kernel_debug_log("[elf_load] fstat failed: ");
+    kernel_debug_log(itoa(res));
+    kernel_debug_log("\n");
     goto out;
   }
 
   elf_file->elf_memory = kzalloc(stat.filesize);
   res = fread(elf_file->elf_memory, stat.filesize, 1, fd);
   if (res < 0) {
+    kernel_debug_log("[elf_load] fread failed: ");
+    kernel_debug_log(itoa(res));
+    kernel_debug_log("\n");
     goto out;
   }
 
   res = elf_process_loaded(elf_file);
   if (res < 0) {
+    kernel_debug_log("[elf_load] elf_process_loaded failed: ");
+    kernel_debug_log(itoa(res));
+    kernel_debug_log("\n");
     goto out;
   }
 
+  kernel_debug_log("[elf_load] success\n");
   *file_out = elf_file;
 out:
   if (res < 0) {

@@ -12,7 +12,7 @@ sleep 1
 
 # Format partitions
 sudo mkfs.vfat -F 16 -n ABC "${LOOP_DEVICE}p1" >/dev/null 2>&1
-sudo mkfs.vfat -F 16 -n ViOS "${LOOP_DEVICE}p2" >/dev/null 2>&1
+sudo mkfs.vfat -F 16 -n VIOS "${LOOP_DEVICE}p2" >/dev/null 2>&1
 
 # Mount and populate partition 1
 MNT_DIR=$(mktemp -d)

@@ -13,7 +13,7 @@ PART2_DEV="${BASE_DISK}s2"
 
 # Format partitions
 newfs_msdos -F 16 -v ABC "$PART1_DEV" >/dev/null 2>&1
-newfs_msdos -F 16 -v ViOS "$PART2_DEV" >/dev/null 2>&1
+newfs_msdos -F 16 -v VIOS "$PART2_DEV" >/dev/null 2>&1
 
 # Mount and populate partition 1
 MNT_DIR=$(mktemp -d)

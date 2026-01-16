@@ -4,16 +4,16 @@
 #include "vios.h"
 int main(int argc, char** argv)
 {
-    print("VIOS v1.0.0\n");
+    vios_print("VIOS v1.0.0\n");
     while(1) 
     {
-        print("> ");
+        vios_print("> ");
         char buf[1024];
         vios_terminal_readline(buf, sizeof(buf), true);
-        print("\n");
+        vios_print("\n");
         vios_system_run(buf);
         
-        print("\n");
+        vios_print("\n");
     }
     return 0;
 }

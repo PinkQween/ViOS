@@ -19,6 +19,6 @@ struct e820_entry* e820_entry(size_t index);
 
 void* memset(void* ptr, int c, size_t size);
 int memcmp(void* s1, void* s2, int count);
-void* memcpy(void* dest, void* src, int len);
+void* memcpy(void* dest, const void* src, int len);
 
 #endif
